@@ -125,7 +125,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   patches = [
     # Patch `packages/opencode/src/provider/models-macro.ts` to get contents of
     # `_api.json` from the file bundled with `bun build`.
-    ../local-models-dev.patch
+    ../patches/opencode-models.patch
   ];
 
   configurePhase = ''
