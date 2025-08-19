@@ -23,7 +23,7 @@ fi
 echo "Latest version: $VERSION"
 
 # Get current version from package file
-CURRENT_VERSION=$(grep 'version = ' "$PACKAGE_FILE" | sed 's/.*version = "\([^"]*\)".*/\1/')
+CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
 
 if [[ "$VERSION" == "$CURRENT_VERSION" ]]; then
 	echo "Already up to date (version $VERSION)"
@@ -46,12 +46,12 @@ echo "Source hash: $SOURCE_HASH"
 # Update version and hash in package file
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# macOS sed
-	sed -i '' "s/version = \"[^\"]*\";/version = \"$VERSION\";/" "$PACKAGE_FILE"
-	sed -i '' "s/hash = \"[^\"]*\";/hash = \"sha256-$SOURCE_HASH\";/" "$PACKAGE_FILE"
+	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+	sed -i.bak 's/hash = "[^"]*";/hash = "sha256-'"$SOURCE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 else
 	# Linux sed
-	sed -i "s/version = \"[^\"]*\";/version = \"$VERSION\";/" "$PACKAGE_FILE"
-	sed -i "s/hash = \"[^\"]*\";/hash = \"sha256-$SOURCE_HASH\";/" "$PACKAGE_FILE"
+	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
+	sed -i 's/hash = "[^"]*";/hash = "sha256-'"$SOURCE_HASH"'";/' "$PACKAGE_FILE"
 fi
 
 echo "Updated $PACKAGE_FILE with version $VERSION"
@@ -64,9 +64,9 @@ if ! nix build .#gcs 2>&1 | tee /tmp/gcs_build.log; then
 		echo "Found new vendorHash: $NEW_VENDOR_HASH"
 
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i '' "s/vendorHash = \"[^\"]*\";/vendorHash = \"$NEW_VENDOR_HASH\";/" "$PACKAGE_FILE"
+			sed -i.bak 's/vendorHash = "[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 		else
-			sed -i "s/vendorHash = \"[^\"]*\";/vendorHash = \"$NEW_VENDOR_HASH\";/" "$PACKAGE_FILE"
+			sed -i 's/vendorHash = "[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE"
 		fi
 
 		echo "Updated vendorHash to $NEW_VENDOR_HASH"

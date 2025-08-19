@@ -23,7 +23,7 @@ fi
 echo "Latest version: $VERSION"
 
 # Get current version from package file
-CURRENT_VERSION=$(grep 'version = ' "$PACKAGE_FILE" | sed 's/.*version = "\([^"]*\)".*/\1/')
+CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
 
 if [[ "$VERSION" == "$CURRENT_VERSION" ]]; then
 	echo "Already up to date (version $VERSION)"
@@ -46,12 +46,12 @@ echo "Main source hash: $MAIN_SOURCE_HASH"
 # Update version and main source hash
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# macOS sed
-	sed -i '' "s/version = \"[^\"]*\";/version = \"$VERSION\";/" "$PACKAGE_FILE"
-	sed -i '' "s/hash = \"sha256-[^\"]*\";/hash = \"sha256-$MAIN_SOURCE_HASH\";/" "$PACKAGE_FILE"
+	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+	sed -i.bak 's/hash = "sha256-[^"]*";/hash = "sha256-'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 else
 	# Linux sed
-	sed -i "s/version = \"[^\"]*\";/version = \"$VERSION\";/" "$PACKAGE_FILE"
-	sed -i "s/hash = \"sha256-[^\"]*\";/hash = \"sha256-$MAIN_SOURCE_HASH\";/" "$PACKAGE_FILE"
+	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
+	sed -i 's/hash = "sha256-[^"]*";/hash = "sha256-'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE"
 fi
 
 echo "Updated main source hash"
@@ -64,9 +64,9 @@ if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build.log; then
 		echo "Found new TUI vendorHash: $NEW_VENDOR_HASH"
 
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i '' "s/vendorHash = \"sha256-[^\"]*\";/vendorHash = \"$NEW_VENDOR_HASH\";/" "$PACKAGE_FILE"
+			sed -i.bak 's/vendorHash = "sha256-[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 		else
-			sed -i "s/vendorHash = \"sha256-[^\"]*\";/vendorHash = \"$NEW_VENDOR_HASH\";/" "$PACKAGE_FILE"
+			sed -i 's/vendorHash = "sha256-[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE"
 		fi
 
 		echo "Updated TUI vendorHash to $NEW_VENDOR_HASH"
@@ -80,15 +80,15 @@ if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build.log; then
 
 				# Update all platform hashes to the same value (they should be identical)
 				if [[ "$OSTYPE" == "darwin"* ]]; then
-					sed -i '' "s/\"aarch64-darwin\" = \"sha256-[^\"]*\";/\"aarch64-darwin\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i '' "s/\"aarch64-linux\" = \"sha256-[^\"]*\";/\"aarch64-linux\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i '' "s/\"x86_64-darwin\" = \"sha256-[^\"]*\";/\"x86_64-darwin\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i '' "s/\"x86_64-linux\" = \"sha256-[^\"]*\";/\"x86_64-linux\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
+					sed -i.bak 's/"aarch64-darwin" = "sha256-[^"]*";/"aarch64-darwin" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+					sed -i.bak 's/"aarch64-linux" = "sha256-[^"]*";/"aarch64-linux" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+					sed -i.bak 's/"x86_64-darwin" = "sha256-[^"]*";/"x86_64-darwin" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+					sed -i.bak 's/"x86_64-linux" = "sha256-[^"]*";/"x86_64-linux" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 				else
-					sed -i "s/\"aarch64-darwin\" = \"sha256-[^\"]*\";/\"aarch64-darwin\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i "s/\"aarch64-linux\" = \"sha256-[^\"]*\";/\"aarch64-linux\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i "s/\"x86_64-darwin\" = \"sha256-[^\"]*\";/\"x86_64-darwin\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
-					sed -i "s/\"x86_64-linux\" = \"sha256-[^\"]*\";/\"x86_64-linux\" = \"$NEW_NODE_HASH\";/" "$PACKAGE_FILE"
+					sed -i 's/"aarch64-darwin" = "sha256-[^"]*";/"aarch64-darwin" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE"
+					sed -i 's/"aarch64-linux" = "sha256-[^"]*";/"aarch64-linux" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE"
+					sed -i 's/"x86_64-darwin" = "sha256-[^"]*";/"x86_64-darwin" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE"
+					sed -i 's/"x86_64-linux" = "sha256-[^"]*";/"x86_64-linux" = "'"$NEW_NODE_HASH"'";/' "$PACKAGE_FILE"
 				fi
 
 				echo "Updated node_modules hash to $NEW_NODE_HASH"
