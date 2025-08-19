@@ -1,59 +1,202 @@
 { pkgs, system }:
 
 let
-  version = "0.5.7";
+  lib = pkgs.lib;
+  stdenv = pkgs.stdenv;
+  stdenvNoCC = pkgs.stdenvNoCC;
+  buildGoModule = pkgs.buildGoModule;
+  bun = pkgs.bun;
+  fetchFromGitHub = pkgs.fetchFromGitHub;
+  makeBinaryWrapper = pkgs.makeBinaryWrapper;
+  models-dev = pkgs.models-dev;
+  nix-update-script = pkgs.nix-update-script;
+  testers = pkgs.testers;
+  writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
-  architectures = {
-    "x86_64-linux" = "linux-x64";
-    "aarch64-linux" = "linux-arm64";
-    "x86_64-darwin" = "darwin-x64";
-    "aarch64-darwin" = "darwin-arm64";
+  opencode-node-modules-hash = {
+    "aarch64-darwin" = "sha256-hznCg/7c9uNV7NXTkb6wtn3EhJDkGI7yZmSIA2SqX7g=";
+    "aarch64-linux" = "sha256-hznCg/7c9uNV7NXTkb6wtn3EhJDkGI7yZmSIA2SqX7g=";
+    "x86_64-darwin" = "sha256-hznCg/7c9uNV7NXTkb6wtn3EhJDkGI7yZmSIA2SqX7g=";
+    "x86_64-linux" = "sha256-hznCg/7c9uNV7NXTkb6wtn3EhJDkGI7yZmSIA2SqX7g=";
   };
-  arch = architectures.${system} or (throw "unsupported system: ${system}");
-
-  checksums = {
-    "opencode-ai" = "1kfs0h993ddzs988gnsav4fh5xjpv55byn06h4ajdgqf6ydrpyzz";
-    "opencode-darwin-arm64" = "1imjcy2747x7l3mlw4mahkmbi14ac84gbwip60d7r7scn18cqrxl";
-    "opencode-darwin-x64" = "1q6z479m6jc9024a14qd99gl6pxwncznm3ws2hq4mw0n34cvx5gw";
-    "opencode-linux-arm64" = "1x1nr7z7c4g0971x4i8yzql20rasbwb6chh12zf0ssv0xsl28k0q";
-    "opencode-linux-x64" = "06gbm0amfmhyj62lgf8gzcrrcnklvn7v73103wmm5ayxwabkiccw";
+  bun-target = {
+    "aarch64-darwin" = "bun-darwin-arm64";
+    "aarch64-linux" = "bun-linux-arm64";
+    "x86_64-darwin" = "bun-darwin-x64";
+    "x86_64-linux" = "bun-linux-x64";
   };
-  opencodeSha = checksums."opencode-ai";
-  platformSha = checksums."opencode-${arch}" or (throw "no sha for: opencode-${arch}");
-
-  platformPackage = "opencode-${arch}";
 in
-
-pkgs.stdenv.mkDerivation {
+stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  inherit version;
-
-  src = pkgs.fetchurl {
-    url = "https://registry.npmjs.org/opencode-ai/-/opencode-ai-${version}.tgz";
-    sha256 = opencodeSha;
+  version = "0.5.7";
+  src = fetchFromGitHub {
+    owner = "sst";
+    repo = "opencode";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-5EgzpUZtsnCdGHeSCNtuaXUtIju0BW9RDoIZN+F51zA=";
   };
 
-  platformSrc = pkgs.fetchurl {
-    url = "https://registry.npmjs.org/${platformPackage}/-/${platformPackage}-${version}.tgz";
-    sha256 = platformSha;
+  tui = buildGoModule {
+    pname = "opencode-tui";
+    inherit (finalAttrs) version src;
+
+    modRoot = "packages/tui";
+
+    vendorHash = "sha256-acDXCL7ZQYW5LnEqbMgDwpTbSgtf4wXnMMVtQI1Dv9s=";
+
+    subPackages = [ "cmd/opencode" ];
+
+    env.CGO_ENABLED = 0;
+
+    ldflags = [
+      "-s"
+      "-X=main.Version=${finalAttrs.version}"
+    ];
+
+    installPhase = ''
+      runHook preInstall
+
+      install -Dm755 $GOPATH/bin/opencode $out/bin/tui
+
+      runHook postInstall
+    '';
   };
 
-  nativeBuildInputs = [ pkgs.makeWrapper ];
+  node_modules = stdenvNoCC.mkDerivation {
+    pname = "opencode-node_modules";
+    inherit (finalAttrs) version src;
 
-  installPhase = ''
-    mkdir -p $out/{bin,lib/{opencode-ai,${platformPackage}}}
-    tar -xzf $src --strip-components=1 -C $out/lib/opencode-ai
-    tar -xzf $platformSrc --strip-components=1 -C $out/lib/${platformPackage}
-    ln -s $out/lib/${platformPackage}/bin/opencode $out/bin/opencode
-    chmod +x $out/bin/opencode
-    wrapProgram $out/bin/opencode --set OPENCODE_BIN_PATH $out/lib/${platformPackage}/bin/opencode
+    impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
+      "GIT_PROXY_COMMAND"
+      "SOCKS_SERVER"
+    ];
+
+    nativeBuildInputs = [
+      bun
+      writableTmpDirAsHomeHook
+    ];
+
+    dontConfigure = true;
+
+    buildPhase = ''
+      runHook preBuild
+
+       export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
+
+       # Disable post-install scripts to avoid shebang issues
+       bun install \
+         --filter=opencode \
+         --force \
+         --frozen-lockfile \
+         --ignore-scripts \
+         --no-progress \
+         --production
+
+      runHook postBuild
+    '';
+
+    installPhase = ''
+      runHook preInstall
+
+      mkdir -p $out/node_modules
+      cp -R ./node_modules $out
+
+      runHook postInstall
+    '';
+
+    # Required else we get errors that our fixed-output derivation references store paths
+    dontFixup = true;
+
+    outputHash = opencode-node-modules-hash.${stdenvNoCC.hostPlatform.system};
+    outputHashAlgo = "sha256";
+    outputHashMode = "recursive";
+  };
+
+  nativeBuildInputs = [
+    bun
+    makeBinaryWrapper
+    models-dev
+  ];
+
+  # patches = [
+  #   # Patch `packages/opencode/src/provider/models-macro.ts` to get contents of
+  #   # `_api.json` from the file bundled with `bun build`.
+  #   ./local-models-dev.patch
+  # ];
+
+  configurePhase = ''
+    runHook preConfigure
+
+    cp -R ${finalAttrs.node_modules}/node_modules .
+
+    runHook postConfigure
   '';
 
-  meta = with pkgs.lib; {
-    description = "AI coding agent, built for the terminal.";
+  env.MODELS_DEV_API_JSON = "${models-dev}/dist/_api.json";
+
+  buildPhase = ''
+    runHook preBuild
+
+    bun build \
+      --define OPENCODE_TUI_PATH="'${finalAttrs.tui}/bin/tui'" \
+      --define OPENCODE_VERSION="'${finalAttrs.version}'" \
+      --compile \
+      --target=${bun-target.${stdenvNoCC.hostPlatform.system}} \
+      --outfile=opencode \
+      ./packages/opencode/src/index.ts \
+
+    runHook postBuild
+  '';
+
+  dontStrip = true;
+
+  installPhase = ''
+    runHook preInstall
+
+    install -Dm755 opencode $out/bin/opencode
+
+    runHook postInstall
+  '';
+
+  # Execution of commands using bash-tool fail on linux with
+  # Error [ERR_DLOPEN_FAILED]: libstdc++.so.6: cannot open shared object file: No such
+  # file or directory
+  # Thus, we add libstdc++.so.6 manually to LD_LIBRARY_PATH
+  postFixup = ''
+    wrapProgram $out/bin/opencode \
+      --set LD_LIBRARY_PATH "${lib.makeLibraryPath [ stdenv.cc.cc.lib ]}"
+  '';
+
+  passthru = {
+    tests.version = testers.testVersion {
+      package = finalAttrs.finalPackage;
+      command = "HOME=$(mktemp -d) opencode --version";
+      inherit (finalAttrs) version;
+    };
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--subpackage"
+        "tui"
+        "--subpackage"
+        "node_modules"
+      ];
+    };
+  };
+
+  meta = {
+    description = "AI coding agent built for the terminal";
+    longDescription = ''
+      OpenCode is a terminal-based agent that can build anything.
+      It combines a TypeScript/JavaScript core with a Go-based TUI
+      to provide an interactive AI coding experience.
+    '';
     homepage = "https://github.com/sst/opencode";
-    license = licenses.mit;
-    platforms = [ system ];
+    license = lib.licenses.mit;
+    platforms = lib.platforms.unix;
+    maintainers = with lib.maintainers; [
+      zestsystem
+      delafthi
+    ];
     mainProgram = "opencode";
   };
-}
+})
