@@ -124,14 +124,6 @@ pkgs.stdenv.mkDerivation {
 nix build .#gcs
 nix build .#opencode
 
-# Run update scripts manually
-./bin/update-gcs.sh
-./bin/update-opencode.sh
-
 # Enter development shell
 nix develop
 ```
-
-## License
-
-This repository is licensed under MIT. Individual packages retain their original licenses.

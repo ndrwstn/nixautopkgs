@@ -93,5 +93,5 @@
       "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
-  "ignorePaths": ["**/bin/**", "**/.github/workflows/auto-merge.yml"]
+  "ignorePaths": ["**/.github/workflows/auto-merge.yml"]
 }

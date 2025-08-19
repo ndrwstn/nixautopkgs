@@ -30,7 +30,7 @@
 - Renovate automatically monitors upstream releases
 - Updates are created as PRs with comprehensive changelogs
 - Add new packages by updating `renovate.json` regex managers
-- Manual update scripts in `bin/` are kept for emergency use
+- All updates are fully automated through Renovate
 
 ## Testing
 
