@@ -35,21 +35,61 @@
       "description": "Update OpenCode version in packages/opencode.nix",
       "fileMatch": ["^packages/opencode\\.nix$"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "npm",
-      "depNameTemplate": "opencode-ai"
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "sst/opencode",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "postUpdateOptions": ["nixfmtDisabled"],
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Update Nix package hashes",
-      "fileMatch": ["^packages/.*\\.nix$"],
+      "description": "Update GCS source hash",
+      "fileMatch": ["^packages/gcs\\.nix$"],
       "matchStrings": ["hash = \"sha256-(?<currentDigest>[A-Za-z0-9+/=]+)\";"],
       "currentValueTemplate": "{{currentDigest}}",
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "richardwilkes/gcs",
       "autoReplaceStringTemplate": "hash = \"sha256-{{newDigest}}\";",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenCode source hash",
+      "fileMatch": ["^packages/opencode\\.nix$"],
+      "matchStrings": [
+        "fetchFromGitHub \\{[\\s\\S]*?hash = \"sha256-(?<currentDigest>[A-Za-z0-9+/=]+)\";"
+      ],
+      "currentValueTemplate": "{{currentDigest}}",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "sst/opencode",
+      "autoReplaceStringTemplate": "hash = \"sha256-{{newDigest}}\";",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenCode vendorHash",
+      "fileMatch": ["^packages/opencode\\.nix$"],
+      "matchStrings": [
+        "vendorHash = \"sha256-(?<currentDigest>[A-Za-z0-9+/=]+)\";"
+      ],
+      "currentValueTemplate": "{{currentDigest}}",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "sst/opencode",
+      "autoReplaceStringTemplate": "vendorHash = \"sha256-{{newDigest}}\";",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenCode node modules hashes for all platforms",
+      "fileMatch": ["^packages/opencode\\.nix$"],
+      "matchStrings": [
+        "opencode-node-modules-hash = \\{[\\s\\S]*?\"aarch64-darwin\" = \"sha256-(?<currentDigest>[A-Za-z0-9+/=]+)\";[\\s\\S]*?\\};"
+      ],
+      "currentValueTemplate": "{{currentDigest}}",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "sst/opencode",
+      "autoReplaceStringTemplate": "opencode-node-modules-hash = {\n    \"aarch64-darwin\" = \"sha256-{{newDigest}}\";\n    \"aarch64-linux\" = \"sha256-{{newDigest}}\";\n    \"x86_64-darwin\" = \"sha256-{{newDigest}}\";\n    \"x86_64-linux\" = \"sha256-{{newDigest}}\";\n  };",
       "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
