@@ -1,0 +1,69 @@
+name: Auto-merge successful PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  check_suite:
+    types: [completed]
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' && 
+      (startsWith(github.head_ref, 'update-gcs-') || startsWith(github.head_ref, 'update-opencode-')) &&
+      github.actor == 'github-actions[bot]'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Test builds
+        id: test
+        run: |
+          echo "Testing builds..."
+
+          # Test both packages
+          BUILD_SUCCESS=true
+
+          if ! nix build .#gcs --no-link; then
+            echo "GCS build failed"
+            BUILD_SUCCESS=false
+          fi
+
+          if ! nix build .#opencode --no-link; then
+            echo "OpenCode build failed"
+            BUILD_SUCCESS=false
+          fi
+
+          if [[ "$BUILD_SUCCESS" == "true" ]]; then
+            echo "build_success=true" >> $GITHUB_OUTPUT
+            echo "All builds successful!"
+          else
+            echo "build_success=false" >> $GITHUB_OUTPUT
+            echo "One or more builds failed"
+          fi
+
+      - name: Auto-merge PR
+        if: steps.test.outputs.build_success == 'true'
+        uses: pascalgn/merge-action@v0.15.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          merge_method: squash
+          merge_commit_message: pull-request-title
+
+      - name: Comment on failed build
+        if: steps.test.outputs.build_success == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Auto-merge failed**: Build tests did not pass. Manual intervention required.\n\nPlease check the build logs and fix any issues before merging.'
+            })
