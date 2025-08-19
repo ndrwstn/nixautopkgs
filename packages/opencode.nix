@@ -8,7 +8,7 @@ let
   bun = pkgs.bun;
   fetchFromGitHub = pkgs.fetchFromGitHub;
   makeBinaryWrapper = pkgs.makeBinaryWrapper;
-  # models-dev = pkgs.models-dev;  # Omitted: provides AI model definitions but not required for core functionality
+  models-dev = pkgs.models-dev;
   nix-update-script = pkgs.nix-update-script;
   testers = pkgs.testers;
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
@@ -115,18 +115,18 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     bun
     makeBinaryWrapper
-    # models-dev  # Omitted: provides AI model definitions but not required for core functionality
+    models-dev
   ];
 
   preBuild = ''
     export HOME=$(mktemp -d)
   '';
 
-  # patches = [
-  #   # Patch `packages/opencode/src/provider/models-macro.ts` to get contents of
-  #   # `_api.json` from the file bundled with `bun build`.
-  #   ./local-models-dev.patch
-  # ];
+  patches = [
+    # Patch `packages/opencode/src/provider/models-macro.ts` to get contents of
+    # `_api.json` from the file bundled with `bun build`.
+    ../local-models-dev.patch
+  ];
 
   configurePhase = ''
     runHook preConfigure
@@ -136,7 +136,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postConfigure
   '';
 
-  # env.MODELS_DEV_API_JSON = "${models-dev}/dist/_api.json";  # Omitted: not needed without models-dev
+  env.MODELS_DEV_API_JSON = "${models-dev}/dist/_api.json";
 
   buildPhase = ''
     runHook preBuild
