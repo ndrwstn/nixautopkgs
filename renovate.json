@@ -41,5 +41,5 @@
     }
   ],
   "postUpdateOptions": ["nixfmtDisabled"],
-  "ignorePaths": ["**/.github/workflows/**"]
+  "ignorePaths": ["**/.github/workflows/**", "**/bin/**"]
 }

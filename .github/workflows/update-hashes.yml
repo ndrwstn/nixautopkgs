@@ -23,113 +23,37 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Update GCS hash
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Update GCS hashes
         id: update-gcs
         run: |
-          set -euo pipefail
-          
-          # Function to extract and update hash
-          update_hash() {
-            local package=$1
-            local file="packages/${package}.nix"
-            
-            if [[ ! -f "$file" ]]; then
-              echo "File $file not found, skipping"
-              return 0
-            fi
-            
-            echo "Updating hashes for $package..."
-            
-            # Try to build and capture the expected hash from error
-            if ! nix build ".#${package}" 2>&1 | tee build_output.log; then
-              # Extract the correct hash from the error message
-              if grep -q "got:" build_output.log; then
-                NEW_HASH=$(grep "got:" build_output.log | head -1 | awk '{print $2}')
-                echo "Found new hash: $NEW_HASH"
-                
-                # Update the hash in the file
-                if [[ -n "$NEW_HASH" ]]; then
-                  # For fetchFromGitHub hash
-                  sed -i "s/hash = \"sha256-[^\"]*\";/hash = \"$NEW_HASH\";/" "$file"
-                  
-                  # For vendorHash (Go modules)
-                  sed -i "s/vendorHash = \"sha256-[^\"]*\";/vendorHash = \"$NEW_HASH\";/" "$file"
-                  
-                  echo "Updated $file with new hash"
-                  echo "updated=true" >> $GITHUB_OUTPUT
-                else
-                  echo "Could not extract hash from build output"
-                fi
-              else
-                echo "No hash mismatch found, build failed for other reasons"
-                cat build_output.log
-                exit 1
-              fi
-            else
-              echo "Build succeeded, no hash update needed"
-            fi
-            
-            rm -f build_output.log
-          }
-          
-          # Update hashes for all packages
-          update_hash "gcs"
+          echo "Running GCS update script..."
+          if ./bin/update-gcs.sh; then
+            echo "updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "GCS update failed or no update needed"
+          fi
 
-      - name: Update OpenCode hashes
+      - name: Update OpenCode hashes  
         id: update-opencode
         run: |
-          set -euo pipefail
-          
-          update_hash() {
-            local package=$1
-            local file="packages/${package}.nix"
-            
-            if [[ ! -f "$file" ]]; then
-              echo "File $file not found, skipping"
-              return 0
-            fi
-            
-            echo "Updating hashes for $package..."
-            
-            # Try to build and capture hash errors
-            if ! nix build ".#${package}" 2>&1 | tee build_output.log; then
-              if grep -q "got:" build_output.log; then
-                # Get all hashes that need updating
-                while IFS= read -r line; do
-                  if [[ $line == *"got:"* ]]; then
-                    NEW_HASH=$(echo "$line" | awk '{print $2}')
-                    echo "Found new hash: $NEW_HASH"
-                    
-                    # Update the first occurrence of a hash that needs updating
-                    if grep -q "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" "$file"; then
-                      sed -i "0,/sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=/s//$(echo $NEW_HASH | sed 's/sha256-//')/" "$file"
-                    elif grep -q "hash = \"sha256-[^\"]*\";" "$file"; then
-                      sed -i "0,/hash = \"sha256-[^\"]*\";/s//hash = \"$NEW_HASH\";/" "$file"
-                    fi
-                    
-                    echo "updated=true" >> $GITHUB_OUTPUT
-                    break
-                  fi
-                done < build_output.log
-              else
-                echo "No hash mismatch found, build failed for other reasons"
-                cat build_output.log
-                exit 1
-              fi
-            else
-              echo "Build succeeded, no hash update needed"
-            fi
-            
-            rm -f build_output.log
-          }
-          
-          # Update OpenCode hashes
-          update_hash "opencode"
+          echo "Running OpenCode update script..."
+          if ./bin/update-opencode.sh; then
+            echo "updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "OpenCode update failed or no update needed"
+          fi
 
-      - name: Verify builds after hash updates
+      - name: Test all builds
         run: |
-          echo "Verifying all builds work after hash updates..."
+          echo "Testing all package builds..."
+          echo "Building GCS..."
           nix build .#gcs
+          echo "Building OpenCode..."
           nix build .#opencode
           echo "All builds successful!"
 
