@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' && 
-      (startsWith(github.head_ref, 'update-gcs-') || startsWith(github.head_ref, 'update-opencode-')) &&
-      github.actor == 'github-actions[bot]'
+      (startsWith(github.head_ref, 'renovate/') || github.actor == 'renovate[bot]') &&
+      contains(github.event.pull_request.labels.*.name, 'dependencies')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,30 +22,38 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Test builds
+      - name: Test builds on all platforms
         id: test
         run: |
-          echo "Testing builds..."
+          echo "Testing builds on all supported platforms..."
 
-          # Test both packages
+          # Define platforms
+          PLATFORMS=("x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin")
+          PACKAGES=("gcs" "opencode")
           BUILD_SUCCESS=true
 
-          if ! nix build .#gcs --no-link; then
-            echo "GCS build failed"
-            BUILD_SUCCESS=false
-          fi
-
-          if ! nix build .#opencode --no-link; then
-            echo "OpenCode build failed"
-            BUILD_SUCCESS=false
-          fi
+          # Test each package on each platform
+          for platform in "${PLATFORMS[@]}"; do
+            echo "Testing platform: $platform"
+            
+            for package in "${PACKAGES[@]}"; do
+              echo "  Building $package for $platform..."
+              
+              if ! nix build .#$package --system $platform --no-link; then
+                echo "❌ $package build failed on $platform"
+                BUILD_SUCCESS=false
+              else
+                echo "✅ $package build successful on $platform"
+              fi
+            done
+          done
 
           if [[ "$BUILD_SUCCESS" == "true" ]]; then
             echo "build_success=true" >> $GITHUB_OUTPUT
-            echo "All builds successful!"
+            echo "🎉 All builds successful on all platforms!"
           else
             echo "build_success=false" >> $GITHUB_OUTPUT
-            echo "One or more builds failed"
+            echo "💥 One or more builds failed"
           fi
 
       - name: Auto-merge PR
@@ -65,5 +73,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '❌ **Auto-merge failed**: Build tests did not pass. Manual intervention required.\n\nPlease check the build logs and fix any issues before merging.'
+              body: '❌ **Auto-merge failed**: Build tests did not pass on all platforms.\n\n**Tested platforms:**\n- x86_64-linux\n- aarch64-linux\n- x86_64-darwin\n- aarch64-darwin\n\nPlease check the build logs and fix any issues before merging.'
             })

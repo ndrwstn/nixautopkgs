@@ -53,18 +53,20 @@ nix build github:yourusername/nixoverlays#gcs
 
 ## Automatic Updates
 
-This repository automatically monitors upstream releases and creates pull requests with updated versions:
+This repository uses [Renovate](https://renovatebot.com/) to automatically monitor upstream releases and create pull requests with updated versions:
 
 - **GCS**: Monitors GitHub releases at `richardwilkes/gcs`
 - **OpenCode**: Monitors npm releases for `opencode-ai`
 
 ### How it works
 
-1. GitHub Actions run daily to check for new releases
-2. If a new version is found, a PR is created with updated hashes
-3. The PR includes a build test to ensure the package still works
-4. If the build succeeds, the PR is automatically merged
-5. If the build fails, the PR remains open for manual intervention
+1. Renovate continuously monitors upstream repositories for new releases
+2. When a new version is detected, a PR is created immediately with updated versions and hashes
+3. The PR includes comprehensive release notes and changelogs
+4. Renovate can auto-merge PRs that pass all checks (configurable)
+5. Failed builds remain open for manual intervention
+
+Configuration is managed through `renovate.json` in the repository root.
 
 ## Adding New Packages
 
@@ -72,8 +74,8 @@ To add a new package:
 
 1. Create `packages/yourpackage.nix` following the existing patterns
 2. Add the package to `flake.nix` in the `packages` attribute
-3. Create `bin/update-yourpackage.sh` script to handle version updates
-4. Create `.github/workflows/update-yourpackage.yml` for automatic monitoring
+3. Add regex managers to `renovate.json` for automatic version detection
+4. Renovate will automatically detect and update new packages based on the patterns
 
 ### Package Template
 
