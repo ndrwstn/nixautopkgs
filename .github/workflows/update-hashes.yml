@@ -3,14 +3,14 @@ name: Update Nix Hashes
 on:
   pull_request:
     paths:
-      - 'packages/*.nix'
+      - "packages/*.nix"
   workflow_dispatch:
 
 jobs:
   update-hashes:
     runs-on: ubuntu-latest
     if: github.actor == 'renovate[bot]' || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
             echo "GCS update failed or no update needed"
           fi
 
-      - name: Update OpenCode hashes  
+      - name: Update OpenCode hashes
         id: update-opencode
         run: |
           echo "Running OpenCode update script..."
@@ -62,14 +62,12 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           git add packages/*.nix
-          
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore: update nix package hashes
-
-Auto-updated by GitHub Actions after version bump"
+            git commit -m "chore: update nix package hashes - auto-updated by GitHub Actions"
             git push
           fi
