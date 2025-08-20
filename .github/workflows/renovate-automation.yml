@@ -1,0 +1,387 @@
+name: Update Release
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "packages/*.nix"
+
+permissions:
+  contents: write # For git push hash updates
+  pull-requests: write # For PR merge
+
+jobs:
+  # Phase 1: Security & Detection (from detect-package.yml)
+  security-validation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      is-renovate: ${{ steps.validate.outputs.is-renovate }}
+    steps:
+      - name: Validate Renovate PR
+        id: validate
+        run: |
+          echo "=== SECURITY VALIDATION ==="
+          echo "Actor: ${{ github.actor }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+          echo "PR labels: ${{ toJson(github.event.pull_request.labels.*.name) }}"
+
+          # Check 1: Must be renovate[bot]
+          if [[ "${{ github.actor }}" != "renovate[bot]" ]]; then
+            echo "❌ SECURITY: Actor is not renovate[bot]"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check 2: Must have renovate branch prefix
+          if [[ ! "${{ github.head_ref }}" =~ ^update- ]]; then
+            echo "❌ SECURITY: Branch does not have renovate prefix 'update-'"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check 3: Must have dependencies label
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if [[ ! "$LABELS" =~ "dependencies" ]]; then
+            echo "❌ SECURITY: PR does not have 'dependencies' label"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check 4: PR title must match renovate pattern
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if [[ ! "$PR_TITLE" =~ ^chore:\ update\ .+\ (to|->)\ .+ ]]; then
+            echo "❌ SECURITY: PR title does not match renovate pattern"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "✅ SECURITY: All Renovate validation checks passed"
+          echo "is-renovate=true" >> $GITHUB_OUTPUT
+
+  package-detection:
+    runs-on: ubuntu-latest
+    needs: security-validation
+    if: needs.security-validation.outputs.is-renovate == 'true'
+    outputs:
+      package: ${{ steps.detect.outputs.package }}
+      should-update: ${{ steps.detect.outputs.should-update }}
+      pr-number: ${{ steps.detect.outputs.pr-number }}
+
+    steps:
+      - name: Detect package from Renovate PR title
+        id: detect
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          echo "PR Title: $PR_TITLE"
+          echo "PR Number: $PR_NUMBER"
+
+          # Parse Renovate PR title to detect which package was updated
+          # Renovate titles follow pattern: "chore: update depName to version" or "chore: update depName -> version"
+          if [[ "$PR_TITLE" =~ richardwilkes/gcs ]]; then
+            echo "package=gcs" >> $GITHUB_OUTPUT
+            echo "should-update=true" >> $GITHUB_OUTPUT
+            echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "✅ Detected GCS package update from Renovate"
+          elif [[ "$PR_TITLE" =~ sst/opencode ]]; then
+            echo "package=opencode" >> $GITHUB_OUTPUT
+            echo "should-update=true" >> $GITHUB_OUTPUT
+            echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "✅ Detected OpenCode package update from Renovate"
+          else
+            echo "package=all" >> $GITHUB_OUTPUT
+            echo "should-update=true" >> $GITHUB_OUTPUT
+            echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "⚠️  Could not detect specific package - will update all packages"
+          fi
+
+  # Phase 2: Hash Updates (from update-hashes.yml)
+  update-hashes:
+    runs-on: ubuntu-latest
+    needs: package-detection
+    if: needs.package-detection.outputs.should-update == 'true'
+    outputs:
+      hashes-updated: ${{ steps.update-hashes.outputs.updated }}
+      package: ${{ needs.package-detection.outputs.package }}
+      pr-number: ${{ needs.package-detection.outputs.pr-number }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Update package hashes
+        id: update-hashes
+        run: |
+            PACKAGE="${{ needs.package-detection.outputs.package }}"
+          echo "Updating hashes for package: $PACKAGE"
+
+          if [[ "$PACKAGE" == "gcs" ]]; then
+            echo "Running GCS hash update script..."
+            if ./bin/update-gcs-hashes.sh; then
+              echo "updated=true" >> $GITHUB_OUTPUT
+              echo "✅ GCS hashes updated successfully"
+            else
+              echo "updated=false" >> $GITHUB_OUTPUT
+              echo "ℹ️  GCS hashes unchanged or failed"
+            fi
+          elif [[ "$PACKAGE" == "opencode" ]]; then
+            echo "Running OpenCode hash update script..."
+            if ./bin/update-opencode-hashes.sh; then
+              echo "updated=true" >> $GITHUB_OUTPUT
+              echo "✅ OpenCode hashes updated successfully"
+            else
+              echo "updated=false" >> $GITHUB_OUTPUT
+              echo "ℹ️  OpenCode hashes unchanged or failed"
+            fi
+          else
+            echo "Running all hash update scripts..."
+            if ./bin/update-hashes.sh; then
+              echo "updated=true" >> $GITHUB_OUTPUT
+              echo "✅ All package hashes updated successfully"
+            else
+              echo "updated=false" >> $GITHUB_OUTPUT
+              echo "ℹ️  No hash updates needed"
+            fi
+          fi
+
+      - name: Commit hash updates
+        if: steps.update-hashes.outputs.updated == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add packages/*.nix
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+          PACKAGE="${{ needs.package-detection.outputs.package }}"
+            if [[ "$PACKAGE" == "all" ]]; then
+              COMMIT_MSG="chore: update nix package hashes - auto-updated by GitHub Actions"
+            else
+              COMMIT_MSG="chore: update $PACKAGE package hashes - auto-updated by GitHub Actions"
+            fi
+            git commit -m "$COMMIT_MSG"
+            git push origin ${{ github.head_ref }}
+          fi
+
+  # Phase 3: Matrix Testing (from update-build.yml)
+  build-test:
+    runs-on: ubuntu-latest
+    needs: update-hashes
+    if: always() && (needs.update-hashes.result == 'success')
+    outputs:
+      package: ${{ needs.update-hashes.outputs.package }}
+      pr-number: ${{ needs.update-hashes.outputs.pr-number }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Test builds for ${{ matrix.platform }}
+        id: build-test
+        run: |
+          PACKAGE="${{ needs.update-hashes.outputs.package }}"
+          PLATFORM="${{ matrix.platform }}"
+          echo "Building package: $PACKAGE on platform: $PLATFORM"
+
+          if [[ "$PACKAGE" == "gcs" ]]; then
+            echo "Building only GCS package for $PLATFORM..."
+            if nix build .#gcs --system $PLATFORM --no-link; then
+              echo "✅ GCS build successful on $PLATFORM"
+            else
+              echo "❌ GCS build failed on $PLATFORM"
+              exit 1
+            fi
+          elif [[ "$PACKAGE" == "opencode" ]]; then
+            echo "Building only OpenCode package for $PLATFORM..."
+            if nix build .#opencode --system $PLATFORM --no-link; then
+              echo "✅ OpenCode build successful on $PLATFORM"
+            else
+              echo "❌ OpenCode build failed on $PLATFORM"
+              exit 1
+            fi
+          else
+            echo "Building all packages for $PLATFORM..."
+            if ./bin/build-$PLATFORM.sh; then
+              echo "✅ All packages build successful on $PLATFORM"
+            else
+              echo "❌ Build failed on $PLATFORM"
+              exit 1
+            fi
+          fi
+
+  # Phase 4: Results & Merge (from update-build.yml + auto-merge.yml)
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: always()
+    outputs:
+      success: ${{ steps.summary.outputs.success }}
+      package: ${{ needs.build-test.outputs.package }}
+      pr-number: ${{ needs.build-test.outputs.pr-number }}
+    steps:
+      - name: Summarize build results
+        id: summary
+        run: |
+          if [[ "${{ needs.build-test.result }}" == "success" ]]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "🎉 All builds successful on all platforms!"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "💥 One or more builds failed"
+          fi
+
+  # Final security validation before auto-merge
+  final-security-check:
+    runs-on: ubuntu-latest
+    needs: [build-summary, security-validation]
+    if: always() && needs.build-summary.outputs.success == 'true' && needs.build-summary.outputs.pr-number != '' && needs.security-validation.outputs.is-renovate == 'true'
+    outputs:
+      is-secure: ${{ steps.validate.outputs.is-secure }}
+      pr-number: ${{ needs.build-summary.outputs.pr-number }}
+    steps:
+      - name: Final security validation before auto-merge
+        id: validate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log("=== FINAL AUTO-MERGE SECURITY VALIDATION ===");
+
+            const prNumber = '${{ needs.build-summary.outputs.pr-number }}';
+            const buildSuccess = '${{ needs.build-summary.outputs.success }}';
+
+            console.log(`PR Number: ${prNumber}`);
+            console.log(`Build Success: ${buildSuccess}`);
+            console.log(`Triggered by: ${context.actor}`);
+
+            // SECURITY CHECK 1: Build must be successful
+            if (buildSuccess !== 'true') {
+              console.log("❌ SECURITY: Build success is not 'true'");
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 2: Get PR details for validation
+            let pr;
+            try {
+              const { data: prData } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: parseInt(prNumber)
+              });
+              pr = prData;
+            } catch (error) {
+              console.log(`❌ SECURITY: Failed to fetch PR ${prNumber}: ${error.message}`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 3: PR must be from renovate[bot]
+            if (pr.user.login !== 'renovate[bot]') {
+              console.log(`❌ SECURITY: PR author is '${pr.user.login}', not 'renovate[bot]'`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 4: Branch must have renovate prefix
+            if (!pr.head.ref.startsWith('update-')) {
+              console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix 'update-'`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 5: PR must have dependencies label
+            const hasDepLabel = pr.labels.some(label => label.name === 'dependencies');
+            if (!hasDepLabel) {
+              console.log("❌ SECURITY: PR does not have 'dependencies' label");
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 6: PR title must match renovate pattern
+            const titlePattern = /^chore: update .+ (to|->) .+$/;
+            if (!titlePattern.test(pr.title)) {
+              console.log(`❌ SECURITY: PR title '${pr.title}' does not match renovate pattern`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            // SECURITY CHECK 7: PR must be open and mergeable
+            if (pr.state !== 'open') {
+              console.log(`❌ SECURITY: PR state is '${pr.state}', not 'open'`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            console.log("✅ SECURITY: All final validation checks passed");
+            core.setOutput('is-secure', 'true');
+
+  auto-merge:
+    runs-on: ubuntu-latest
+    needs: final-security-check
+    if: needs.final-security-check.outputs.is-secure == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Get validated PR details
+        id: pr-details
+        run: |
+          echo "pr_number=${{ needs.final-security-check.outputs.pr-number }}" >> $GITHUB_OUTPUT
+          echo "✅ Using security-validated PR details"
+
+      - name: Auto-merge validated Renovate PR
+        uses: pascalgn/merge-action@v0.15.6
+        with:
+          github_token: ${{ github.token }}
+          merge_method: squash
+          merge_commit_message: pull-request-title
+
+      - name: Log successful auto-merge
+        run: |
+          echo "✅ Successfully auto-merged Renovate PR #${{ steps.pr-details.outputs.pr_number }}"
+          echo "🔒 All security validations passed"
+          echo "✅ All build tests passed"
+
+      - name: Comment on successful auto-merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = '${{ steps.pr-details.outputs.pr_number }}';
+
+            await github.rest.issues.createComment({
+              issue_number: parseInt(prNumber),
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Auto-merge successful!**\n\n🔒 All security validations passed\n✅ All build tests passed on all platforms\n🤖 Merged by Renovate automation'
+            });
