@@ -34,8 +34,8 @@ jobs:
           fi
 
           # Check 2: Must have renovate branch prefix
-          if [[ ! "${{ github.head_ref }}" =~ ^nixoverlays/ ]]; then
-            echo "❌ SECURITY: Branch does not have renovate prefix 'nixoverlays/'"
+          if [[ ! "${{ github.head_ref }}" =~ ^update- ]]; then
+            echo "❌ SECURITY: Branch does not have renovate prefix 'update-'"
             echo "is-renovate=false" >> $GITHUB_OUTPUT
             exit 0
           fi

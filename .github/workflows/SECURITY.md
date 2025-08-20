@@ -14,8 +14,8 @@ This repository implements comprehensive security measures to ensure **ONLY Reno
 
 ### Layer 2: Branch Prefix Validation
 
-- **Check**: Branch must start with `nixoverlays/`
-- **Purpose**: Renovate uses this specific prefix (configured in `renovate.json`)
+- **Check**: Branch must start with `update-`
+- **Purpose**: Renovate uses this specific prefix after repository rename (configured in `renovate.json`)
 - **Applied in**: All security validation steps
 
 ### Layer 3: PR Label Validation
@@ -82,7 +82,7 @@ graph TD
 
 ### 3. Branch Name Spoofing
 
-- **Attack**: User creates branch with `nixoverlays/` prefix
+- **Attack**: User creates branch with `update-` prefix
 - **Prevention**: Multiple validation layers (actor + labels + title)
 - **Status**: ✅ BLOCKED
 
@@ -111,7 +111,7 @@ Each workflow performs these validations:
 ### detect-package.yml
 
 - [x] Actor is `renovate[bot]`
-- [x] Branch starts with `nixoverlays/`
+- [x] Branch starts with `update-`
 - [x] PR has `dependencies` label
 - [x] PR title matches Renovate pattern
 - [x] No manual `workflow_dispatch` allowed
@@ -119,20 +119,20 @@ Each workflow performs these validations:
 ### update-hashes.yml
 
 - [x] Actor is `renovate[bot]`
-- [x] Branch starts with `nixoverlays/`
+- [x] Branch starts with `update-`
 - [x] No manual `workflow_dispatch` allowed
 
 ### test-builds.yml
 
 - [x] PR author is `renovate[bot]`
-- [x] Branch starts with `nixoverlays/`
+- [x] Branch starts with `update-`
 - [x] Only triggered by validated automation
 
 ### auto-merge.yml
 
 - [x] Build success is validated
 - [x] PR author is `renovate[bot]`
-- [x] Branch starts with `nixoverlays/`
+- [x] Branch starts with `update-`
 - [x] PR has `dependencies` label
 - [x] PR title matches Renovate pattern
 - [x] PR is open and mergeable
