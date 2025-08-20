@@ -131,9 +131,17 @@ jobs:
     needs: [test-builds, build-summary]
     if: always() && needs.build-summary.outputs.success == 'true' && needs.test-builds.outputs.pr-number != ''
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Trigger auto-merge workflow
         uses: actions/github-script@v7
         with:
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const prNumber = '${{ needs.test-builds.outputs.pr-number }}';
             const package = '${{ needs.test-builds.outputs.package }}';

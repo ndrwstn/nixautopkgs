@@ -101,9 +101,17 @@ jobs:
     needs: detect-package
     if: needs.detect-package.outputs.should-update == 'true'
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Trigger hash update workflow
         uses: actions/github-script@v7
         with:
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const package = '${{ needs.detect-package.outputs.package }}';
             const prNumber = '${{ needs.detect-package.outputs.pr-number }}';
