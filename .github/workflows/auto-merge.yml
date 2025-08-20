@@ -75,8 +75,8 @@ jobs:
             }
 
             // SECURITY CHECK 4: Branch must have renovate prefix
-            if (!pr.head.ref.startsWith('nixoverlays/')) {
-              console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix 'nixoverlays/'`);
+            if (!pr.head.ref.startsWith('nixautopkgs/')) {
+              console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix 'nixautopkgs/'`);
               core.setOutput('is-secure', 'false');
               return;
             }

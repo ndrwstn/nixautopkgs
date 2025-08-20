@@ -1,4 +1,4 @@
-# nixoverlays
+# nixautopkgs
 
 A Nix flake providing up-to-date packages that are often behind in nixpkgs.
 
@@ -10,13 +10,13 @@ Add to your flake inputs:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixoverlays.url = "github:ndrwstn/nixoverlays";
+    nixautopkgs.url = "github:ndrwstn/nixautopkgs";
   };
 
-  outputs = { self, nixpkgs, nixoverlays, ... }: {
+  outputs = { self, nixpkgs, nixautopkgs, ... }: {
     environment.systemPackages = [
-      nixoverlays.packages.x86_64-linux.gcs
-      nixoverlays.packages.x86_64-linux.opencode
+      nixautopkgs.packages.x86_64-linux.gcs
+      nixautopkgs.packages.x86_64-linux.opencode
     ];
   };
 }
