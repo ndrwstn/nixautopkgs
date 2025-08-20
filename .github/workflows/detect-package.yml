@@ -117,7 +117,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'update-hashes.yml',
-              ref: ref,
+              ref: 'master',
               inputs: {
                 package: package,
                 pr_number: prNumber,

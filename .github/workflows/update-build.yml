@@ -52,109 +52,14 @@ jobs:
           echo "✅ SECURITY: Workflow dispatch validation passed"
           echo "is-renovate=true" >> $GITHUB_OUTPUT
 
-  update-hashes:
+  test-builds:
     runs-on: ubuntu-latest
     needs: security-check
     if: needs.security-check.outputs.is-renovate == 'true'
     outputs:
-      hashes-updated: ${{ steps.update-hashes.outputs.updated }}
       package: ${{ github.event.inputs.package }}
       pr-number: ${{ github.event.inputs.pr_number }}
       target-ref: ${{ github.event.inputs.target_ref }}
-    steps:
-      - name: Set package from input
-        id: detect-package
-        run: |
-          PACKAGE="${{ github.event.inputs.package }}"
-          PR_NUMBER="${{ github.event.inputs.pr_number }}"
-          TARGET_REF="${{ github.event.inputs.target_ref }}"
-
-          echo "Package: $PACKAGE"
-          echo "PR Number: $PR_NUMBER"
-          echo "Target Ref: $TARGET_REF"
-
-          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
-          echo "✅ Using package from workflow input: $PACKAGE"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.target_ref }}
-          fetch-depth: 0
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq curl
-
-      - name: Update package hashes
-        id: update-hashes
-        run: |
-          PACKAGE="${{ steps.detect-package.outputs.package }}"
-          echo "Updating hashes for package: $PACKAGE"
-
-          if [[ "$PACKAGE" == "gcs" ]]; then
-            echo "Running GCS hash update script..."
-            if ./bin/update-gcs-hashes.sh; then
-              echo "updated=true" >> $GITHUB_OUTPUT
-              echo "✅ GCS hashes updated successfully"
-            else
-              echo "updated=false" >> $GITHUB_OUTPUT
-              echo "ℹ️  GCS hashes unchanged or failed"
-            fi
-          elif [[ "$PACKAGE" == "opencode" ]]; then
-            echo "Running OpenCode hash update script..."
-            if ./bin/update-opencode-hashes.sh; then
-              echo "updated=true" >> $GITHUB_OUTPUT
-              echo "✅ OpenCode hashes updated successfully"
-            else
-              echo "updated=false" >> $GITHUB_OUTPUT
-              echo "ℹ️  OpenCode hashes unchanged or failed"
-            fi
-          else
-            echo "Running all hash update scripts..."
-            if ./bin/update-hashes.sh; then
-              echo "updated=true" >> $GITHUB_OUTPUT
-              echo "✅ All package hashes updated successfully"
-            else
-              echo "updated=false" >> $GITHUB_OUTPUT
-              echo "ℹ️  No hash updates needed"
-            fi
-          fi
-
-      - name: Commit hash updates
-        if: steps.update-hashes.outputs.updated == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          git add packages/*.nix
-
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            PACKAGE="${{ steps.detect-package.outputs.package }}"
-            if [[ "$PACKAGE" == "all" ]]; then
-              COMMIT_MSG="chore: update nix package hashes - auto-updated by GitHub Actions"
-            else
-              COMMIT_MSG="chore: update $PACKAGE package hashes - auto-updated by GitHub Actions"
-            fi
-            git commit -m "$COMMIT_MSG"
-            git push origin ${{ github.event.inputs.target_ref }}
-          fi
-
-  test-builds:
-    runs-on: ubuntu-latest
-    needs: update-hashes
-    if: always() && (needs.update-hashes.result == 'success')
-    outputs:
-      build-success: ${{ steps.build-summary.outputs.success }}
     strategy:
       fail-fast: false
       matrix:
@@ -163,7 +68,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.update-hashes.outputs.target-ref }}
+          ref: ${{ github.event.inputs.target_ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -173,7 +78,7 @@ jobs:
       - name: Test builds for ${{ matrix.platform }}
         id: build-test
         run: |
-          PACKAGE="${{ needs.update-hashes.outputs.package }}"
+          PACKAGE="${{ github.event.inputs.package }}"
           PLATFORM="${{ matrix.platform }}"
           echo "Building package: $PACKAGE on platform: $PLATFORM"
 
@@ -223,16 +128,16 @@ jobs:
 
   trigger-auto-merge:
     runs-on: ubuntu-latest
-    needs: [update-hashes, build-summary]
-    if: always() && needs.build-summary.outputs.success == 'true' && needs.update-hashes.outputs.pr-number != ''
+    needs: [test-builds, build-summary]
+    if: always() && needs.build-summary.outputs.success == 'true' && needs.test-builds.outputs.pr-number != ''
     steps:
       - name: Trigger auto-merge workflow
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = '${{ needs.update-hashes.outputs.pr-number }}';
-            const package = '${{ needs.update-hashes.outputs.package }}';
-            const targetRef = '${{ needs.update-hashes.outputs.target-ref }}';
+            const prNumber = '${{ needs.test-builds.outputs.pr-number }}';
+            const package = '${{ needs.test-builds.outputs.package }}';
+            const targetRef = '${{ needs.test-builds.outputs.target-ref }}';
 
             console.log(`Triggering auto-merge for PR: ${prNumber}`);
             console.log(`Package: ${package}`);
