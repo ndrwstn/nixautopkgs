@@ -75,10 +75,10 @@ jobs:
             }
 
             // SECURITY CHECK: Branch must have renovate prefix
-            if (!pr.head.ref.startsWith('nixautopkgs/')) {
-              console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix`);
-              core.setOutput('is-secure', 'false');
-              return;
+            if (!pr.head.ref.startsWith('update-')) {
+                console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix 'update-'`);
+                core.setOutput('is-secure', 'false');
+                return;
             }
 
             console.log("✅ SECURITY: Build test validation passed");
