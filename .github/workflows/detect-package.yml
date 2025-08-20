@@ -50,7 +50,7 @@ jobs:
 
           # Check 4: PR title must match renovate pattern
           PR_TITLE="${{ github.event.pull_request.title }}"
-          if [[ ! "$PR_TITLE" =~ ^chore:\ update\ .+\ -\>\ .+ ]]; then
+          if [[ ! "$PR_TITLE" =~ ^chore:\ update\ .+\ (to|->)\ .+ ]]; then
             echo "❌ SECURITY: PR title does not match renovate pattern"
             echo "is-renovate=false" >> $GITHUB_OUTPUT
             exit 0
@@ -78,7 +78,7 @@ jobs:
           echo "PR Number: $PR_NUMBER"
 
           # Parse Renovate PR title to detect which package was updated
-          # Renovate titles follow pattern: "chore: update depName -> version"
+          # Renovate titles follow pattern: "chore: update depName to version" or "chore: update depName -> version"
           if [[ "$PR_TITLE" =~ richardwilkes/gcs ]]; then
             echo "package=gcs" >> $GITHUB_OUTPUT
             echo "should-update=true" >> $GITHUB_OUTPUT
