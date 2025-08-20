@@ -27,12 +27,18 @@ CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*ver
 
 echo "Updating from $CURRENT_VERSION to $VERSION"
 
-# Fetch new source hash for main repo using nix-prefetch-url for proper SRI format
+# Fetch new source hash for main repo and convert to SRI format
 echo "Fetching main source hash..."
-MAIN_SOURCE_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+OLD_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+MAIN_SOURCE_HASH=$(nix hash convert --hash-algo sha256 --to sri "$OLD_HASH")
+
+if [[ -z "$OLD_HASH" ]]; then
+	echo "Error: Failed to fetch main source hash"
+	exit 1
+fi
 
 if [[ -z "$MAIN_SOURCE_HASH" ]]; then
-	echo "Error: Failed to fetch main source hash"
+	echo "Error: Failed to convert hash to SRI format"
 	exit 1
 fi
 
