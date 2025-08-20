@@ -21,37 +21,34 @@ This repository uses a modular GitHub Actions workflow architecture that separat
 
 **Flow:** Parses PR titles or manual input → Triggers hash update workflow
 
-### 2. Hash Update Component (`update-hashes-component.yml`)
+### 2. Hash Update Component (`update-hashes.yml`)
 
-**Purpose:** Updates package hashes for the specified package.
+**Purpose:** Updates package hashes for the specified package and triggers build validation.
 
 **Triggers:**
 
 - Workflow dispatch from detect-package workflow
-- Manual workflow dispatch
+- Pull requests that modify `packages/*.nix`
 
 **Inputs:**
 
 - `package`: Package to update (gcs, opencode, or all)
 - `pr_number`: PR number (if applicable)
-- `target_ref`: Target branch/ref to update
 
-**Flow:** Updates hashes → Commits changes → Triggers build test workflow
+**Flow:** Updates hashes → Commits changes → Triggers build validation → Triggers auto-merge (if successful)
 
-### 3. Build Test Component (`test-builds.yml`)
+### 3. Build Validation Component (`update-build.yml`)
 
-**Purpose:** Tests builds across all supported platforms for the specified package.
+**Purpose:** Validates builds across all supported platforms for the specified package.
 
 **Triggers:**
 
 - Workflow dispatch from hash update workflow
-- Manual workflow dispatch
 
 **Inputs:**
 
-- `package`: Package to test (gcs, opencode, or all)
+- `package`: Package to validate (gcs, opencode, or all)
 - `pr_number`: PR number (if applicable)
-- `target_ref`: Target branch/ref to test
 
 **Platforms Tested:**
 
@@ -68,32 +65,21 @@ This repository uses a modular GitHub Actions workflow architecture that separat
 
 **Triggers:**
 
-- Workflow dispatch from build test workflow (when builds pass)
+- Workflow dispatch from build validation workflow (when builds pass)
 - Direct PR events (legacy compatibility)
 
 **Flow:** Validates build success → Merges PR or reports failure
-
-### 5. Legacy Orchestrator (`update-hashes.yml`)
-
-**Purpose:** Maintains backward compatibility by orchestrating the new modular workflows.
-
-**Triggers:**
-
-- Pull requests that modify `packages/*.nix` (same as original)
-- Manual workflow dispatch
-
-**Flow:** Detects package → Triggers modular workflow chain
 
 ## Workflow Execution Flow
 
 ```
 PR Created/Updated (Renovate)
          ↓
-Legacy Orchestrator (update-hashes.yml)
+Package Detection (detect-package.yml)
          ↓
-Hash Update Component (update-hashes-component.yml)
+Hash Update (update-hashes.yml)
          ↓
-Build Test Component (test-builds.yml)
+Build Validation (update-build.yml)
          ↓
 Auto-merge (auto-merge.yml)
 ```
@@ -136,17 +122,17 @@ Auto-merge (auto-merge.yml)
 
 ```bash
 # Trigger hash update for GCS only
-gh workflow run update-hashes-component.yml -f package=gcs -f target_ref=master
+gh workflow run update-hashes.yml -f package=gcs
 
 # Test builds for OpenCode only
-gh workflow run test-builds.yml -f package=opencode -f target_ref=master
+gh workflow run update-build.yml -f package=opencode
 ```
 
 ### Full Manual Update
 
 ```bash
 # Trigger full update process
-gh workflow run update-hashes.yml -f package=all
+gh workflow run detect-package.yml
 ```
 
 ## Migration Notes

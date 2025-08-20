@@ -54,16 +54,15 @@ graph TD
     F --> G[Security Check: Actor + Branch]
     G --> H{Valid Renovate PR?}
     H -->|No| I[❌ Block execution]
-    H -->|Yes| J[update-hashes-component.yml]
-    J --> K[test-builds.yml]
-    K --> L[Security Check: PR validation]
-    L --> M{Valid + Builds pass?}
-    M -->|No| N[❌ Block auto-merge]
-    M -->|Yes| O[auto-merge.yml]
-    O --> P[Security Check: All validations]
-    P --> Q{All checks pass?}
-    Q -->|No| R[❌ Block merge]
-    Q -->|Yes| S[✅ Auto-merge]
+    H -->|Yes| J[update-build.yml]
+    J --> K[Security Check: PR validation]
+    K --> L{Valid + Builds pass?}
+    L -->|No| M[❌ Block auto-merge]
+    L -->|Yes| N[auto-merge.yml]
+    N --> O[Security Check: All validations]
+    O --> P{All checks pass?}
+    P -->|No| Q[❌ Block merge]
+    P -->|Yes| R[✅ Auto-merge]
 ```
 
 ## 🚫 Blocked Attack Vectors
@@ -122,7 +121,7 @@ Each workflow performs these validations:
 - [x] Branch starts with `update-`
 - [x] No manual `workflow_dispatch` allowed
 
-### test-builds.yml
+### update-build.yml
 
 - [x] PR author is `renovate[bot]`
 - [x] Branch starts with `update-`
