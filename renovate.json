@@ -23,7 +23,9 @@
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "richardwilkes/gcs",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "currentVersionTemplate": "{{currentValue}}",
+      "newVersionTemplate": "{{newValue}}"
     },
     {
       "customType": "regex",
@@ -32,7 +34,9 @@
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "sst/opencode",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "currentVersionTemplate": "{{currentValue}}",
+      "newVersionTemplate": "{{newValue}}"
     }
   ],
   "postUpdateOptions": ["nixfmtDisabled"],
