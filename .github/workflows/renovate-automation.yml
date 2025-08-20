@@ -129,7 +129,7 @@ jobs:
       - name: Update package hashes
         id: update-hashes
         run: |
-            PACKAGE="${{ needs.package-detection.outputs.package }}"
+          PACKAGE="${{ needs.package-detection.outputs.package }}"
           echo "Updating hashes for package: $PACKAGE"
 
           if [[ "$PACKAGE" == "gcs" ]]; then
