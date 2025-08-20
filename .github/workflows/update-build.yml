@@ -146,6 +146,7 @@ jobs:
             fi
             git commit -m "$COMMIT_MSG"
             git push origin ${{ github.head_ref }}
+          fi
 
   test-builds:
     runs-on: ubuntu-latest

@@ -97,6 +97,7 @@ jobs:
             fi
             git commit -m "$COMMIT_MSG"
             git push origin ${{ inputs.target_ref }}
+          fi
 
   trigger-build-test:
     runs-on: ubuntu-latest
