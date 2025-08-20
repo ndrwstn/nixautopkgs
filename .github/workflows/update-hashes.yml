@@ -1,75 +1,92 @@
-name: Update Nix Hashes
+name: 📦 Package Update Orchestrator
 
 on:
   pull_request:
     types: [opened, synchronize]
     paths:
       - "packages/*.nix"
-  workflow_dispatch:
+  # SECURITY: workflow_dispatch removed to prevent manual triggering
+  # Only Renovate PRs should trigger this automation
 
 jobs:
-  update-hashes:
+  # SECURITY: Comprehensive Renovate-only validation
+  security-check:
     runs-on: ubuntu-latest
-    if: github.actor == 'renovate[bot]' || github.event_name == 'workflow_dispatch'
-
+    if: github.event_name == 'pull_request'
+    outputs:
+      is-renovate: ${{ steps.validate.outputs.is-renovate }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Validate Renovate PR
+        id: validate
+        run: |
+          echo "=== ORCHESTRATOR SECURITY VALIDATION ==="
+          echo "Actor: ${{ github.actor }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+
+          # Must be renovate[bot]
+          if [[ "${{ github.actor }}" != "renovate[bot]" ]]; then
+            echo "❌ SECURITY: Actor is not renovate[bot]"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Must have renovate branch prefix
+          if [[ ! "${{ github.head_ref }}" =~ ^nixoverlays/ ]]; then
+            echo "❌ SECURITY: Branch does not have renovate prefix"
+            echo "is-renovate=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "✅ SECURITY: Renovate validation passed"
+          echo "is-renovate=true" >> $GITHUB_OUTPUT
+
+  orchestrate:
+    runs-on: ubuntu-latest
+    needs: security-check
+    if: needs.security-check.outputs.is-renovate == 'true'
+    steps:
+      - name: Trigger modular workflow
+        uses: actions/github-script@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
+          script: |
+            // Determine package from Renovate PR
+            let package = 'all';
+            const prTitle = context.payload.pull_request.title;
+            const prNumber = context.payload.pull_request.number.toString();
+            const targetRef = context.payload.pull_request.head.ref;
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v27
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
+            console.log(`PR Title: ${prTitle}`);
+            console.log(`PR Number: ${prNumber}`);
+            console.log(`Target Ref: ${targetRef}`);
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq curl
+            // Parse Renovate PR title to detect which package was updated
+            // Renovate titles follow pattern: "chore: update depName -> version"
+            if (prTitle.includes('richardwilkes/gcs')) {
+              package = 'gcs';
+              console.log('✅ Detected GCS package update from Renovate');
+            } else if (prTitle.includes('sst/opencode')) {
+              package = 'opencode';
+              console.log('✅ Detected OpenCode package update from Renovate');
+            } else {
+              package = 'all';
+              console.log('⚠️  Could not detect specific package - will update all packages');
+            }
 
-      - name: Update GCS hashes
-        id: update-gcs
-        run: |
-          echo "Running GCS update script..."
-          if ./bin/update-gcs.sh; then
-            echo "updated=true" >> $GITHUB_OUTPUT
-          else
-            echo "GCS update failed or no update needed"
-          fi
+            console.log(`Package: ${package}`);
 
-      - name: Update OpenCode hashes
-        id: update-opencode
-        run: |
-          echo "Running OpenCode update script..."
-          if ./bin/update-opencode.sh; then
-            echo "updated=true" >> $GITHUB_OUTPUT
-          else
-            echo "OpenCode update failed or no update needed"
-          fi
+            // Trigger the hash update workflow directly
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'update-hashes-component.yml',
+              ref: targetRef,
+              inputs: {
+                package: package,
+                pr_number: prNumber,
+                target_ref: targetRef
+              }
+            });
 
-      - name: Test all builds
-        run: |
-          echo "Testing all package builds..."
-          echo "Building GCS..."
-          nix build .#gcs
-          echo "Building OpenCode..."
-          nix build .#opencode
-          echo "All builds successful!"
-
-      - name: Commit hash updates
-        if: steps.update-gcs.outputs.updated == 'true' || steps.update-opencode.outputs.updated == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          git add packages/*.nix
-
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: update nix package hashes - auto-updated by GitHub Actions"
-            git push origin ${{ github.head_ref }}
-          fi
+            console.log('✅ Triggered secure hash update workflow for Renovate PR');

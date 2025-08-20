@@ -32,9 +32,9 @@ fi
 
 echo "Updating from $CURRENT_VERSION to $VERSION"
 
-# Fetch new source hash for main repo
+# Fetch new source hash for main repo using nix-prefetch-url for proper SRI format
 echo "Fetching main source hash..."
-MAIN_SOURCE_HASH=$(nix-prefetch-git --url "https://github.com/$REPO_OWNER/$REPO_NAME.git" --rev "v$VERSION" --quiet | jq -r '.sha256')
+MAIN_SOURCE_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
 
 if [[ -z "$MAIN_SOURCE_HASH" ]]; then
 	echo "Error: Failed to fetch main source hash"
@@ -47,11 +47,11 @@ echo "Main source hash: $MAIN_SOURCE_HASH"
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# macOS sed
 	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
-	sed -i.bak 's/hash = "sha256-[^"]*";/hash = "sha256-'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+	sed -i.bak 's/hash = "[^"]*";/hash = "'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 else
 	# Linux sed
 	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
-	sed -i 's/hash = "sha256-[^"]*";/hash = "sha256-'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE"
+	sed -i 's/hash = "[^"]*";/hash = "'"$MAIN_SOURCE_HASH"'";/' "$PACKAGE_FILE"
 fi
 
 echo "Updated main source hash"
