@@ -25,11 +25,6 @@ echo "Latest version: $VERSION"
 # Get current version from package file
 CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
 
-if [[ "$VERSION" == "$CURRENT_VERSION" ]]; then
-	echo "Already up to date (version $VERSION)"
-	exit 0
-fi
-
 echo "Updating from $CURRENT_VERSION to $VERSION"
 
 # Fetch new source hash for main repo using nix-prefetch-url for proper SRI format
