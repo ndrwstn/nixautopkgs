@@ -205,13 +205,9 @@ jobs:
           else
           PACKAGE="${{ needs.package-detection.outputs.package }}"
             if [[ "$PACKAGE" == "all" ]]; then
-              COMMIT_MSG="chore: update nix package hashes [skip ci]
-
-Auto-updated by GitHub Actions to prevent recursive workflow triggers."
+              COMMIT_MSG="chore: update nix package hashes [skip ci]"$'\n\n'"Auto-updated by GitHub Actions to prevent recursive workflow triggers."
             else
-              COMMIT_MSG="chore: update $PACKAGE package hashes [skip ci]
-
-Auto-updated by GitHub Actions to prevent recursive workflow triggers."
+              COMMIT_MSG="chore: update $PACKAGE package hashes [skip ci]"$'\n\n'"Auto-updated by GitHub Actions to prevent recursive workflow triggers."
             fi
             git commit -m "$COMMIT_MSG"
             git push origin ${{ github.head_ref }}
