@@ -1,4 +1,4 @@
-name: 📦 Package Update Orchestrator
+name: 🔄 Update and Build
 
 on:
   pull_request:
