@@ -17,9 +17,33 @@ jobs:
     if: github.event_name == 'pull_request'
     outputs:
       is-renovate: ${{ steps.validate.outputs.is-renovate }}
+      skip-workflow: ${{ steps.check-author.outputs.skip-workflow }}
     steps:
+      - name: Checkout to check commit author
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 2
+
+      - name: Check if commit is from GitHub Actions
+        id: check-author
+        run: |
+          # Get the latest commit author
+          LATEST_AUTHOR=$(git log -1 --pretty=format:'%an')
+          echo "Latest commit author: $LATEST_AUTHOR"
+
+          # Skip workflow if the latest commit is from GitHub Actions
+          if [[ "$LATEST_AUTHOR" == "GitHub Action" ]]; then
+            echo "⏭️  Skipping workflow - latest commit is from GitHub Actions"
+            echo "skip-workflow=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Proceeding with workflow - latest commit is from: $LATEST_AUTHOR"
+            echo "skip-workflow=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Validate Renovate PR
         id: validate
+        if: steps.check-author.outputs.skip-workflow == 'false'
         run: |
           echo "=== SECURITY VALIDATION ==="
           echo "Actor: ${{ github.actor }}"
@@ -61,10 +85,17 @@ jobs:
           echo "✅ SECURITY: All Renovate validation checks passed"
           echo "is-renovate=true" >> $GITHUB_OUTPUT
 
+      - name: Skip workflow notification
+        if: steps.check-author.outputs.skip-workflow == 'true'
+        run: |
+          echo "⏭️  WORKFLOW SKIPPED: Latest commit is from GitHub Actions"
+          echo "This prevents recursive workflow triggers when hash updates are committed"
+          echo "The original PR commit will show the proper checks"
+
   package-detection:
     runs-on: ubuntu-latest
     needs: security-validation
-    if: needs.security-validation.outputs.is-renovate == 'true'
+    if: needs.security-validation.outputs.is-renovate == 'true' && needs.security-validation.outputs.skip-workflow == 'false'
     outputs:
       package: ${{ steps.detect.outputs.package }}
       should-update: ${{ steps.detect.outputs.should-update }}
@@ -174,9 +205,13 @@ jobs:
           else
           PACKAGE="${{ needs.package-detection.outputs.package }}"
             if [[ "$PACKAGE" == "all" ]]; then
-              COMMIT_MSG="chore: update nix package hashes - auto-updated by GitHub Actions"
+              COMMIT_MSG="chore: update nix package hashes [skip ci]
+
+Auto-updated by GitHub Actions to prevent recursive workflow triggers."
             else
-              COMMIT_MSG="chore: update $PACKAGE package hashes - auto-updated by GitHub Actions"
+              COMMIT_MSG="chore: update $PACKAGE package hashes [skip ci]
+
+Auto-updated by GitHub Actions to prevent recursive workflow triggers."
             fi
             git commit -m "$COMMIT_MSG"
             git push origin ${{ github.head_ref }}
