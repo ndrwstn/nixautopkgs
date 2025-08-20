@@ -14,15 +14,7 @@
   "automerge": true,
   "platformAutomerge": true,
   "automergeType": "pr",
-  "packageRules": [
-    {
-      "description": "Group all Nix package updates together",
-      "matchFileNames": ["packages/**"],
-      "groupName": "nix packages",
-      "commitMessageTopic": "Nix packages",
-      "automerge": true
-    }
-  ],
+
   "customManagers": [
     {
       "customType": "regex",
