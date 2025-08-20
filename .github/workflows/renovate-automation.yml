@@ -22,7 +22,7 @@ jobs:
       - name: Checkout to check commit author
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 2
 
       - name: Check if commit is from GitHub Actions
@@ -223,7 +223,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -369,7 +369,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get validated PR details
         id: pr-details
