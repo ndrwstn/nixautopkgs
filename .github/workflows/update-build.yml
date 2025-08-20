@@ -162,7 +162,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'auto-merge.yml',
-              ref: 'master',
+              ref: targetRef,
               inputs: {
                 pr_number: prNumber,
                 pr_ref: targetRef,
