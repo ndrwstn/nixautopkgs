@@ -25,19 +25,21 @@ echo "Latest version: $VERSION"
 # Get current version from package file
 CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
 
-if [[ "$VERSION" == "$CURRENT_VERSION" ]]; then
-	echo "Already up to date (version $VERSION)"
-	exit 0
-fi
-
 echo "Updating from $CURRENT_VERSION to $VERSION"
 
-# Fetch new source hash using nix-prefetch-url for proper SRI format
+# Fetch new source hash using nix-prefetch-url and convert to SRI format
 echo "Fetching source hash..."
-SOURCE_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+OLD_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+
+if [[ -z "$OLD_HASH" ]]; then
+	echo "Error: Failed to fetch source hash"
+	exit 1
+fi
+
+SOURCE_HASH=$(nix hash convert --hash-algo sha256 --to sri "$OLD_HASH")
 
 if [[ -z "$SOURCE_HASH" ]]; then
-	echo "Error: Failed to fetch source hash"
+	echo "Error: Failed to convert hash to SRI format"
 	exit 1
 fi
 
@@ -47,11 +49,11 @@ echo "Source hash: $SOURCE_HASH"
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# macOS sed
 	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
-	sed -i.bak 's/hash = "[^"]*";/hash = "'"$SOURCE_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+	sed -i.bak 's|hash = "[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 else
 	# Linux sed
 	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
-	sed -i 's/hash = "[^"]*";/hash = "'"$SOURCE_HASH"'";/' "$PACKAGE_FILE"
+	sed -i 's|hash = "[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE"
 fi
 
 echo "Updated $PACKAGE_FILE with version $VERSION"

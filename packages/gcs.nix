@@ -8,7 +8,7 @@ pkgs.buildGoModule rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-VHysS1/LxtVIJvnlw1joFPc+8uS525VK+FpmKoSikp0=";
+    hash = "sha256-8uz3TfBcbgo6cQkm9qIFAchFBDCbCeP6DUe/BO8fPI8=";
   };
 
   modPostBuild = ''
