@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - "packages/*.nix"
+    branches:
+      - master
 
 permissions:
   contents: write # For git push hash updates
