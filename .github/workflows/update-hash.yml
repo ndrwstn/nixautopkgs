@@ -49,7 +49,7 @@ jobs:
             exit 1
           fi
 
-          echo "✅ SECURITY: All validation checks passed"
+          echo "Security validation passed"
 
       - name: Extract package name from PR title
         id: package
