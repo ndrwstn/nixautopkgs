@@ -1,166 +1,52 @@
-# GitHub Actions Workflow Architecture
+# GitHub Actions Workflows
 
-This repository uses a modular GitHub Actions workflow architecture that separates concerns into focused, reusable components.
+Automated CI/CD pipeline for Nix package updates via Renovate.
 
-## Workflow Components
+## Workflow Chain
 
-### 1. Package Detection (`detect-package.yml`)
+```
+Renovate PR → Hash Update → Build Matrix → Auto-merge
+```
 
-**Purpose:** Identifies which package needs to be updated from Renovate PRs or manual input.
+## Core Workflows
 
-**Triggers:**
+### `update-hash.yml` (Workflow 1/3)
 
-- Pull requests that modify `packages/*.nix`
-- Manual workflow dispatch with package selection
+- **Trigger**: Renovate PRs modifying `packages/*.nix`
+- **Security**: Only `renovate[bot]` with `update/` branch prefix
+- **Action**: Extracts package name, runs `bin/update-{package}`, commits hash updates
+- **Next**: Triggers `test-builds.yml`
 
-**Outputs:**
+### `test-builds.yml` (Workflow 2/3)
 
-- `package`: The detected package name (gcs, opencode, or all)
-- `should-update`: Whether an update should proceed
-- `pr-number`: The PR number (if applicable)
+- **Trigger**: Workflow dispatch from hash update
+- **Security**: Validates Renovate PR origin and commit SHA
+- **Action**: Matrix builds on all platforms (x86_64/aarch64 Linux/Darwin)
+- **Next**: Triggers `auto-merge.yml` if all builds pass
 
-**Flow:** Parses PR titles or manual input → Triggers hash update workflow
+### `auto-merge.yml` (Workflow 3/3)
 
-### 2. Hash Update Component (`update-hashes-component.yml`)
+- **Trigger**: Workflow dispatch from successful builds
+- **Security**: Multi-layer validation (actor, branch, labels, title, state)
+- **Action**: Squash merges validated Renovate PRs
 
-**Purpose:** Updates package hashes for the specified package.
+## Security Features
 
-**Triggers:**
+- **Actor validation**: Only `renovate[bot]` can trigger automation
+- **Branch validation**: Must start with `update/` (Renovate pattern)
+- **Title validation**: Must match `chore: update {package} to {version}`
+- **Label validation**: Must have `dependencies` label
+- **State validation**: PR must be open and mergeable
+- **No manual triggers**: Users cannot manually trigger auto-merge
 
-- Workflow dispatch from detect-package workflow
-- Manual workflow dispatch
+## Supported Packages
 
-**Inputs:**
+- **gcs**: GURPS Character Sheet (`richardwilkes/gcs`)
+- **opencode**: AI Coding Agent (`sst/opencode`)
 
-- `package`: Package to update (gcs, opencode, or all)
-- `pr_number`: PR number (if applicable)
-- `target_ref`: Target branch/ref to update
-
-**Flow:** Updates hashes → Commits changes → Triggers build test workflow
-
-### 3. Build Test Component (`test-builds.yml`)
-
-**Purpose:** Tests builds across all supported platforms for the specified package.
-
-**Triggers:**
-
-- Workflow dispatch from hash update workflow
-- Manual workflow dispatch
-
-**Inputs:**
-
-- `package`: Package to test (gcs, opencode, or all)
-- `pr_number`: PR number (if applicable)
-- `target_ref`: Target branch/ref to test
-
-**Platforms Tested:**
+## Platform Support
 
 - x86_64-linux
 - aarch64-linux
 - x86_64-darwin
 - aarch64-darwin
-
-**Flow:** Runs builds on all platforms → Reports results → Triggers auto-merge (if successful)
-
-### 4. Auto-merge (`auto-merge.yml`)
-
-**Purpose:** Automatically merges PRs when all builds pass.
-
-**Triggers:**
-
-- Workflow dispatch from build test workflow (when builds pass)
-- Direct PR events (legacy compatibility)
-
-**Flow:** Validates build success → Merges PR or reports failure
-
-### 5. Legacy Orchestrator (`update-hashes.yml`)
-
-**Purpose:** Maintains backward compatibility by orchestrating the new modular workflows.
-
-**Triggers:**
-
-- Pull requests that modify `packages/*.nix` (same as original)
-- Manual workflow dispatch
-
-**Flow:** Detects package → Triggers modular workflow chain
-
-## Workflow Execution Flow
-
-```
-PR Created/Updated (Renovate)
-         ↓
-Legacy Orchestrator (update-hashes.yml)
-         ↓
-Hash Update Component (update-hashes-component.yml)
-         ↓
-Build Test Component (test-builds.yml)
-         ↓
-Auto-merge (auto-merge.yml)
-```
-
-## Benefits of Modular Architecture
-
-### 1. **Separation of Concerns**
-
-- Each workflow has a single, focused responsibility
-- Easier to understand, debug, and maintain
-- Clear boundaries between different operations
-
-### 2. **Reusability**
-
-- Components can be triggered independently
-- Manual testing of specific components
-- Flexible orchestration patterns
-
-### 3. **Better Error Handling**
-
-- Isolated failure points
-- Specific error reporting for each component
-- Easier troubleshooting and debugging
-
-### 4. **Maintainability**
-
-- Smaller, focused workflow files
-- Easier to modify individual components
-- Clear dependency relationships
-
-### 5. **Backward Compatibility**
-
-- Legacy orchestrator maintains existing behavior
-- Gradual migration path
-- No disruption to existing processes
-
-## Manual Usage
-
-### Test a Specific Package
-
-```bash
-# Trigger hash update for GCS only
-gh workflow run update-hashes-component.yml -f package=gcs -f target_ref=master
-
-# Test builds for OpenCode only
-gh workflow run test-builds.yml -f package=opencode -f target_ref=master
-```
-
-### Full Manual Update
-
-```bash
-# Trigger full update process
-gh workflow run update-hashes.yml -f package=all
-```
-
-## Migration Notes
-
-- **Existing behavior preserved:** All existing triggers and functionality remain the same
-- **New capabilities added:** Individual component testing and manual orchestration
-- **No breaking changes:** Renovate PRs continue to work as before
-- **Enhanced debugging:** Each component can be tested independently
-
-## Monitoring and Debugging
-
-1. **Check workflow runs:** Each component creates separate workflow runs for better visibility
-2. **Component isolation:** Issues can be traced to specific components
-3. **Manual testing:** Individual components can be triggered for testing
-4. **Clear logging:** Each workflow provides detailed logging for its specific function
-
-This modular architecture provides a robust, maintainable foundation for the repository's CI/CD processes while preserving all existing functionality.
