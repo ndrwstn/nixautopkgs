@@ -12,6 +12,7 @@ permissions:
   contents: write # For git push hash updates
   pull-requests: write # For PR comments
   issues: write # For issue comments
+  actions: write # For triggering workflow dispatch
 
 jobs:
   update-hash:
