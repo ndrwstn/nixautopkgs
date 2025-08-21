@@ -1,0 +1,271 @@
+name: 🔄 Update Hash (Workflow 1/3)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "packages/*.nix"
+
+jobs:
+  update-hash:
+    runs-on: ubuntu-latest
+    # SECURITY: Only process PRs from renovate[bot] with proper branch naming
+    if: >
+      github.actor == 'renovate[bot]' &&
+      startsWith(github.head_ref, 'update/') &&
+      contains(github.event.pull_request.title, 'chore: update')
+    steps:
+      - name: Security validation
+        id: security
+        run: |
+          echo "=== WORKFLOW 1: HASH UPDATE SECURITY VALIDATION ==="
+          echo "Actor: ${{ github.actor }}"
+          echo "Branch: ${{ github.head_ref }}"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          
+          # SECURITY CHECK 1: Must be renovate[bot]
+          if [[ "${{ github.actor }}" != "renovate[bot]" ]]; then
+            echo "❌ SECURITY: Actor is not renovate[bot]"
+            exit 1
+          fi
+          
+          # SECURITY CHECK 2: Branch must start with update/
+          if [[ ! "${{ github.head_ref }}" =~ ^update/ ]]; then
+            echo "❌ SECURITY: Branch does not start with 'update/'"
+            exit 1
+          fi
+          
+          # SECURITY CHECK 3: PR title must match pattern
+          if [[ ! "${{ github.event.pull_request.title }}" =~ ^chore:\ update\ .+\ to\ .+$ ]]; then
+            echo "❌ SECURITY: PR title does not match expected pattern"
+            exit 1
+          fi
+          
+          echo "✅ SECURITY: All validation checks passed"
+
+      - name: Extract package name from PR title
+        id: package
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Extract package name between "update " and " to "
+          PACKAGE=$(echo "$PR_TITLE" | sed -n 's/.*update \([^ ]*\) to.*/\1/p')
+          
+          if [[ -z "$PACKAGE" ]]; then
+            echo "❌ ERROR: Failed to extract package name from PR title"
+            exit 1
+          fi
+          
+          echo "Detected package: $PACKAGE"
+          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
+
+      - name: Validate package script exists
+        id: validate-script
+        run: |
+          PACKAGE="${{ steps.package.outputs.package }}"
+          SCRIPT_PATH="bin/update-$PACKAGE"
+          
+          echo "Checking for script: $SCRIPT_PATH"
+          
+          if [[ ! -f "$SCRIPT_PATH" ]]; then
+            echo "❌ ERROR: Package '$PACKAGE' not supported - script $SCRIPT_PATH not found"
+            echo "script_exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✅ Found update script: $SCRIPT_PATH"
+          echo "script_exists=true" >> $GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # CRITICAL: Use head SHA for proper check association
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Install dependencies
+        run: |
+          # Install required tools for update scripts
+          nix-env -iA nixpkgs.jq nixpkgs.curl
+
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run hash update script
+        id: update-hash
+        run: |
+          PACKAGE="${{ steps.package.outputs.package }}"
+          SCRIPT_PATH="./bin/update-$PACKAGE"
+          
+          echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
+          echo "Script: $SCRIPT_PATH"
+          
+          # Make script executable
+          chmod +x "$SCRIPT_PATH"
+          
+          # Run the update script and capture output
+          if ! "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log; then
+            echo "❌ ERROR: Hash update script failed"
+            echo "script_success=false" >> $GITHUB_OUTPUT
+            
+            # Capture error details for comment
+            ERROR_DETAILS=$(cat /tmp/update_output.log | tail -20)
+            echo "error_details<<EOF" >> $GITHUB_OUTPUT
+            echo "$ERROR_DETAILS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✅ Hash update script completed successfully"
+          echo "script_success=true" >> $GITHUB_OUTPUT
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          echo "=== CHECKING FOR CHANGES ==="
+          
+          # Check if there are any changes to commit
+          if git diff --quiet; then
+            echo "No changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected:"
+            git diff --name-only
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            
+            # Stage all changes
+            git add .
+          fi
+
+      - name: Commit hash updates
+        id: commit
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          PACKAGE="${{ steps.package.outputs.package }}"
+          COMMIT_MESSAGE="chore: update $PACKAGE package hashes"
+          
+          echo "=== COMMITTING CHANGES ==="
+          echo "Commit message: $COMMIT_MESSAGE"
+          
+          git commit -m "$COMMIT_MESSAGE"
+          
+          # Push changes back to PR branch
+          git push origin HEAD:${{ github.head_ref }}
+          
+          # Get the new commit SHA
+          NEW_COMMIT_SHA=$(git rev-parse HEAD)
+          echo "New commit SHA: $NEW_COMMIT_SHA"
+          echo "commit_sha=$NEW_COMMIT_SHA" >> $GITHUB_OUTPUT
+          
+          echo "✅ Successfully committed and pushed hash updates"
+
+      - name: Trigger build matrix workflow
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.update-hash.outputs.script_success == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const package = '${{ steps.package.outputs.package }}';
+            const prNumber = ${{ github.event.pull_request.number }};
+            const commitSha = '${{ steps.commit.outputs.commit_sha }}';
+            const branchRef = '${{ github.head_ref }}';
+            
+            console.log('=== TRIGGERING WORKFLOW 2: BUILD MATRIX ===');
+            console.log(`Package: ${package}`);
+            console.log(`PR Number: ${prNumber}`);
+            console.log(`Commit SHA: ${commitSha}`);
+            console.log(`Branch Ref: ${branchRef}`);
+            
+            try {
+              const response = await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'test-builds.yml',
+                ref: 'master',
+                inputs: {
+                  pr_number: prNumber.toString(),
+                  commit_sha: commitSha,
+                  package: package,
+                  branch_ref: branchRef
+                }
+              });
+              
+              console.log('✅ Successfully triggered build matrix workflow');
+            } catch (error) {
+              console.error('❌ Failed to trigger build matrix workflow:', error.message);
+              throw error;
+            }
+
+      - name: Comment on hash update failure
+        if: failure() && steps.validate-script.outputs.script_exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const package = '${{ steps.package.outputs.package }}';
+            
+            const comment = `❌ **Hash Update Failed**
+
+Package: \`${package}\`
+Error: Package not supported - script \`bin/update-${package}\` not found
+
+The hash update script for this package does not exist. Please ensure the package is properly configured with an update script.`;
+
+            await github.rest.issues.createComment({
+              issue_number: ${{ github.event.pull_request.number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Comment on script execution failure
+        if: failure() && steps.update-hash.outputs.script_success == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const package = '${{ steps.package.outputs.package }}';
+            const errorDetails = `${{ steps.update-hash.outputs.error_details }}`;
+            
+            const comment = `❌ **Hash Update Failed**
+
+Package: \`${package}\`
+Error: Hash update script failed to complete successfully
+
+**Error Details:**
+\`\`\`
+${errorDetails}
+\`\`\`
+
+The hash update script failed to complete successfully. Please check the package configuration and try again.`;
+
+            await github.rest.issues.createComment({
+              issue_number: ${{ github.event.pull_request.number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Log workflow completion
+        if: always()
+        run: |
+          echo "=== WORKFLOW 1 COMPLETION SUMMARY ==="
+          echo "Package: ${{ steps.package.outputs.package }}"
+          echo "Script exists: ${{ steps.validate-script.outputs.script_exists }}"
+          echo "Script success: ${{ steps.update-hash.outputs.script_success }}"
+          echo "Has changes: ${{ steps.check-changes.outputs.has_changes }}"
+          echo "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+          
+          if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" && "${{ steps.update-hash.outputs.script_success }}" == "true" ]]; then
+            echo "✅ Workflow 1 completed successfully - triggered Workflow 2"
+          elif [[ "${{ steps.check-changes.outputs.has_changes }}" == "false" ]]; then
+            echo "ℹ️ Workflow 1 completed - no changes needed"
+          else
+            echo "❌ Workflow 1 failed - check logs above"
+          fi
