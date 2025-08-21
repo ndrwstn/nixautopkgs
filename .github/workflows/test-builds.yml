@@ -1,20 +1,18 @@
-name: 🧪 Test Package Builds
+name: 🧪 Build Matrix
 
 on:
-  # SECURITY: Only allow workflow_dispatch from trusted automation workflows
-  # Manual triggering by users is not permitted for security
   workflow_dispatch:
     inputs:
-      package:
-        description: "Package to test (gcs, opencode, or all)"
+      pr_number:
         required: true
         type: string
-      pr_number:
-        description: "PR number (if applicable)"
-        required: false
+      commit_sha:
+        required: true
         type: string
-      target_ref:
-        description: "Target branch/ref to test"
+      package:
+        required: true
+        type: string
+      branch_ref:
         required: true
         type: string
 
@@ -27,30 +25,26 @@ jobs:
       is-secure: ${{ steps.validate.outputs.is-secure }}
       package: ${{ github.event.inputs.package }}
       pr-number: ${{ github.event.inputs.pr_number }}
-      target-ref: ${{ github.event.inputs.target_ref }}
+      commit-sha: ${{ github.event.inputs.commit_sha }}
+      branch-ref: ${{ github.event.inputs.branch_ref }}
     steps:
       - name: Validate build test security
         id: validate
         uses: actions/github-script@v7
         with:
           script: |
-            console.log("=== BUILD TEST SECURITY VALIDATION ===");
+            console.log("=== BUILD MATRIX SECURITY VALIDATION ===");
 
             const prNumber = '${{ github.event.inputs.pr_number }}';
-            const targetRef = '${{ github.event.inputs.target_ref }}';
+            const commitSha = '${{ github.event.inputs.commit_sha }}';
             const package = '${{ github.event.inputs.package }}';
+            const branchRef = '${{ github.event.inputs.branch_ref }}';
 
             console.log(`PR Number: ${prNumber}`);
-            console.log(`Target Ref: ${targetRef}`);
+            console.log(`Commit SHA: ${commitSha}`);
             console.log(`Package: ${package}`);
+            console.log(`Branch Ref: ${branchRef}`);
             console.log(`Triggered by: ${context.actor}`);
-
-            // If no PR number, this might be a manual test - allow but log
-            if (!prNumber) {
-              console.log("⚠️  No PR number provided - allowing manual build test");
-              core.setOutput('is-secure', 'true');
-              return;
-            }
 
             // SECURITY CHECK: Get PR details for validation
             let pr;
@@ -81,139 +75,137 @@ jobs:
               return;
             }
 
-            console.log("✅ SECURITY: Build test validation passed");
+            // SECURITY CHECK: Commit SHA must match PR head
+            if (pr.head.sha !== commitSha) {
+              console.log(`❌ SECURITY: Commit SHA mismatch. PR head: ${pr.head.sha}, provided: ${commitSha}`);
+              core.setOutput('is-secure', 'false');
+              return;
+            }
+
+            console.log("✅ SECURITY: Build matrix validation passed");
             core.setOutput('is-secure', 'true');
 
-  test-builds:
+  build-matrix:
     runs-on: ubuntu-latest
     needs: security-validation
     if: needs.security-validation.outputs.is-secure == 'true'
-    outputs:
-      build-success: ${{ steps.build-summary.outputs.success }}
-      package: ${{ needs.security-validation.outputs.package }}
-      pr-number: ${{ needs.security-validation.outputs.pr-number }}
     strategy:
       fail-fast: false
       matrix:
         platform: [x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin]
+    outputs:
+      matrix-success: ${{ steps.matrix-result.outputs.success }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.security-validation.outputs.target-ref }}
+          ref: ${{ needs.security-validation.outputs.commit-sha }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Test builds for ${{ matrix.platform }}
-        id: build-test
+      - name: Build package on ${{ matrix.platform }}
+        id: build
         run: |
           PACKAGE="${{ needs.security-validation.outputs.package }}"
           PLATFORM="${{ matrix.platform }}"
-          echo "Building validated package: $PACKAGE on platform: $PLATFORM"
 
-          if [[ "$PACKAGE" == "gcs" ]]; then
-            echo "Building only GCS package for $PLATFORM..."
-            if nix build .#gcs --system $PLATFORM --no-link; then
-              echo "✅ GCS build successful on $PLATFORM"
-              echo "success=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ GCS build failed on $PLATFORM"
-              echo "success=false" >> $GITHUB_OUTPUT
-              exit 1
-            fi
-          elif [[ "$PACKAGE" == "opencode" ]]; then
-            echo "Building only OpenCode package for $PLATFORM..."
-            if nix build .#opencode --system $PLATFORM --no-link; then
-              echo "✅ OpenCode build successful on $PLATFORM"
-              echo "success=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ OpenCode build failed on $PLATFORM"
-              echo "success=false" >> $GITHUB_OUTPUT
-              exit 1
-            fi
+          echo "=== Building $PACKAGE on $PLATFORM ==="
+          echo "Package: $PACKAGE"
+          echo "Platform: $PLATFORM"
+          echo "Commit SHA: ${{ needs.security-validation.outputs.commit-sha }}"
+
+          # Use the build-package script for consistent builds
+          if ./bin/build-package --platform "$PLATFORM" --package "$PACKAGE"; then
+            echo "✅ Build successful: $PACKAGE on $PLATFORM"
+            echo "success=true" >> $GITHUB_OUTPUT
           else
-            echo "Building all packages for $PLATFORM..."
-            if ./bin/build-$PLATFORM.sh; then
-              echo "✅ All packages build successful on $PLATFORM"
-              echo "success=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ Build failed on $PLATFORM"
-              echo "success=false" >> $GITHUB_OUTPUT
-              exit 1
-            fi
+            echo "❌ Build failed: $PACKAGE on $PLATFORM"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
-  build-summary:
+      - name: Set matrix job result
+        id: matrix-result
+        if: always()
+        run: |
+          if [[ "${{ steps.build.outcome }}" == "success" ]]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "✅ Matrix job succeeded for ${{ matrix.platform }}"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "❌ Matrix job failed for ${{ matrix.platform }}"
+          fi
+
+  aggregate-results:
     runs-on: ubuntu-latest
-    needs: test-builds
+    needs: [security-validation, build-matrix]
     if: always()
     outputs:
-      success: ${{ steps.summary.outputs.success }}
+      all-builds-success: ${{ steps.aggregate.outputs.success }}
+      failed-platforms: ${{ steps.aggregate.outputs.failed-platforms }}
     steps:
-      - name: Summarize build results
-        id: summary
+      - name: Aggregate build results
+        id: aggregate
         run: |
-          # Check if all builds succeeded
-          BUILD_SUCCESS=true
+          echo "=== Aggregating Build Matrix Results ==="
 
-          # Note: In a matrix job, we need to check if any job failed
-          # GitHub Actions doesn't provide a direct way to check this in outputs
-          # So we'll use the job result status
-          if [[ "${{ needs.test-builds.result }}" != "success" ]]; then
-            BUILD_SUCCESS=false
-          fi
+          # Check the overall result of the matrix job
+          MATRIX_RESULT="${{ needs.build-matrix.result }}"
+          echo "Matrix job result: $MATRIX_RESULT"
 
-          echo "success=$BUILD_SUCCESS" >> $GITHUB_OUTPUT
-
-          if [[ "$BUILD_SUCCESS" == "true" ]]; then
-            echo "🎉 All builds successful on all platforms!"
+          if [[ "$MATRIX_RESULT" == "success" ]]; then
+            echo "✅ All platform builds succeeded"
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "failed-platforms=" >> $GITHUB_OUTPUT
           else
-            echo "💥 One or more builds failed"
+            echo "❌ One or more platform builds failed"
+            echo "success=false" >> $GITHUB_OUTPUT
+            # For now, use placeholder for failed platforms
+            # Future enhancement: parse individual matrix job results
+            echo "failed-platforms=PLACEHOLDER" >> $GITHUB_OUTPUT
           fi
 
   trigger-auto-merge:
     runs-on: ubuntu-latest
-    needs: [security-validation, test-builds, build-summary]
-    if: always() && needs.build-summary.outputs.success == 'true' && needs.security-validation.outputs.pr-number != ''
+    needs: [security-validation, build-matrix, aggregate-results]
+    if: always() && needs.aggregate-results.outputs.all-builds-success == 'true'
     steps:
       - name: Trigger auto-merge workflow
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
+            const branchRef = '${{ needs.security-validation.outputs.branch-ref }}';
             const package = '${{ needs.security-validation.outputs.package }}';
 
-            console.log(`Triggering auto-merge for validated Renovate PR: ${prNumber}`);
+            console.log(`✅ All builds successful - triggering auto-merge`);
+            console.log(`PR Number: ${prNumber}`);
+            console.log(`Branch Ref: ${branchRef}`);
             console.log(`Package: ${package}`);
 
-            // Get PR details
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: parseInt(prNumber)
-            });
-
-            // Trigger auto-merge workflow by creating a workflow dispatch
+            // Trigger auto-merge workflow
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'auto-merge.yml',
-              ref: pr.head.ref,
+              ref: 'master',
               inputs: {
                 pr_number: prNumber,
-                pr_ref: pr.head.ref,
+                pr_ref: branchRef,
                 build_success: 'true'
               }
             });
 
+            console.log(`🚀 Auto-merge workflow triggered for PR ${prNumber}`);
+
   report-failure:
     runs-on: ubuntu-latest
-    needs: [security-validation, test-builds, build-summary]
-    if: always() && needs.build-summary.outputs.success == 'false' && needs.security-validation.outputs.pr-number != ''
+    needs: [security-validation, build-matrix, aggregate-results]
+    if: always() && needs.aggregate-results.outputs.all-builds-success == 'false'
     steps:
       - name: Comment on failed build
         uses: actions/github-script@v7
@@ -221,10 +213,29 @@ jobs:
           script: |
             const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
             const package = '${{ needs.security-validation.outputs.package }}';
+            const failedPlatforms = '${{ needs.aggregate-results.outputs.failed-platforms }}';
+
+            const comment = `❌ **Build Matrix Failed**
+
+            Package: ${package}
+            Failed Platforms: ${failedPlatforms}
+            Error Details: PLACEHOLDER
+
+            Some platform builds failed. Please check the build logs for details.
+
+            **Tested platforms:**
+            - x86_64-linux
+            - aarch64-linux  
+            - x86_64-darwin
+            - aarch64-darwin
+
+            🔒 **Security validated**: This is a legitimate Renovate PR`;
 
             await github.rest.issues.createComment({
               issue_number: parseInt(prNumber),
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `❌ **Build tests failed**: One or more builds did not pass on all platforms.\n\n**Tested platforms:**\n- x86_64-linux\n- aarch64-linux\n- x86_64-darwin\n- aarch64-darwin\n\n**Package tested:** ${package}\n\n🔒 **Security validated**: This is a legitimate Renovate PR\n\nPlease check the build logs and fix any issues before merging.`
+              body: comment
             });
+
+            console.log(`💬 Failure comment posted to PR ${prNumber}`);
