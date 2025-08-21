@@ -2,6 +2,7 @@
   description = "Nix flake for up-to-date packages not yet in nixpkgs";
 
   inputs = {
+    # NOTE: nixpkgs-unstable required for packages to build
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };

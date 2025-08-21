@@ -9,6 +9,7 @@ Add to your flake inputs:
 ```nix
 {
   inputs = {
+    # NOTE: nixpkgs-unstable required for packages to build
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixautopkgs.url = "github:ndrwstn/nixautopkgs";
   };
