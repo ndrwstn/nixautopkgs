@@ -213,8 +213,8 @@ jobs:
             
             const comment = `❌ **Hash Update Failed**
 
-Package: \`${package}\`
-Error: Package not supported - script \`bin/update-${package}\` not found
+Package: \\\`${package}\\\`
+Error: Package not supported - script \\\`bin/update-${package}\\\` not found
 
 The hash update script for this package does not exist. Please ensure the package is properly configured with an update script.`;
 
@@ -235,13 +235,13 @@ The hash update script for this package does not exist. Please ensure the packag
             
             const comment = `❌ **Hash Update Failed**
 
-Package: \`${package}\`
+Package: \\\`${package}\\\`
 Error: Hash update script failed to complete successfully
 
 **Error Details:**
-\`\`\`
+\\\`\\\`\\\`
 ${errorDetails}
-\`\`\`
+\\\`\\\`\\\`
 
 The hash update script failed to complete successfully. Please check the package configuration and try again.`;
 
