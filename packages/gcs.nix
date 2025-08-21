@@ -2,7 +2,7 @@
 
 pkgs.buildGoModule rec {
   pname = "gcs";
-  version = "5.36.1";
+  version = "5.38.1";
 
   src = pkgs.fetchFromGitHub {
     owner = "richardwilkes";
