@@ -95,11 +95,6 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Install dependencies
-        run: |
-          # Install required tools for update scripts
-          nix-env -iA nixpkgs.jq nixpkgs.curl
-
       - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"

@@ -21,14 +21,6 @@
             inherit gcs opencode;
             default = gcs; # Default to gcs for now
           };
-
-          devShells.default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              nix-prefetch-git
-              curl
-              jq
-            ];
-          };
         };
     };
 }
