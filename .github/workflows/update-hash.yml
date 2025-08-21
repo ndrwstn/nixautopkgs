@@ -65,30 +65,30 @@ jobs:
           echo "Detected package: $PACKAGE"
           echo "package=$PACKAGE" >> $GITHUB_OUTPUT
 
-       - name: Checkout repository
-         uses: actions/checkout@v4
-         with:
-           # CRITICAL: Use head SHA for proper check association
-           ref: ${{ github.event.pull_request.head.sha }}
-           token: ${{ secrets.GITHUB_TOKEN }}
-           fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # CRITICAL: Use head SHA for proper check association
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-       - name: Validate package script exists
-         id: validate-script
-         run: |
-           PACKAGE="${{ steps.package.outputs.package }}"
-           SCRIPT_PATH="bin/update-$PACKAGE"
+      - name: Validate package script exists
+        id: validate-script
+        run: |
+          PACKAGE="${{ steps.package.outputs.package }}"
+          SCRIPT_PATH="bin/update-$PACKAGE"
 
-           echo "Checking for script: $SCRIPT_PATH"
+          echo "Checking for script: $SCRIPT_PATH"
 
-           if [[ ! -f "$SCRIPT_PATH" ]]; then
-             echo "❌ ERROR: Package '$PACKAGE' not supported - script $SCRIPT_PATH not found"
-             echo "script_exists=false" >> $GITHUB_OUTPUT
-             exit 1
-           fi
+          if [[ ! -f "$SCRIPT_PATH" ]]; then
+            echo "❌ ERROR: Package '$PACKAGE' not supported - script $SCRIPT_PATH not found"
+            echo "script_exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
-           echo "✅ Found update script: $SCRIPT_PATH"
-           echo "script_exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Found update script: $SCRIPT_PATH"
+          echo "script_exists=true" >> $GITHUB_OUTPUT
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
