@@ -6,6 +6,11 @@ on:
     paths:
       - "packages/*.nix"
 
+permissions:
+  contents: write # For git push hash updates
+  pull-requests: write # For PR comments
+  issues: write # For issue comments
+
 jobs:
   update-hash:
     runs-on: ubuntu-latest

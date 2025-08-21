@@ -16,6 +16,11 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read # For checkout
+  pull-requests: write # For PR comments
+  issues: write # For issue comments
+
 jobs:
   # SECURITY: Validate that this is a legitimate Renovate PR build test
   security-validation:
