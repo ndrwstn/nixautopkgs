@@ -11,21 +11,10 @@ if [[ ! -f "$PACKAGE_FILE" ]]; then
 	exit 1
 fi
 
-echo "Fetching latest version from GitHub releases..."
-LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest")
-VERSION=$(echo "$LATEST_RELEASE" | jq -r '.tag_name' | sed 's/^v//')
+# Get version from package file (already updated by Renovate)
+VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
 
-if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
-	echo "Error: Failed to fetch version from GitHub releases"
-	exit 1
-fi
-
-echo "Latest version: $VERSION"
-
-# Get current version from package file
-CURRENT_VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
-
-echo "Updating from $CURRENT_VERSION to $VERSION"
+echo "Updating hashes for version $VERSION"
 
 # Fetch new source hash for main repo using nix-prefetch-url and convert to SRI format
 echo "Fetching main source hash..."
@@ -45,14 +34,12 @@ fi
 
 echo "Main source hash: $MAIN_SOURCE_HASH"
 
-# Update version and main source hash
+# Update main source hash (version is already updated by Renovate)
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	# macOS sed
-	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 	sed -i.bak 's|hash = "[^"]*";|hash = "'"$MAIN_SOURCE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 else
 	# Linux sed
-	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
 	sed -i 's|hash = "[^"]*";|hash = "'"$MAIN_SOURCE_HASH"'";|' "$PACKAGE_FILE"
 fi
 
