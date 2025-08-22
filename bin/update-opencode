@@ -86,39 +86,15 @@ if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build.log; then
 				NEW_NODE_HASH=$(grep "got:" /tmp/opencode_build2.log | head -1 | awk '{print $2}')
 				echo "Found new node_modules hash: $NEW_NODE_HASH"
 
-				# Update all platform hashes to the same value (they should be identical)
+				# Update the single node_modules hash
 				if [[ "$OSTYPE" == "darwin"* ]]; then
-					sed -i.bak 's|"aarch64-darwin" = "sha256-[^"]*";|"aarch64-darwin" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-						echo "ERROR: Failed to update aarch64-darwin node_modules hash"
-						exit 1
-					}
-					sed -i.bak 's|"aarch64-linux" = "sha256-[^"]*";|"aarch64-linux" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-						echo "ERROR: Failed to update aarch64-linux node_modules hash"
-						exit 1
-					}
-					sed -i.bak 's|"x86_64-darwin" = "sha256-[^"]*";|"x86_64-darwin" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-						echo "ERROR: Failed to update x86_64-darwin node_modules hash"
-						exit 1
-					}
-					sed -i.bak 's|"x86_64-linux" = "sha256-[^"]*";|"x86_64-linux" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-						echo "ERROR: Failed to update x86_64-linux node_modules hash"
+					sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+						echo "ERROR: Failed to update node_modules hash"
 						exit 1
 					}
 				else
-					sed -i 's|"aarch64-darwin" = "sha256-[^"]*";|"aarch64-darwin" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" || {
-						echo "ERROR: Failed to update aarch64-darwin node_modules hash"
-						exit 1
-					}
-					sed -i 's|"aarch64-linux" = "sha256-[^"]*";|"aarch64-linux" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" || {
-						echo "ERROR: Failed to update aarch64-linux node_modules hash"
-						exit 1
-					}
-					sed -i 's|"x86_64-darwin" = "sha256-[^"]*";|"x86_64-darwin" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" || {
-						echo "ERROR: Failed to update x86_64-darwin node_modules hash"
-						exit 1
-					}
-					sed -i 's|"x86_64-linux" = "sha256-[^"]*";|"x86_64-linux" = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" || {
-						echo "ERROR: Failed to update x86_64-linux node_modules hash"
+					sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$NEW_NODE_HASH"'";|' "$PACKAGE_FILE" || {
+						echo "ERROR: Failed to update node_modules hash"
 						exit 1
 					}
 				fi
