@@ -111,20 +111,19 @@ jobs:
 
           echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
           echo "Script: $SCRIPT_PATH"
-          echo "Shell settings: $-"  # Debug: show current shell options
 
           # Make script executable
           chmod +x "$SCRIPT_PATH"
 
-          # Run the update script with proper exit code handling
-          # This prevents pipefail from terminating the script prematurely
-          set +e  # Temporarily disable errexit
-          "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
-          SCRIPT_EXIT=${PIPESTATUS[0]}  # Capture script's actual exit code, not tee's
-          set -e  # Re-enable errexit
+          # Run the update script in a subshell to fully isolate its execution
+          # This prevents GitHub Actions from misinterpreting internal failures
+          (
+            "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
+            exit ${PIPESTATUS[0]}
+          ) && SCRIPT_SUCCESS=true || SCRIPT_SUCCESS=false
 
-          if [ $SCRIPT_EXIT -ne 0 ]; then
-            echo "❌ ERROR: Hash update script failed with exit code $SCRIPT_EXIT"
+          if [ "$SCRIPT_SUCCESS" = "false" ]; then
+            echo "❌ ERROR: Hash update script failed"
             echo "script_success=false" >> $GITHUB_OUTPUT
             
             # Capture error details for comment
