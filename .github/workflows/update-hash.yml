@@ -182,43 +182,135 @@ jobs:
           echo "New commit SHA: $NEW_COMMIT_SHA"
           echo "commit_sha=$NEW_COMMIT_SHA" >> $GITHUB_OUTPUT
 
-          echo "✅ Successfully committed and pushed hash updates"
+           echo "✅ Successfully committed and pushed hash updates"
 
-      - name: Trigger build matrix workflow
-        if: steps.check-changes.outputs.has_changes == 'true' && steps.update-hash.outputs.script_success == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const package = '${{ steps.package.outputs.package }}';
-            const prNumber = ${{ github.event.pull_request.number }};
-            const commitSha = '${{ steps.commit.outputs.commit_sha }}';
-            const branchRef = '${{ github.head_ref }}';
+       - name: Transfer checks to new commit
+         id: transfer-checks
+         if: steps.check-changes.outputs.has_changes == 'true' && steps.update-hash.outputs.script_success == 'true'
+         uses: actions/github-script@v7
+         with:
+           script: |
+             const originalSha = '${{ github.event.pull_request.head.sha }}';
+             const newSha = '${{ steps.commit.outputs.commit_sha }}';
+             const prNumber = ${{ github.event.pull_request.number }};
 
-            console.log('=== TRIGGERING WORKFLOW 2: BUILD MATRIX ===');
-            console.log(`Package: ${package}`);
-            console.log(`PR Number: ${prNumber}`);
-            console.log(`Commit SHA: ${commitSha}`);
-            console.log(`Branch Ref: ${branchRef}`);
+             console.log('=== TRANSFERRING CHECKS TO NEW COMMIT ===');
+             console.log(`Original SHA: ${originalSha}`);
+             console.log(`New SHA: ${newSha}`);
+             console.log(`PR Number: ${prNumber}`);
 
-            try {
-              const response = await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'test-builds.yml',
-                ref: branchRef,
-                inputs: {
-                  pr_number: prNumber.toString(),
-                  commit_sha: commitSha,
-                  package: package,
-                  branch_ref: branchRef
-                }
-              });
-              
-              console.log('✅ Successfully triggered build matrix workflow');
-            } catch (error) {
-              console.error('❌ Failed to trigger build matrix workflow:', error.message);
-              throw error;
-            }
+             if (originalSha === newSha) {
+               console.log('ℹ️ No SHA change detected, skipping check transfer');
+               return;
+             }
+
+             try {
+               // Get all check runs from the original commit
+               const { data: checkRuns } = await github.rest.checks.listForRef({
+                 owner: context.repo.owner,
+                 repo: context.repo.repo,
+                 ref: originalSha,
+                 per_page: 100
+               });
+
+               console.log(`Found ${checkRuns.check_runs.length} check runs on original commit`);
+
+               let transferredCount = 0;
+               let skippedCount = 0;
+
+               for (const checkRun of checkRuns.check_runs) {
+                 // Skip our own workflow to avoid recursion
+                 if (checkRun.name === 'update-hash' || 
+                     checkRun.name.includes('Update Hash') ||
+                     checkRun.app?.slug === 'github-actions') {
+                   console.log(`⏭️ Skipping own workflow check: ${checkRun.name}`);
+                   skippedCount++;
+                   continue;
+                 }
+
+                 console.log(`🔄 Transferring check: ${checkRun.name} (${checkRun.conclusion || checkRun.status})`);
+
+                 try {
+                   // Create a new check run on the new commit with transferred results
+                   const transferredCheck = await github.rest.checks.create({
+                     owner: context.repo.owner,
+                     repo: context.repo.repo,
+                     name: checkRun.name,
+                     head_sha: newSha,
+                     status: checkRun.status === 'completed' ? 'completed' : 'in_progress',
+                     conclusion: checkRun.conclusion,
+                     started_at: checkRun.started_at,
+                     completed_at: checkRun.completed_at,
+                     output: {
+                       title: checkRun.output?.title ? `[TRANSFERRED] ${checkRun.output.title}` : '[TRANSFERRED] Check result transferred from previous commit',
+                       summary: `This check was automatically transferred from commit ${originalSha.substring(0, 7)} after hash updates.\n\n` +
+                                `**Original Check Details:**\n` +
+                                `- Status: ${checkRun.status}\n` +
+                                `- Conclusion: ${checkRun.conclusion || 'N/A'}\n` +
+                                `- Started: ${checkRun.started_at}\n` +
+                                `- Completed: ${checkRun.completed_at || 'N/A'}\n\n` +
+                                `**Original Summary:**\n${checkRun.output?.summary || 'No summary available'}\n\n` +
+                                `[View original check](${checkRun.html_url})`,
+                       text: checkRun.output?.text || ''
+                     },
+                     details_url: checkRun.details_url,
+                     external_id: `transferred-${checkRun.id}`
+                   });
+
+                   console.log(`✅ Transferred check: ${checkRun.name} -> ${transferredCheck.data.id}`);
+                   transferredCount++;
+
+                 } catch (error) {
+                   console.error(`❌ Failed to transfer check ${checkRun.name}:`, error.message);
+                   // Continue with other checks even if one fails
+                 }
+               }
+
+               console.log(`📊 Check transfer summary: ${transferredCount} transferred, ${skippedCount} skipped`);
+               core.setOutput('transferred_count', transferredCount);
+               core.setOutput('skipped_count', skippedCount);
+
+             } catch (error) {
+               console.error('❌ Failed to transfer checks:', error.message);
+               // Don't fail the workflow if check transfer fails
+               console.log('⚠️ Continuing workflow despite check transfer failure');
+             }
+
+       - name: Trigger build matrix workflow
+         if: steps.check-changes.outputs.has_changes == 'true' && steps.update-hash.outputs.script_success == 'true'
+         uses: actions/github-script@v7
+         with:
+           script: |
+             const package = '${{ steps.package.outputs.package }}';
+             const prNumber = ${{ github.event.pull_request.number }};
+             const commitSha = '${{ steps.commit.outputs.commit_sha }}';
+             const branchRef = '${{ github.head_ref }}';
+
+             console.log('=== TRIGGERING WORKFLOW 2: BUILD MATRIX ===');
+             console.log(`Package: ${package}`);
+             console.log(`PR Number: ${prNumber}`);
+             console.log(`Commit SHA: ${commitSha}`);
+             console.log(`Branch Ref: ${branchRef}`);
+
+             try {
+               const response = await github.rest.actions.createWorkflowDispatch({
+                 owner: context.repo.owner,
+                 repo: context.repo.repo,
+                 workflow_id: 'test-builds.yml',
+                 ref: branchRef,
+                 inputs: {
+                   pr_number: prNumber.toString(),
+                   commit_sha: commitSha,
+                   package: package,
+                   branch_ref: branchRef
+                 }
+               });
+               
+               console.log('✅ Successfully triggered build matrix workflow');
+             } catch (error) {
+               console.error('❌ Failed to trigger build matrix workflow:', error.message);
+               throw error;
+             }
 
       - name: Comment on hash update failure
         if: failure() && steps.validate-script.outputs.script_exists == 'false'
@@ -261,20 +353,25 @@ jobs:
               body: comment
             });
 
-      - name: Log workflow completion
-        if: always()
-        run: |
-          echo "=== WORKFLOW 1 COMPLETION SUMMARY ==="
-          echo "Package: ${{ steps.package.outputs.package }}"
-          echo "Script exists: ${{ steps.validate-script.outputs.script_exists }}"
-          echo "Script success: ${{ steps.update-hash.outputs.script_success }}"
-          echo "Has changes: ${{ steps.check-changes.outputs.has_changes }}"
-          echo "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+       - name: Log workflow completion
+         if: always()
+         run: |
+           echo "=== WORKFLOW 1 COMPLETION SUMMARY ==="
+           echo "Package: ${{ steps.package.outputs.package }}"
+           echo "Script exists: ${{ steps.validate-script.outputs.script_exists }}"
+           echo "Script success: ${{ steps.update-hash.outputs.script_success }}"
+           echo "Has changes: ${{ steps.check-changes.outputs.has_changes }}"
+           echo "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+           echo "Checks transferred: ${{ steps.transfer-checks.outputs.transferred_count || '0' }}"
+           echo "Checks skipped: ${{ steps.transfer-checks.outputs.skipped_count || '0' }}"
 
-          if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" && "${{ steps.update-hash.outputs.script_success }}" == "true" ]]; then
-            echo "✅ Workflow 1 completed successfully - triggered Workflow 2"
-          elif [[ "${{ steps.check-changes.outputs.has_changes }}" == "false" ]]; then
-            echo "ℹ️ Workflow 1 completed - no changes needed"
-          else
-            echo "❌ Workflow 1 failed - check logs above"
-          fi
+           if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" && "${{ steps.update-hash.outputs.script_success }}" == "true" ]]; then
+             echo "✅ Workflow 1 completed successfully - triggered Workflow 2"
+             if [[ "${{ steps.transfer-checks.outputs.transferred_count }}" != "" ]]; then
+               echo "🔄 Transferred ${{ steps.transfer-checks.outputs.transferred_count }} checks to new commit"
+             fi
+           elif [[ "${{ steps.check-changes.outputs.has_changes }}" == "false" ]]; then
+             echo "ℹ️ Workflow 1 completed - no changes needed"
+           else
+             echo "❌ Workflow 1 failed - check logs above"
+           fi

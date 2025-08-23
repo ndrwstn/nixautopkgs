@@ -24,6 +24,7 @@ permissions:
 jobs:
   # SECURITY: Validate that this is a legitimate Renovate PR build test
   security-validation:
+    name: "Security Validation"
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     outputs:
@@ -91,6 +92,7 @@ jobs:
             core.setOutput('is-secure', 'true');
 
   build-matrix:
+    name: "Build Matrix - ${{ matrix.platform }}"
     needs: security-validation
     if: needs.security-validation.outputs.is-secure == 'true'
     strategy:
@@ -154,6 +156,7 @@ jobs:
           fi
 
   aggregate-results:
+    name: "Aggregate Results"
     runs-on: ubuntu-latest
     needs: [security-validation, build-matrix]
     if: always()
@@ -183,6 +186,7 @@ jobs:
           fi
 
   trigger-auto-merge:
+    name: "Trigger Auto-merge"
     runs-on: ubuntu-latest
     needs: [security-validation, build-matrix, aggregate-results]
     if: always() && needs.aggregate-results.outputs.all-builds-success == 'true'
@@ -216,6 +220,7 @@ jobs:
             console.log(`🚀 Auto-merge workflow triggered for PR ${prNumber}`);
 
   report-failure:
+    name: "Report Failure"
     runs-on: ubuntu-latest
     needs: [security-validation, build-matrix, aggregate-results]
     if: always() && needs.aggregate-results.outputs.all-builds-success == 'false'
