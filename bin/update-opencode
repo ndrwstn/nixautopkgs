@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 15:30 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:20 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -128,22 +128,12 @@ bun install \
 
 # Create the same directory structure as the Nix derivation
 echo "Creating Nix-compatible directory structure..."
-mkdir -p nix-node-modules
-cp -R ./node_modules nix-node-modules/
+mkdir -p nix-out/node_modules
+cp -R ./node_modules nix-out
 
-# Normalize file permissions and timestamps to match what Nix derivation does
-echo "Normalizing node_modules permissions and timestamps..."
-find nix-node-modules -type d -exec chmod 755 {} +
-find nix-node-modules -type f -exec chmod 644 {} +
-find nix-node-modules -type f -path "*/bin/*" -exec chmod 755 {} +
-find nix-node-modules -type f -name "*.node" -exec chmod 755 {} +
-
-# Reset timestamps to a fixed date (epoch + 1 second) - use + for efficiency
-find nix-node-modules -exec touch -h -d @1 {} +
-
-# Calculate node_modules hash
+# Calculate node_modules hash using the same structure as Nix
 echo "Calculating node_modules hash..."
-NODE_MODULES_HASH=$(nix hash path nix-node-modules)
+NODE_MODULES_HASH=$(nix hash path nix-out)
 
 if [[ -z "$NODE_MODULES_HASH" ]]; then
 	echo "Error: Failed to calculate node_modules hash"
