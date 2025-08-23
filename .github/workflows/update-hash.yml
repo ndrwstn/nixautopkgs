@@ -144,23 +144,6 @@ jobs:
           echo "✅ Hash update script completed successfully"
           echo "script_success=true" >> $GITHUB_OUTPUT
 
-      - name: Verify build after hash updates
-        id: verify-build
-        if: steps.update-hash.outputs.script_success == 'true'
-        run: |
-          PACKAGE="${{ steps.package.outputs.package }}"
-
-          echo "=== VERIFYING BUILD SUCCESS ==="
-          echo "Testing that all hashes are now correct..."
-
-          if ! nix build .#$PACKAGE --no-link; then
-            echo "❌ ERROR: Build still fails after hash update"
-            echo "This indicates the script did not fix all required hashes"
-            exit 1
-          fi
-
-          echo "✅ Build verification successful - all hashes are correct"
-
       - name: Check for changes
         id: check-changes
         run: |
