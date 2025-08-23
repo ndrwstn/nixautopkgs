@@ -13,7 +13,7 @@ let
   testers = pkgs.testers;
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
-  opencode-node-modules-hash = "sha256-45CH81xKEN5DwjZaX6aVh1Wyv+T02Q2wZkQzDwIIEFg=";
+  opencode-node-modules-hash = "sha256-+2vtTmcHBppd2YbE6IDqW0QUkY/QMyZg60xReIiUhNo=";
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
     "aarch64-linux" = "bun-linux-arm64";
@@ -23,12 +23,12 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  version = "0.5.18";
+  version = "0.5.15";
   src = fetchFromGitHub {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-vXIdh1A7gM9aweZriHAq3dk1gI69yx9T2WlB/+v5Iqs=";
+    hash = "sha256-1wCjvimcr9dpYNEy9pOvmQbHMupigzO2VFgoRCbK5lQ=";
   };
 
   tui = buildGoModule {
@@ -37,7 +37,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     modRoot = "packages/tui";
 
-    vendorHash = "sha256-78MfWF0HSeLFLGDr1Zh74XeyY71zUmmazgG2MnWPucw=";
+    vendorHash = "sha256-TR0BsUccXrsFEgHXn06gVynoWXOerM0n0484oR8AG0w=";
 
     subPackages = [ "cmd/opencode" ];
 
@@ -95,16 +95,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
       mkdir -p $out/node_modules
       cp -R ./node_modules $out
-
-      # Normalize file permissions and timestamps to ensure reproducible hashes
-      # This matches what the update script does to calculate the expected hash
-      find $out -type d -exec chmod 755 {} +
-      find $out -type f -exec chmod 644 {} +
-      find $out -type f -path "*/bin/*" -exec chmod 755 {} +
-      find $out -type f -name "*.node" -exec chmod 755 {} +
-      
-      # Reset timestamps to a fixed date (epoch + 1 second) - use + for efficiency
-      find $out -exec touch -h -d @1 {} +
 
       runHook postInstall
     '';
