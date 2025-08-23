@@ -115,12 +115,18 @@ jobs:
           # Make script executable
           chmod +x "$SCRIPT_PATH"
 
-          # Run the update script in a subshell to fully isolate its execution
-          # This prevents GitHub Actions from misinterpreting internal failures
-          (
-            "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
-            exit ${PIPESTATUS[0]}
-          ) && SCRIPT_SUCCESS=true || SCRIPT_SUCCESS=false
+          # Run the update script with proper isolation from GitHub Actions' pipefail
+          # The script handles its own build failures internally, so we need to let it complete
+          set +e  # Temporarily disable errexit to prevent premature termination
+          "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
+          SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
+          set -e  # Re-enable errexit
+
+          if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
+            SCRIPT_SUCCESS=true
+          else
+            SCRIPT_SUCCESS=false
+          fi
 
           if [ "$SCRIPT_SUCCESS" = "false" ]; then
             echo "❌ ERROR: Hash update script failed"
