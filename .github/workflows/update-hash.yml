@@ -111,17 +111,24 @@ jobs:
 
           echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
           echo "Script: $SCRIPT_PATH"
+          echo "Shell settings: $-"  # Debug: show current shell options
 
           # Make script executable
           chmod +x "$SCRIPT_PATH"
 
-          # Run the update script and capture output
-          if ! "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log; then
-            echo "❌ ERROR: Hash update script failed"
+          # Run the update script with proper exit code handling
+          # This prevents pipefail from terminating the script prematurely
+          set +e  # Temporarily disable errexit
+          "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
+          SCRIPT_EXIT=${PIPESTATUS[0]}  # Capture script's actual exit code, not tee's
+          set -e  # Re-enable errexit
+
+          if [ $SCRIPT_EXIT -ne 0 ]; then
+            echo "❌ ERROR: Hash update script failed with exit code $SCRIPT_EXIT"
             echo "script_success=false" >> $GITHUB_OUTPUT
             
             # Capture error details for comment
-            ERROR_DETAILS=$(cat /tmp/update_output.log | tail -20)
+            ERROR_DETAILS=$(tail -20 /tmp/update_output.log)
             echo "error_details<<EOF" >> $GITHUB_OUTPUT
             echo "$ERROR_DETAILS" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
@@ -130,6 +137,23 @@ jobs:
 
           echo "✅ Hash update script completed successfully"
           echo "script_success=true" >> $GITHUB_OUTPUT
+
+      - name: Verify build after hash updates
+        id: verify-build
+        if: steps.update-hash.outputs.script_success == 'true'
+        run: |
+          PACKAGE="${{ steps.package.outputs.package }}"
+
+          echo "=== VERIFYING BUILD SUCCESS ==="
+          echo "Testing that all hashes are now correct..."
+
+          if ! nix build .#$PACKAGE --no-link; then
+            echo "❌ ERROR: Build still fails after hash update"
+            echo "This indicates the script did not fix all required hashes"
+            exit 1
+          fi
+
+          echo "✅ Build verification successful - all hashes are correct"
 
       - name: Check for changes
         id: check-changes
