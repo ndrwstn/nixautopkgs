@@ -4,8 +4,9 @@
 
 - **Build packages**: `nix build .#gcs` or `nix build .#opencode`
 - **Unified build**: `./bin/build-package --platform <platform> --package <package>`
-- **Development shell**: `nix develop`
+- **Development shell**: `nix develop` (includes go, bun, git, jq, nix-prefetch tools)
 - **Update packages**: Automated via Renovate
+- **Manual hash updates**: `./bin/update-gcs` or `./bin/update-opencode` (run in `nix develop`)
 
 ## Code Style
 

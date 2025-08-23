@@ -3,13 +3,14 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 15:45 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:15 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
 REPO_NAME="opencode"
 
 # Configuration
+ORIGINAL_DIR=$(pwd)
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
 
@@ -135,20 +136,19 @@ echo "Node modules hash: $NODE_MODULES_HASH"
 echo "=== Updating package file ==="
 
 # Go back to original directory
-cd - > /dev/null
+cd "$ORIGINAL_DIR"
 
 # Create backup
 cp "$PACKAGE_FILE" "$PACKAGE_FILE.bak"
 
 # Function to safely update file
 update_file() {
-	local pattern="$1"
-	local replacement="$2"
+	local sed_command="$1"
 	
 	if [[ "$OSTYPE" == "darwin"* ]]; then
-		sed -i.tmp "$pattern" "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.tmp"
+		sed -i.tmp "$sed_command" "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.tmp"
 	else
-		sed -i "$pattern" "$PACKAGE_FILE"
+		sed -i "$sed_command" "$PACKAGE_FILE"
 	fi
 }
 

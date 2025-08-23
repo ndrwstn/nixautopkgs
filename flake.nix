@@ -22,6 +22,60 @@
             inherit gcs opencode;
             default = gcs; # Default to gcs for now
           };
+
+          devShells = {
+            default = pkgs.mkShell {
+              name = "nixautopkgs-dev";
+
+              buildInputs = with pkgs; [
+                # Language toolchains
+                go
+                bun
+
+                # Version control
+                git
+
+                # Nix tools
+                nix-prefetch-git
+                nix-prefetch-github
+
+                # Utilities
+                jq
+                curl
+                gnused
+                diffutils
+                coreutils
+
+                # Optional: Additional development tools
+                ripgrep # Better grep for searching
+                fd # Better find for file discovery
+              ];
+
+              shellHook = ''
+                echo "╔══════════════════════════════════════════════════════════╗"
+                echo "║          nixautopkgs development shell loaded           ║"
+                echo "╚══════════════════════════════════════════════════════════╝"
+                echo ""
+                echo "📦 Package Commands:"
+                echo "  ./bin/update-gcs       - Update GCS package hashes"
+                echo "  ./bin/update-opencode  - Update OpenCode package hashes"
+                echo "  nix build .#gcs        - Build GCS package"
+                echo "  nix build .#opencode   - Build OpenCode package"
+                echo ""
+                echo "🛠️  Available Tools:"
+                echo "  • go $(go version | cut -d' ' -f3) - Go programming language"
+                echo "  • bun - JavaScript runtime & package manager"
+                echo "  • git - Version control"
+                echo "  • jq - JSON processor"
+                echo "  • nix-prefetch-* - Nix fetching tools"
+                echo ""
+                echo "💡 Tips:"
+                echo "  • Run update scripts after Renovate updates versions"
+                echo "  • Use 'nix flake check' to validate the flake"
+                echo "  • Use 'nix flake show' to see all outputs"
+              '';
+            };
+          };
         };
     };
 }
