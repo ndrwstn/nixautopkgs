@@ -42,7 +42,8 @@ jobs:
           fi
 
           # SECURITY CHECK 3: PR title must match pattern
-          if [[ ! "${{ github.event.pull_request.title }}" =~ ^chore:\ update\ .+\ to\ .+$ ]]; then
+          if [[ ! "${{ github.event.pull_request.title }}" =~ \
+                ^chore:\ update\ .+\ to\ .+$ ]]; then
             echo "❌ SECURITY: PR title does not match expected pattern"
             exit 1
           fi

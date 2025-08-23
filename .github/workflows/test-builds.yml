@@ -69,21 +69,24 @@ jobs:
 
             // SECURITY CHECK: PR must be from renovate[bot]
             if (pr.user.login !== 'renovate[bot]') {
-              console.log(`❌ SECURITY: PR author is '${pr.user.login}', not 'renovate[bot]'`);
+              console.log(`❌ SECURITY: PR author is '${pr.user.login}', ` +
+                         `not 'renovate[bot]'`);
               core.setOutput('is-secure', 'false');
               return;
             }
 
             // SECURITY CHECK: Branch must have renovate prefix
             if (!pr.head.ref.startsWith('update/')) {
-              console.log(`❌ SECURITY: Branch '${pr.head.ref}' does not have renovate prefix`);
+              console.log(`❌ SECURITY: Branch '${pr.head.ref}' ` +
+                         `does not have renovate prefix`);
               core.setOutput('is-secure', 'false');
               return;
             }
 
             // SECURITY CHECK: Commit SHA must match PR head
             if (pr.head.sha !== commitSha) {
-              console.log(`❌ SECURITY: Commit SHA mismatch. PR head: ${pr.head.sha}, provided: ${commitSha}`);
+              console.log(`❌ SECURITY: Commit SHA mismatch. ` +
+                         `PR head: ${pr.head.sha}, provided: ${commitSha}`);
               core.setOutput('is-secure', 'false');
               return;
             }
