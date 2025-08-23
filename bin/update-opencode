@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT - LAST MODIFIED 2025-08-23 00:40 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT - LAST MODIFIED 2025-08-23 02:30 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -48,107 +48,68 @@ fi
 
 echo "Updated main source hash"
 
-# Helper function to update vendorHash if needed
-update_vendorhash_if_needed() {
-	local build_output="$1"
-	# Use a more robust approach: extract the hash from the specific error block
-	local new_hash=$(echo "$build_output" | awk '
-		/opencode-tui-.*-go-modules\.drv/ { in_block=1; next }
-		in_block && /got:/ { print $2; in_block=0; exit }
-		in_block && /^error:/ && !/got:/ { in_block=0 }
-	')
-	
-	if [[ -n "$new_hash" ]]; then
-		echo "Found vendorHash mismatch: updating to $new_hash"
-		
+# Update TUI vendorHash by attempting build and extracting correct hash
+echo "Updating TUI vendorHash..."
+if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build.log; then
+	if grep -q "got:" /tmp/opencode_build.log; then
+		NEW_VENDOR_HASH=$(grep "got:" /tmp/opencode_build.log | head -1 | awk '{print $2}')
+		echo "Found new TUI vendorHash: $NEW_VENDOR_HASH"
+
 		# Escape special characters in the hash for sed
-		escaped_hash=$(printf '%s\n' "$new_hash" | sed 's/[[\.*^$()+?{|]/\\&/g')
-		
+		ESCAPED_VENDOR_HASH=$(printf '%s\n' "$NEW_VENDOR_HASH" | sed 's/[[\.*^$()+?{|]/\\&/g')
+
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$ESCAPED_VENDOR_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
 				echo "ERROR: Failed to update vendorHash"
 				exit 1
 			}
 		else
-			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" || {
+			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$ESCAPED_VENDOR_HASH"'";|' "$PACKAGE_FILE" || {
 				echo "ERROR: Failed to update vendorHash"
 				exit 1
 			}
 		fi
-		return 0
-	fi
-	return 1
-}
 
-# Helper function to update node_modules hash if needed
-update_node_modules_hash_if_needed() {
-	local build_output="$1"
-	# Use a more robust approach: extract the hash from the specific error block
-	local new_hash=$(echo "$build_output" | awk '
-		/opencode-node_modules-.*\.drv/ { in_block=1; next }
-		in_block && /got:/ { print $2; in_block=0; exit }
-		in_block && /^error:/ && !/got:/ { in_block=0 }
-	')
-	
-	if [[ -n "$new_hash" ]]; then
-		echo "Found node_modules hash mismatch: updating to $new_hash"
-		
-		# Escape special characters in the hash for sed
-		escaped_hash=$(printf '%s\n' "$new_hash" | sed 's/[[\.*^$()+?{|]/\\&/g')
-		
-		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-				echo "ERROR: Failed to update node_modules hash"
+		echo "Updated TUI vendorHash to $NEW_VENDOR_HASH"
+
+		# Try building again to get node_modules hash
+		echo "Updating node_modules hash..."
+		if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build2.log; then
+			if grep -q "got:" /tmp/opencode_build2.log; then
+				NEW_NODE_HASH=$(grep "got:" /tmp/opencode_build2.log | head -1 | awk '{print $2}')
+				echo "Found new node_modules hash: $NEW_NODE_HASH"
+
+				# Escape special characters in the hash for sed
+				ESCAPED_NODE_HASH=$(printf '%s\n' "$NEW_NODE_HASH" | sed 's/[[\.*^$()+?{|]/\\&/g')
+
+				# Update the single node_modules hash
+				if [[ "$OSTYPE" == "darwin"* ]]; then
+					sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$ESCAPED_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+						echo "ERROR: Failed to update node_modules hash"
+						exit 1
+					}
+				else
+					sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$ESCAPED_NODE_HASH"'";|' "$PACKAGE_FILE" || {
+						echo "ERROR: Failed to update node_modules hash"
+						exit 1
+					}
+				fi
+
+				echo "Updated node_modules hash to $NEW_NODE_HASH"
+			else
+				echo "Warning: Build failed but no node_modules hash mismatch found"
+				cat /tmp/opencode_build2.log
 				exit 1
-			}
-		else
-			sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" || {
-				echo "ERROR: Failed to update node_modules hash"
-				exit 1
-			}
+			fi
 		fi
-		return 0
-	fi
-	return 1
-}
-
-# Build with hash correction loop
-echo "Building and updating hashes as needed..."
-MAX_ATTEMPTS=5
-attempt=0
-
-while [ $attempt -lt $MAX_ATTEMPTS ]; do
-	echo "Build attempt $((attempt + 1))..."
-	
-	if BUILD_OUTPUT=$(nix build .#opencode 2>&1); then
-		echo "✅ Build successful!"
-		break
-	fi
-	
-	# Check which hash needs updating
-	hash_updated=false
-	
-	if update_vendorhash_if_needed "$BUILD_OUTPUT"; then
-		hash_updated=true
-	fi
-	
-	if update_node_modules_hash_if_needed "$BUILD_OUTPUT"; then
-		hash_updated=true
-	fi
-	
-	if [ "$hash_updated" = false ]; then
-		echo "ERROR: Build failed but no recognized hash mismatch found"
-		echo "Build output:"
-		echo "$BUILD_OUTPUT"
+		rm -f /tmp/opencode_build2.log
+	else
+		echo "Warning: Build failed but no vendorHash mismatch found"
+		cat /tmp/opencode_build.log
 		exit 1
 	fi
-	
-	((attempt++))
-done
-
-if [ $attempt -eq $MAX_ATTEMPTS ]; then
-	echo "ERROR: Failed to fix hashes after $MAX_ATTEMPTS attempts"
-	exit 1
 fi
+
+rm -f /tmp/opencode_build.log
 echo "Successfully updated $PACKAGE_FILE"
 echo "Run 'nix build .#opencode' to verify the build"
