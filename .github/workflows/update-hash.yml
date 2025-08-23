@@ -109,18 +109,19 @@ jobs:
           PACKAGE="${{ steps.package.outputs.package }}"
           SCRIPT_PATH="./bin/update-$PACKAGE"
 
-          echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
-          echo "Script: $SCRIPT_PATH"
+           echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
+           echo "Script: $SCRIPT_PATH"
+           echo "Environment: nix develop (provides go, bun, git, jq, nix-prefetch tools)"
 
           # Make script executable
           chmod +x "$SCRIPT_PATH"
 
-          # Run the update script with proper isolation from GitHub Actions' pipefail
-          # The script handles its own build failures internally, so we need to let it complete
-          set +e  # Temporarily disable errexit to prevent premature termination
-          "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
-          SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
-          set -e  # Re-enable errexit
+           # Run the update script in development shell with proper isolation from GitHub Actions' pipefail
+           # The script requires tools (go, bun, etc.) provided by the development shell
+           set +e  # Temporarily disable errexit to prevent premature termination
+           nix develop --command "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
+           SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
+           set -e  # Re-enable errexit
 
           if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
             SCRIPT_SUCCESS=true
