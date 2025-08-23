@@ -23,6 +23,16 @@
 - **Update OpenCode**: `./bin/update-opencode`
 - **Build**: `./bin/build-package --platform <platform> --package <package>`
 
+### Script Versioning
+
+**CRITICAL**: When modifying any update script (`bin/update-*`), you MUST update the version string at the top of the script:
+
+```bash
+echo ">>> SCRIPT_NAME UPDATE HASH SCRIPT - LAST MODIFIED YYYY-MM-DD HH:MM <<<"
+```
+
+This helps track which version of the script is running in GitHub Actions logs and debug issues. The timestamp should be the actual modification time, not dynamic.
+
 ## Project Structure
 
 - Package definitions: `packages/*.nix`

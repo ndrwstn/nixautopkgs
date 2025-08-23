@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# IMPORTANT: Update this version string every time the script is modified
+echo ">>> OPENCODE UPDATE HASH SCRIPT - LAST MODIFIED 2025-08-23 00:40 <<<"
+
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
 REPO_NAME="opencode"
