@@ -61,13 +61,16 @@ update_vendorhash_if_needed() {
 	if [[ -n "$new_hash" ]]; then
 		echo "Found vendorHash mismatch: updating to $new_hash"
 		
+		# Escape special characters in the hash for sed
+		escaped_hash=$(printf '%s\n' "$new_hash" | sed 's/[[\.*^$()+?{|]/\\&/g')
+		
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
 				echo "ERROR: Failed to update vendorHash"
 				exit 1
 			}
 		else
-			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
+			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" || {
 				echo "ERROR: Failed to update vendorHash"
 				exit 1
 			}
@@ -90,13 +93,16 @@ update_node_modules_hash_if_needed() {
 	if [[ -n "$new_hash" ]]; then
 		echo "Found node_modules hash mismatch: updating to $new_hash"
 		
+		# Escape special characters in the hash for sed
+		escaped_hash=$(printf '%s\n' "$new_hash" | sed 's/[[\.*^$()+?{|]/\\&/g')
+		
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+			sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
 				echo "ERROR: Failed to update node_modules hash"
 				exit 1
 			}
 		else
-			sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
+			sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$escaped_hash"'";|' "$PACKAGE_FILE" || {
 				echo "ERROR: Failed to update node_modules hash"
 				exit 1
 			}
