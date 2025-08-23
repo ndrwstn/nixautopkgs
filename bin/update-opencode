@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:30 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 18:45 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -12,7 +12,7 @@ REPO_NAME="opencode"
 # Configuration
 ORIGINAL_DIR=$(pwd)
 TEMP_DIR=$(mktemp -d)
-trap "rm -rf \"$TEMP_DIR\"" EXIT
+trap 'chmod -R u+w "$TEMP_DIR" 2>/dev/null; rm -rf "$TEMP_DIR"' EXIT
 
 if [[ ! -f "$PACKAGE_FILE" ]]; then
 	echo "Error: $PACKAGE_FILE not found"
