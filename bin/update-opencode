@@ -48,25 +48,28 @@ echo "Updated main source hash"
 # Helper function to update vendorHash if needed
 update_vendorhash_if_needed() {
 	local build_output="$1"
-	if grep -q "opencode-tui-.*-go-modules\.drv" <<< "$build_output"; then
-		# Extract the hash specifically from the tui-go-modules derivation error block
-		local new_hash=$(echo "$build_output" | grep -A 3 "opencode-tui-.*-go-modules\.drv" | grep "got:" | head -1 | awk '{print $2}')
-		if [[ -n "$new_hash" ]]; then
-			echo "Found vendorHash mismatch: updating to $new_hash"
-			
-			if [[ "$OSTYPE" == "darwin"* ]]; then
-				sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-					echo "ERROR: Failed to update vendorHash"
-					exit 1
-				}
-			else
-				sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
-					echo "ERROR: Failed to update vendorHash"
-					exit 1
-				}
-			fi
-			return 0
+	# Use a more robust approach: extract the hash from the specific error block
+	local new_hash=$(echo "$build_output" | awk '
+		/opencode-tui-.*-go-modules\.drv/ { in_block=1; next }
+		in_block && /got:/ { print $2; in_block=0; exit }
+		in_block && /^error:/ && !/got:/ { in_block=0 }
+	')
+	
+	if [[ -n "$new_hash" ]]; then
+		echo "Found vendorHash mismatch: updating to $new_hash"
+		
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+				echo "ERROR: Failed to update vendorHash"
+				exit 1
+			}
+		else
+			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
+				echo "ERROR: Failed to update vendorHash"
+				exit 1
+			}
 		fi
+		return 0
 	fi
 	return 1
 }
@@ -74,25 +77,28 @@ update_vendorhash_if_needed() {
 # Helper function to update node_modules hash if needed
 update_node_modules_hash_if_needed() {
 	local build_output="$1"
-	if grep -q "opencode-node_modules-.*\.drv" <<< "$build_output"; then
-		# Extract the hash specifically from the node_modules derivation error block
-		local new_hash=$(echo "$build_output" | grep -A 3 "opencode-node_modules-.*\.drv" | grep "got:" | head -1 | awk '{print $2}')
-		if [[ -n "$new_hash" ]]; then
-			echo "Found node_modules hash mismatch: updating to $new_hash"
-			
-			if [[ "$OSTYPE" == "darwin"* ]]; then
-				sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-					echo "ERROR: Failed to update node_modules hash"
-					exit 1
-				}
-			else
-				sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
-					echo "ERROR: Failed to update node_modules hash"
-					exit 1
-				}
-			fi
-			return 0
+	# Use a more robust approach: extract the hash from the specific error block
+	local new_hash=$(echo "$build_output" | awk '
+		/opencode-node_modules-.*\.drv/ { in_block=1; next }
+		in_block && /got:/ { print $2; in_block=0; exit }
+		in_block && /^error:/ && !/got:/ { in_block=0 }
+	')
+	
+	if [[ -n "$new_hash" ]]; then
+		echo "Found node_modules hash mismatch: updating to $new_hash"
+		
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
+				echo "ERROR: Failed to update node_modules hash"
+				exit 1
+			}
+		else
+			sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$new_hash"'";|' "$PACKAGE_FILE" || {
+				echo "ERROR: Failed to update node_modules hash"
+				exit 1
+			}
 		fi
+		return 0
 	fi
 	return 1
 }
