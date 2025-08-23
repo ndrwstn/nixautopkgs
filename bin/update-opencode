@@ -49,8 +49,9 @@ echo "Updated main source hash"
 update_vendorhash_if_needed() {
 	local build_output="$1"
 	if grep -q "opencode-tui-.*-go-modules\.drv" <<< "$build_output"; then
-		if grep -q "got:" <<< "$build_output"; then
-			local new_hash=$(grep "got:" <<< "$build_output" | head -1 | awk '{print $2}')
+		# Extract the hash specifically from the tui-go-modules derivation error block
+		local new_hash=$(echo "$build_output" | grep -A 3 "opencode-tui-.*-go-modules\.drv" | grep "got:" | head -1 | awk '{print $2}')
+		if [[ -n "$new_hash" ]]; then
 			echo "Found vendorHash mismatch: updating to $new_hash"
 			
 			if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -74,8 +75,9 @@ update_vendorhash_if_needed() {
 update_node_modules_hash_if_needed() {
 	local build_output="$1"
 	if grep -q "opencode-node_modules-.*\.drv" <<< "$build_output"; then
-		if grep -q "got:" <<< "$build_output"; then
-			local new_hash=$(grep "got:" <<< "$build_output" | head -1 | awk '{print $2}')
+		# Extract the hash specifically from the node_modules derivation error block
+		local new_hash=$(echo "$build_output" | grep -A 3 "opencode-node_modules-.*\.drv" | grep "got:" | head -1 | awk '{print $2}')
+		if [[ -n "$new_hash" ]]; then
 			echo "Found node_modules hash mismatch: updating to $new_hash"
 			
 			if [[ "$OSTYPE" == "darwin"* ]]; then
