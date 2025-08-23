@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:15 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:30 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -12,7 +12,7 @@ REPO_NAME="opencode"
 # Configuration
 ORIGINAL_DIR=$(pwd)
 TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
+trap "rm -rf \"$TEMP_DIR\"" EXIT
 
 if [[ ! -f "$PACKAGE_FILE" ]]; then
 	echo "Error: $PACKAGE_FILE not found"
@@ -21,6 +21,13 @@ fi
 
 # Get version from package file (already updated by Renovate)
 VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "\([^"]*\)".*/\1/')
+
+# Validate version was extracted
+if [[ -z "$VERSION" ]]; then
+    echo "Error: Failed to extract version from $PACKAGE_FILE"
+    echo "Expected format: version = \"X.X.X\";"
+    exit 1
+fi
 
 echo "Updating hashes for version $VERSION"
 
