@@ -3,11 +3,15 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT - LAST MODIFIED 2025-08-23 02:30 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 15:45 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
 REPO_NAME="opencode"
+
+# Configuration
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
 
 if [[ ! -f "$PACKAGE_FILE" ]]; then
 	echo "Error: $PACKAGE_FILE not found"
@@ -19,97 +23,170 @@ VERSION=$(grep '^\s*version = ' "$PACKAGE_FILE" | head -1 | sed 's/.*version = "
 
 echo "Updating hashes for version $VERSION"
 
-# Fetch new source hash for main repo using nix-prefetch-url and convert to SRI format
-echo "Fetching main source hash..."
-OLD_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+# ============================================
+# STEP 1: Calculate Main Source Hash
+# ============================================
+echo "=== Calculating main source hash ==="
 
-if [[ -z "$OLD_HASH" ]]; then
-	echo "Error: Failed to fetch main source hash"
-	exit 1
+# Method 1: Using nix-prefetch-github (preferred)
+if command -v nix-prefetch-github &> /dev/null; then
+	echo "Using nix-prefetch-github..."
+	GITHUB_JSON=$(nix-prefetch-github "$REPO_OWNER" "$REPO_NAME" --rev "v$VERSION" --json)
+	MAIN_SOURCE_HASH=$(echo "$GITHUB_JSON" | jq -r '.hash')
+	echo "Main source hash: $MAIN_SOURCE_HASH"
+else
+	# Method 2: Using nix-prefetch-url
+	echo "Using nix-prefetch-url..."
+	OLD_HASH=$(nix-prefetch-url --unpack "https://github.com/$REPO_OWNER/$REPO_NAME/archive/v$VERSION.tar.gz" 2>/dev/null)
+	
+	if [[ -z "$OLD_HASH" ]]; then
+		echo "Error: Failed to fetch main source hash"
+		exit 1
+	fi
+	
+	MAIN_SOURCE_HASH=$(nix hash convert --hash-algo sha256 --to sri "$OLD_HASH")
 fi
 
-MAIN_SOURCE_HASH=$(nix hash convert --hash-algo sha256 --to sri "$OLD_HASH")
-
 if [[ -z "$MAIN_SOURCE_HASH" ]]; then
-	echo "Error: Failed to convert hash to SRI format"
+	echo "Error: Failed to calculate main source hash"
 	exit 1
 fi
 
 echo "Main source hash: $MAIN_SOURCE_HASH"
 
-# Update main source hash (version is already updated by Renovate)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-	# macOS sed
-	sed -i.bak 's|hash = "[^"]*";|hash = "'"$MAIN_SOURCE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
-else
-	# Linux sed
-	sed -i 's|hash = "[^"]*";|hash = "'"$MAIN_SOURCE_HASH"'";|' "$PACKAGE_FILE"
+# ============================================
+# STEP 2: Calculate Vendor Hash (Go Dependencies)
+# ============================================
+echo "=== Calculating vendor hash for TUI ==="
+
+# Clone the repository at the specific version
+cd "$TEMP_DIR"
+echo "Cloning repository..."
+git clone --quiet --depth 1 --branch "v$VERSION" "https://github.com/$REPO_OWNER/$REPO_NAME.git" opencode
+cd opencode/packages/tui
+
+# Download and vendor Go dependencies
+echo "Downloading Go dependencies..."
+export GOPATH="$TEMP_DIR/go"
+export GO111MODULE=on
+
+# Download all dependencies
+go mod download
+
+# Create vendor directory
+echo "Creating vendor directory..."
+go mod vendor
+
+# Calculate vendor hash using nix hash
+echo "Calculating vendor hash..."
+VENDOR_HASH=$(nix hash path vendor)
+
+if [[ -z "$VENDOR_HASH" ]]; then
+	echo "Error: Failed to calculate vendor hash"
+	exit 1
 fi
 
-echo "Updated main source hash"
+echo "Vendor hash: $VENDOR_HASH"
 
-# Update TUI vendorHash by attempting build and extracting correct hash
-echo "Updating TUI vendorHash..."
-if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build.log; then
-	if grep -q "got:" /tmp/opencode_build.log; then
-		NEW_VENDOR_HASH=$(grep "got:" /tmp/opencode_build.log | head -1 | awk '{print $2}')
-		echo "Found new TUI vendorHash: $NEW_VENDOR_HASH"
+# ============================================
+# STEP 3: Calculate Node Modules Hash
+# ============================================
+echo "=== Calculating node_modules hash ==="
 
-		# Escape special characters in the hash for sed
-		ESCAPED_VENDOR_HASH=$(printf '%s\n' "$NEW_VENDOR_HASH" | sed 's/[[\.*^$()+?{|]/\\&/g')
+# Go back to repo root
+cd "$TEMP_DIR/opencode"
 
-		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$ESCAPED_VENDOR_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-				echo "ERROR: Failed to update vendorHash"
-				exit 1
-			}
-		else
-			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$ESCAPED_VENDOR_HASH"'";|' "$PACKAGE_FILE" || {
-				echo "ERROR: Failed to update vendorHash"
-				exit 1
-			}
-		fi
+# Check if bun is available
+if ! command -v bun &> /dev/null; then
+	echo "Error: bun is required but not installed"
+	echo "Install bun or run this script in nix develop shell"
+	exit 1
+fi
 
-		echo "Updated TUI vendorHash to $NEW_VENDOR_HASH"
+# Install node modules exactly as the Nix derivation does
+echo "Installing node modules with bun..."
+export BUN_INSTALL_CACHE_DIR="$TEMP_DIR/bun-cache"
+export HOME="$TEMP_DIR/home"
+mkdir -p "$HOME"
 
-		# Try building again to get node_modules hash
-		echo "Updating node_modules hash..."
-		if ! nix build .#opencode 2>&1 | tee /tmp/opencode_build2.log; then
-			if grep -q "got:" /tmp/opencode_build2.log; then
-				NEW_NODE_HASH=$(grep "got:" /tmp/opencode_build2.log | head -1 | awk '{print $2}')
-				echo "Found new node_modules hash: $NEW_NODE_HASH"
+# Match the exact flags from the Nix derivation
+bun install \
+	--filter=opencode \
+	--force \
+	--frozen-lockfile \
+	--ignore-scripts \
+	--no-progress \
+	--production
 
-				# Escape special characters in the hash for sed
-				ESCAPED_NODE_HASH=$(printf '%s\n' "$NEW_NODE_HASH" | sed 's/[[\.*^$()+?{|]/\\&/g')
+# Calculate node_modules hash
+echo "Calculating node_modules hash..."
+NODE_MODULES_HASH=$(nix hash path node_modules)
 
-				# Update the single node_modules hash
-				if [[ "$OSTYPE" == "darwin"* ]]; then
-					sed -i.bak 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$ESCAPED_NODE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak" || {
-						echo "ERROR: Failed to update node_modules hash"
-						exit 1
-					}
-				else
-					sed -i 's|opencode-node-modules-hash = "sha256-[^"]*";|opencode-node-modules-hash = "'"$ESCAPED_NODE_HASH"'";|' "$PACKAGE_FILE" || {
-						echo "ERROR: Failed to update node_modules hash"
-						exit 1
-					}
-				fi
+if [[ -z "$NODE_MODULES_HASH" ]]; then
+	echo "Error: Failed to calculate node_modules hash"
+	exit 1
+fi
 
-				echo "Updated node_modules hash to $NEW_NODE_HASH"
-			else
-				echo "Warning: Build failed but no node_modules hash mismatch found"
-				cat /tmp/opencode_build2.log
-				exit 1
-			fi
-		fi
-		rm -f /tmp/opencode_build2.log
+echo "Node modules hash: $NODE_MODULES_HASH"
+
+# ============================================
+# STEP 4: Update Package File
+# ============================================
+echo "=== Updating package file ==="
+
+# Go back to original directory
+cd - > /dev/null
+
+# Create backup
+cp "$PACKAGE_FILE" "$PACKAGE_FILE.bak"
+
+# Function to safely update file
+update_file() {
+	local pattern="$1"
+	local replacement="$2"
+	
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		sed -i.tmp "$pattern" "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.tmp"
 	else
-		echo "Warning: Build failed but no vendorHash mismatch found"
-		cat /tmp/opencode_build.log
-		exit 1
+		sed -i "$pattern" "$PACKAGE_FILE"
 	fi
+}
+
+# Update main source hash
+echo "Updating main source hash..."
+update_file "s|hash = \"sha256-[^\"]*\";|hash = \"$MAIN_SOURCE_HASH\";|"
+
+# Update vendor hash
+echo "Updating vendor hash..."
+update_file "s|vendorHash = \"sha256-[^\"]*\";|vendorHash = \"$VENDOR_HASH\";|"
+
+# Update node_modules hash
+echo "Updating node_modules hash..."
+update_file "s|opencode-node-modules-hash = \"sha256-[^\"]*\";|opencode-node-modules-hash = \"$NODE_MODULES_HASH\";|"
+
+# ============================================
+# STEP 5: Verification
+# ============================================
+echo "=== Verification ==="
+
+# Show the changes
+echo "Changes made:"
+if command -v diff &> /dev/null; then
+	diff -u "$PACKAGE_FILE.bak" "$PACKAGE_FILE" || true
+else
+	echo "diff not available, showing updated file content:"
+	grep -E "(hash|vendorHash|opencode-node-modules-hash)" "$PACKAGE_FILE"
 fi
 
-rm -f /tmp/opencode_build.log
-echo "Successfully updated $PACKAGE_FILE"
+# Clean up backup
+rm -f "$PACKAGE_FILE.bak"
+
+echo ""
+echo "✅ Successfully updated all hashes for OpenCode v$VERSION"
+echo ""
+echo "Hashes updated:"
+echo "  Main source: $MAIN_SOURCE_HASH"
+echo "  Vendor:      $VENDOR_HASH"
+echo "  Node modules: $NODE_MODULES_HASH"
+echo ""
 echo "Run 'nix build .#opencode' to verify the build"
