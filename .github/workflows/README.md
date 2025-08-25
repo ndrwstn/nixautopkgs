@@ -5,24 +5,21 @@ Automated CI/CD pipeline for Nix package updates via Renovate.
 ## Workflow Chain
 
 ```
-Renovate PR → Hash Update → Build Matrix → Auto-merge
+Renovate PR → Update & Build (unified) → Auto-merge
 ```
 
 ## Core Workflows
 
-### `update-hash.yml` (Workflow 1/3)
+### `update-build.yml` (Workflow 1/2)
 
 - **Trigger**: Renovate PRs modifying `packages/*.nix`
 - **Security**: Only `renovate[bot]` with `update/` branch prefix
-- **Action**: Extracts package name, runs `bin/update-{package}`, commits hash updates
+- **Action**:
+  - Extracts package name from PR title
+  - Runs `bin/update-{package}` to update hashes
+  - Commits hash updates if needed
+  - Performs matrix builds on all platforms (x86_64/aarch64 Linux/Darwin)
 - **Check Transfer**: Automatically transfers existing checks to new commit after hash updates
-- **Next**: Triggers `test-builds.yml`
-
-### `test-builds.yml` (Workflow 2/3)
-
-- **Trigger**: Workflow dispatch from hash update
-- **Security**: Validates Renovate PR origin and commit SHA
-- **Action**: Matrix builds on all platforms (x86_64/aarch64 Linux/Darwin)
 - **Check Names**: Clear naming with "Build Matrix - {platform}" format
 - **Next**: Triggers `auto-merge.yml` if all builds pass
 
@@ -33,7 +30,7 @@ Renovate PR → Hash Update → Build Matrix → Auto-merge
 - **Action**: Transfers checks from previous commit when manual commits are pushed
 - **Prevention**: Skips transfer for commits made by hash update workflow to avoid loops
 
-### `auto-merge.yml` (Workflow 3/3)
+### `auto-merge.yml` (Workflow 2/2)
 
 - **Trigger**: Workflow dispatch from successful builds
 - **Security**: Multi-layer validation (actor, branch, labels, title, state)
@@ -54,7 +51,7 @@ The workflow pipeline includes an automated check transfer system to prevent che
 
 ### How It Works
 
-1. **Hash Update Transfer**: When `update-hash.yml` pushes a new commit with hash updates, it automatically transfers all existing checks from the original commit to the new commit
+1. **Hash Update Transfer**: When `update-build.yml` pushes a new commit with hash updates, it automatically transfers all existing checks from the original commit to the new commit
 2. **Manual Commit Transfer**: When manual commits are pushed to Renovate PRs, `check-transfer.yml` transfers checks from the previous commit
 3. **Loop Prevention**: The system intelligently skips transferring its own workflow checks to prevent infinite loops
 4. **Audit Trail**: Transferred checks are clearly marked with `[TRANSFERRED]` prefix and include links to original checks

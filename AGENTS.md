@@ -43,9 +43,8 @@ This helps track which version of the script is running in GitHub Actions logs a
 
 ## Workflow Pipeline
 
-1. **update-hash.yml** - Updates package hashes from Renovate PRs
-2. **test-builds.yml** - Matrix builds on all platforms
-3. **auto-merge.yml** - Merges successful builds
+1. **update-build.yml** - Unified workflow that updates hashes and builds packages from Renovate PRs
+2. **auto-merge.yml** - Merges successful builds
 
 ## Packages
 

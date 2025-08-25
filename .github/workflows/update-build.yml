@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check-state:
-    name: "Check State & Security Validation"
+    name: "Check State"
     runs-on: ubuntu-latest
     # SECURITY: Only process PRs from renovate[bot] with proper branch naming
     if: >
@@ -29,35 +29,6 @@ jobs:
       commit-sha: ${{ github.event.pull_request.head.sha }}
       branch-ref: ${{ github.head_ref }}
     steps:
-      - name: Security validation
-        id: security
-        run: |
-          echo "=== SECURITY VALIDATION ==="
-          echo "Actor: ${{ github.actor }}"
-          echo "Branch: ${{ github.head_ref }}"
-          echo "PR Title: ${{ github.event.pull_request.title }}"
-
-          # SECURITY CHECK 1: Must be renovate[bot]
-          if [[ "${{ github.actor }}" != "renovate[bot]" ]]; then
-            echo "❌ SECURITY: Actor is not renovate[bot]"
-            exit 1
-          fi
-
-          # SECURITY CHECK 2: Branch must start with update/
-          if [[ ! "${{ github.head_ref }}" =~ ^update/ ]]; then
-            echo "❌ SECURITY: Branch does not start with 'update/'"
-            exit 1
-          fi
-
-          # SECURITY CHECK 3: PR title must match pattern
-          if [[ ! "${{ github.event.pull_request.title }}" =~ \
-                ^chore:\ update\ .+\ to\ .+$ ]]; then
-            echo "❌ SECURITY: PR title does not match expected pattern"
-            exit 1
-          fi
-
-          echo "✅ Security validation passed"
-
       - name: Extract package name from PR title
         id: package
         run: |
@@ -263,7 +234,6 @@ jobs:
     name: "Build Matrix"
     needs: [check-state, update-hash]
     if: |
-      always() && 
       needs.check-state.result == 'success' &&
       (needs.update-hash.result == 'success' || needs.update-hash.result == 'skipped')
     strategy:
