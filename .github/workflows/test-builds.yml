@@ -13,7 +13,12 @@ jobs:
   security-validation:
     name: "Security Validation"
     runs-on: ubuntu-latest
-    if: github.actor == 'github-actions[bot]'
+    # NOTE: In pull_request synchronize events, github.actor is the PR author
+    # (renovate[bot]), not the commit author. We check commit author and message
+    # to detect hash update commits.
+    if: |
+      github.event.head_commit.author.username == 'github-actions[bot]' ||
+      contains(github.event.head_commit.message, 'package hashes')
     outputs:
       is-secure: ${{ steps.validate.outputs.is-secure }}
       package: ${{ steps.extract-package.outputs.package }}
@@ -21,6 +26,20 @@ jobs:
       commit-sha: ${{ github.event.pull_request.head.sha }}
       branch-ref: ${{ github.head_ref }}
     steps:
+      - name: Debug event context
+        run: |
+          echo "=== GITHUB EVENT CONTEXT DEBUG ==="
+          echo "Actor: ${{ github.actor }}"
+          echo "Triggering Actor: ${{ github.triggering_actor }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Head Commit SHA: ${{ github.event.head_commit.id }}"
+          echo "Head Commit Author: ${{ github.event.head_commit.author.username }}"
+          echo "Head Commit Message: ${{ github.event.head_commit.message }}"
+          echo "PR Head SHA: ${{ github.event.pull_request.head.sha }}"
+          echo "PR Author: ${{ github.event.pull_request.user.login }}"
+          echo "Branch: ${{ github.head_ref }}"
+          echo "Base Branch: ${{ github.base_ref }}"
+
       - name: Extract package name from PR title
         id: extract-package
         run: |
@@ -52,6 +71,8 @@ jobs:
             const branchRef = '${{ github.head_ref }}';
             const prAuthor = '${{ github.event.pull_request.user.login }}';
             const prTitle = '${{ github.event.pull_request.title }}';
+            const headCommitAuthor = '${{ github.event.head_commit.author.username }}';
+            const headCommitMessage = '${{ github.event.head_commit.message }}';
 
             console.log(`PR Number: ${prNumber}`);
             console.log(`Commit SHA: ${commitSha}`);
@@ -60,11 +81,17 @@ jobs:
             console.log(`Triggered by: ${context.actor}`);
             console.log(`PR Author: ${prAuthor}`);
             console.log(`PR Title: ${prTitle}`);
+            console.log(`Head Commit Author: ${headCommitAuthor}`);
+            console.log(`Head Commit Message: ${headCommitMessage}`);
 
-            // SECURITY CHECK: Actor must be github-actions[bot]
-            if (context.actor !== 'github-actions[bot]') {
-              console.log(`❌ SECURITY: Actor is '${context.actor}', ` +
-                         `not 'github-actions[bot]'`);
+            // SECURITY CHECK: Commit must be from github-actions[bot] OR
+            // contain hash update message
+            const isHashUpdateCommit = headCommitAuthor === 'github-actions[bot]' ||
+                                     headCommitMessage.includes('package hashes');
+
+            if (!isHashUpdateCommit) {
+              console.log(`❌ SECURITY: Commit author is '${headCommitAuthor}' ` +
+                         `and message does not contain 'package hashes'`);
               core.setOutput('is-secure', 'false');
               return;
             }
