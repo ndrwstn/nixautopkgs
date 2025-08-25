@@ -232,22 +232,22 @@ jobs:
               body: comment
              });
 
-       - name: Log workflow completion
-         if: always()
-         run: |
-           echo "=== HASH UPDATE WORKFLOW COMPLETION SUMMARY ==="
-           echo "Package: ${{ steps.package.outputs.package }}"
-           echo "Script exists: ${{ steps.validate-script.outputs.script_exists }}"
-           echo "Script success: ${{ steps.update-hash.outputs.script_success }}"
-           echo "Has changes: ${{ steps.check-changes.outputs.has_changes }}"
-           echo "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+      - name: Log workflow completion
+        if: always()
+        run: |
+          echo "=== HASH UPDATE WORKFLOW COMPLETION SUMMARY ==="
+          echo "Package: ${{ steps.package.outputs.package }}"
+          echo "Script exists: ${{ steps.validate-script.outputs.script_exists }}"
+          echo "Script success: ${{ steps.update-hash.outputs.script_success }}"
+          echo "Has changes: ${{ steps.check-changes.outputs.has_changes }}"
+          echo "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
 
-           if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" && \
-                "${{ steps.update-hash.outputs.script_success }}" == "true" ]]; then
-             echo "✅ Hash update workflow completed successfully"
-             echo "🔄 Hash update commit will trigger test-builds workflow via pull_request synchronize event"
-           elif [[ "${{ steps.check-changes.outputs.has_changes }}" == "false" ]]; then
-             echo "ℹ️ Hash update workflow completed - no changes needed"
-           else
-             echo "❌ Hash update workflow failed - check logs above"
-           fi
+          if [[ "${{ steps.check-changes.outputs.has_changes }}" == "true" && \
+               "${{ steps.update-hash.outputs.script_success }}" == "true" ]]; then
+            echo "✅ Hash update workflow completed successfully"
+            echo "🔄 Hash update commit will trigger test-builds workflow via pull_request synchronize event"
+          elif [[ "${{ steps.check-changes.outputs.has_changes }}" == "false" ]]; then
+            echo "ℹ️ Hash update workflow completed - no changes needed"
+          else
+            echo "❌ Hash update workflow failed - check logs above"
+          fi
