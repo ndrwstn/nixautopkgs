@@ -1,20 +1,9 @@
 name: Test Builds
 
 on:
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        required: true
-        type: string
-      commit_sha:
-        required: true
-        type: string
-      package:
-        required: true
-        type: string
-      branch_ref:
-        required: true
-        type: string
+  pull_request:
+    types: [synchronize]
+    branches: [master]
 
 permissions:
   contents: read # For checkout
@@ -26,14 +15,32 @@ jobs:
   security-validation:
     name: "Security Validation"
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.actor == 'github-actions[bot]'
     outputs:
       is-secure: ${{ steps.validate.outputs.is-secure }}
-      package: ${{ github.event.inputs.package }}
-      pr-number: ${{ github.event.inputs.pr_number }}
-      commit-sha: ${{ github.event.inputs.commit_sha }}
-      branch-ref: ${{ github.event.inputs.branch_ref }}
+      package: ${{ steps.extract-package.outputs.package }}
+      pr-number: ${{ github.event.pull_request.number }}
+      commit-sha: ${{ github.event.pull_request.head.sha }}
+      branch-ref: ${{ github.head_ref }}
     steps:
+      - name: Extract package name from PR title
+        id: extract-package
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+
+          # Extract package name between "update " and " to "
+          PACKAGE=$(echo "$PR_TITLE" | \
+            sed -n 's/.*update \([^ ]*\) to.*/\1/p')
+
+          if [[ -z "$PACKAGE" ]]; then
+            echo "❌ ERROR: Failed to extract package name from PR title"
+            exit 1
+          fi
+
+          echo "Detected package: $PACKAGE"
+          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
+
       - name: Validate build test security
         id: validate
         uses: actions/github-script@v7
@@ -41,52 +48,49 @@ jobs:
           script: |
             console.log("=== BUILD MATRIX SECURITY VALIDATION ===");
 
-            const prNumber = '${{ github.event.inputs.pr_number }}';
-            const commitSha = '${{ github.event.inputs.commit_sha }}';
-            const package = '${{ github.event.inputs.package }}';
-            const branchRef = '${{ github.event.inputs.branch_ref }}';
+            const prNumber = ${{ github.event.pull_request.number }};
+            const commitSha = '${{ github.event.pull_request.head.sha }}';
+            const package = '${{ steps.extract-package.outputs.package }}';
+            const branchRef = '${{ github.head_ref }}';
+            const prAuthor = '${{ github.event.pull_request.user.login }}';
+            const prTitle = '${{ github.event.pull_request.title }}';
 
             console.log(`PR Number: ${prNumber}`);
             console.log(`Commit SHA: ${commitSha}`);
             console.log(`Package: ${package}`);
             console.log(`Branch Ref: ${branchRef}`);
             console.log(`Triggered by: ${context.actor}`);
+            console.log(`PR Author: ${prAuthor}`);
+            console.log(`PR Title: ${prTitle}`);
 
-            // SECURITY CHECK: Get PR details for validation
-            let pr;
-            try {
-              const { data: prData } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: parseInt(prNumber)
-              });
-              pr = prData;
-            } catch (error) {
-              console.log(`❌ SECURITY: Failed to fetch PR ${prNumber}: ${error.message}`);
+            // SECURITY CHECK: Actor must be github-actions[bot]
+            if (context.actor !== 'github-actions[bot]') {
+              console.log(`❌ SECURITY: Actor is '${context.actor}', ` +
+                         `not 'github-actions[bot]'`);
               core.setOutput('is-secure', 'false');
               return;
             }
 
             // SECURITY CHECK: PR must be from renovate[bot]
-            if (pr.user.login !== 'renovate[bot]') {
-              console.log(`❌ SECURITY: PR author is '${pr.user.login}', ` +
+            if (prAuthor !== 'renovate[bot]') {
+              console.log(`❌ SECURITY: PR author is '${prAuthor}', ` +
                          `not 'renovate[bot]'`);
               core.setOutput('is-secure', 'false');
               return;
             }
 
             // SECURITY CHECK: Branch must have renovate prefix
-            if (!pr.head.ref.startsWith('update/')) {
-              console.log(`❌ SECURITY: Branch '${pr.head.ref}' ` +
+            if (!branchRef.startsWith('update/')) {
+              console.log(`❌ SECURITY: Branch '${branchRef}' ` +
                          `does not have renovate prefix`);
               core.setOutput('is-secure', 'false');
               return;
             }
 
-            // SECURITY CHECK: Commit SHA must match PR head
-            if (pr.head.sha !== commitSha) {
-              console.log(`❌ SECURITY: Commit SHA mismatch. ` +
-                         `PR head: ${pr.head.sha}, provided: ${commitSha}`);
+            // SECURITY CHECK: PR title must match pattern
+            if (!prTitle.match(/^chore: update .+ to .+$/)) {
+              console.log(`❌ SECURITY: PR title '${prTitle}' ` +
+                         `does not match expected pattern`);
               core.setOutput('is-secure', 'false');
               return;
             }
@@ -188,39 +192,40 @@ jobs:
             echo "failed-platforms=PLACEHOLDER" >> $GITHUB_OUTPUT
           fi
 
-  trigger-auto-merge:
-    name: "Trigger Auto-merge"
-    runs-on: ubuntu-latest
-    needs: [security-validation, build-matrix, aggregate-results]
-    if: always() && needs.aggregate-results.outputs.all-builds-success == 'true'
-    steps:
-      - name: Trigger auto-merge workflow
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
-            const branchRef = '${{ needs.security-validation.outputs.branch-ref }}';
-            const package = '${{ needs.security-validation.outputs.package }}';
-
-            console.log(`✅ All builds successful - triggering auto-merge`);
-            console.log(`PR Number: ${prNumber}`);
-            console.log(`Branch Ref: ${branchRef}`);
-            console.log(`Package: ${package}`);
-
-            // Trigger auto-merge workflow
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'auto-merge.yml',
-              ref: 'master',
-              inputs: {
-                pr_number: prNumber,
-                pr_ref: branchRef,
-                build_success: 'true'
-              }
-            });
-
-            console.log(`🚀 Auto-merge workflow triggered for PR ${prNumber}`);
+  # TODO: Re-enable when auto-merge.yml workflow is implemented
+  # trigger-auto-merge:
+  #   name: "Trigger Auto-merge"
+  #   runs-on: ubuntu-latest
+  #   needs: [security-validation, build-matrix, aggregate-results]
+  #   if: always() && needs.aggregate-results.outputs.all-builds-success == 'true'
+  #   steps:
+  #     - name: Trigger auto-merge workflow
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
+  #           const branchRef = '${{ needs.security-validation.outputs.branch-ref }}';
+  #           const package = '${{ needs.security-validation.outputs.package }}';
+  #
+  #           console.log(`✅ All builds successful - triggering auto-merge`);
+  #           console.log(`PR Number: ${prNumber}`);
+  #           console.log(`Branch Ref: ${branchRef}`);
+  #           console.log(`Package: ${package}`);
+  #
+  #           // Trigger auto-merge workflow
+  #           await github.rest.actions.createWorkflowDispatch({
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             workflow_id: 'auto-merge.yml',
+  #             ref: 'master',
+  #             inputs: {
+  #               pr_number: prNumber,
+  #               pr_ref: branchRef,
+  #               build_success: 'true'
+  #             }
+  #           });
+  #
+  #           console.log(`🚀 Auto-merge workflow triggered for PR ${prNumber}`);
 
   report-failure:
     name: "Report Failure"
