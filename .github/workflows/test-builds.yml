@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read # For checkout
-  pull-requests: write # For PR comments
-  issues: write # For issue comments
 
 jobs:
   # SECURITY: Validate that this is a legitimate Renovate PR build test
@@ -114,8 +112,6 @@ jobs:
           - platform: aarch64-darwin
             runner: macos-14
     runs-on: ${{ matrix.runner }}
-    outputs:
-      matrix-success: ${{ steps.matrix-result.outputs.success }}
 
     steps:
       - name: Checkout
@@ -129,7 +125,6 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Build package on ${{ matrix.platform }}
-        id: build
         run: |
           PACKAGE="${{ needs.security-validation.outputs.package }}"
           PLATFORM="${{ matrix.platform }}"
@@ -142,125 +137,7 @@ jobs:
           # Use the build-package script for consistent builds
           if ./bin/build-package --platform "$PLATFORM" --package "$PACKAGE"; then
             echo "✅ Build successful: $PACKAGE on $PLATFORM"
-            echo "success=true" >> $GITHUB_OUTPUT
           else
             echo "❌ Build failed: $PACKAGE on $PLATFORM"
-            echo "success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
-
-      - name: Set matrix job result
-        id: matrix-result
-        if: always()
-        run: |
-          if [[ "${{ steps.build.outcome }}" == "success" ]]; then
-            echo "success=true" >> $GITHUB_OUTPUT
-            echo "✅ Matrix job succeeded for ${{ matrix.platform }}"
-          else
-            echo "success=false" >> $GITHUB_OUTPUT
-            echo "❌ Matrix job failed for ${{ matrix.platform }}"
-          fi
-
-  aggregate-results:
-    name: "Aggregate Results"
-    runs-on: ubuntu-latest
-    needs: [security-validation, build-matrix]
-    if: always()
-    outputs:
-      all-builds-success: ${{ steps.aggregate.outputs.success }}
-      failed-platforms: ${{ steps.aggregate.outputs.failed-platforms }}
-    steps:
-      - name: Aggregate build results
-        id: aggregate
-        run: |
-          echo "=== Aggregating Build Matrix Results ==="
-
-          # Check the overall result of the matrix job
-          MATRIX_RESULT="${{ needs.build-matrix.result }}"
-          echo "Matrix job result: $MATRIX_RESULT"
-
-          if [[ "$MATRIX_RESULT" == "success" ]]; then
-            echo "✅ All platform builds succeeded"
-            echo "success=true" >> $GITHUB_OUTPUT
-            echo "failed-platforms=" >> $GITHUB_OUTPUT
-          else
-            echo "❌ One or more platform builds failed"
-            echo "success=false" >> $GITHUB_OUTPUT
-            # For now, use placeholder for failed platforms
-            # Future enhancement: parse individual matrix job results
-            echo "failed-platforms=PLACEHOLDER" >> $GITHUB_OUTPUT
-          fi
-
-  # TODO: Re-enable when auto-merge.yml workflow is implemented
-  # trigger-auto-merge:
-  #   name: "Trigger Auto-merge"
-  #   runs-on: ubuntu-latest
-  #   needs: [security-validation, build-matrix, aggregate-results]
-  #   if: always() && needs.aggregate-results.outputs.all-builds-success == 'true'
-  #   steps:
-  #     - name: Trigger auto-merge workflow
-  #       uses: actions/github-script@v7
-  #       with:
-  #         script: |
-  #           const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
-  #           const branchRef = '${{ needs.security-validation.outputs.branch-ref }}';
-  #           const package = '${{ needs.security-validation.outputs.package }}';
-  #
-  #           console.log(`✅ All builds successful - triggering auto-merge`);
-  #           console.log(`PR Number: ${prNumber}`);
-  #           console.log(`Branch Ref: ${branchRef}`);
-  #           console.log(`Package: ${package}`);
-  #
-  #           // Trigger auto-merge workflow
-  #           await github.rest.actions.createWorkflowDispatch({
-  #             owner: context.repo.owner,
-  #             repo: context.repo.repo,
-  #             workflow_id: 'auto-merge.yml',
-  #             ref: 'master',
-  #             inputs: {
-  #               pr_number: prNumber,
-  #               pr_ref: branchRef,
-  #               build_success: 'true'
-  #             }
-  #           });
-  #
-  #           console.log(`🚀 Auto-merge workflow triggered for PR ${prNumber}`);
-
-  report-failure:
-    name: "Report Failure"
-    runs-on: ubuntu-latest
-    needs: [security-validation, build-matrix, aggregate-results]
-    if: always() && needs.aggregate-results.outputs.all-builds-success == 'false'
-    steps:
-      - name: Comment on failed build
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = '${{ needs.security-validation.outputs.pr-number }}';
-            const package = '${{ needs.security-validation.outputs.package }}';
-            const failedPlatforms = '${{ needs.aggregate-results.outputs.failed-platforms }}';
-
-            const comment = `❌ **Build Matrix Failed**
-
-            Package: ${package}
-            Failed Platforms: ${failedPlatforms}
-            Error Details: PLACEHOLDER
-
-            Some platform builds failed. Please check the build logs for details.
-
-            **Tested platforms:**
-            - x86_64-linux
-            - aarch64-linux  
-            - x86_64-darwin
-            - aarch64-darwin
-
-            🔒 **Security validated**: This is a legitimate Renovate PR`;
-
-            await github.rest.issues.createComment({
-              issue_number: parseInt(prNumber),
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-            console.log(`💬 Failure comment posted to PR ${prNumber}`);
