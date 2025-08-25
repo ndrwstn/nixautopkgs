@@ -1,56 +1,56 @@
-name: Renovate Package Update
+name: Renovate Package Update (self-updating PR with preserved checks)
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "packages/*.nix"
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Avoid over-restrictive path filters that block synchronize runs
+    # If you must filter, include every path your script could touch.
+    # paths:
+    #   - "packages/*.nix"
+    #   - "**/*.nix"
+    #   - "flake.*"
+    #   - "nix/**"
     branches:
       - master
 
 permissions:
-  contents: write # For git push hash updates
-  pull-requests: write # For PR comments
-  issues: write # For issue comments
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   check-state:
-    name: "Check State"
+    name: Check State
     runs-on: ubuntu-latest
-    # SECURITY: Only process PRs from renovate[bot] with proper branch naming
     if: >
-      github.actor == 'renovate[bot]' &&
+      github.event.pull_request.draft == false &&
+      github.base_ref == 'master' &&
       startsWith(github.head_ref, 'update/') &&
-      contains(github.event.pull_request.title, 'chore: update')
+      github.event.pull_request.user.login == 'renovate[bot]'
+
     outputs:
       package: ${{ steps.package.outputs.package }}
       needs-hash-update: ${{ steps.check-hash-commit.outputs.needs-hash-update }}
       pr-number: ${{ github.event.pull_request.number }}
       commit-sha: ${{ github.event.pull_request.head.sha }}
       branch-ref: ${{ github.head_ref }}
+
     steps:
       - name: Extract package name from PR title
         id: package
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "PR Title: $PR_TITLE"
-
-          # Extract package name between "update " and " to "
-          PACKAGE=$(echo "$PR_TITLE" | \
-            sed -n 's/.*update \([^ ]*\) to.*/\1/p')
-
+          PACKAGE=$(echo "$PR_TITLE" | sed -n 's/.*update \([^ ]*\) to.*/\1/p')
           if [[ -z "$PACKAGE" ]]; then
-            echo "❌ ERROR: Failed to extract package name from PR title"
+            echo "Failed to extract package name from title"
             exit 1
           fi
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
 
-          echo "Detected package: $PACKAGE"
-          echo "package=$PACKAGE" >> $GITHUB_OUTPUT
-
-      - name: Checkout repository
+      - name: Checkout at PR head SHA
         uses: actions/checkout@v4
         with:
-          # CRITICAL: Use head SHA for proper check association
           ref: ${{ github.event.pull_request.head.sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -59,46 +59,16 @@ jobs:
         id: check-hash-commit
         run: |
           PACKAGE="${{ steps.package.outputs.package }}"
-
-          echo "=== CHECKING FOR EXISTING HASH UPDATE COMMIT ==="
-          echo "Package: $PACKAGE"
-
-          # Check if the latest commit is already a hash update commit
           LATEST_COMMIT_MSG=$(git log -1 --pretty=format:"%s")
-          EXPECTED_COMMIT_MSG="chore: update $PACKAGE package hashes"
-
-          echo "Latest commit message: $LATEST_COMMIT_MSG"
-          echo "Expected hash update message: $EXPECTED_COMMIT_MSG"
-
-          if [[ "$LATEST_COMMIT_MSG" == "$EXPECTED_COMMIT_MSG" ]]; then
-            echo "✅ Hash update commit already exists - skipping hash update"
-            echo "needs-hash-update=false" >> $GITHUB_OUTPUT
+          EXPECTED="chore: update $PACKAGE package hashes"
+          if [[ "$LATEST_COMMIT_MSG" == "$EXPECTED" ]]; then
+            echo "needs-hash-update=false" >> "$GITHUB_OUTPUT"
           else
-            echo "🔄 Hash update needed - no existing hash update commit found"
-            echo "needs-hash-update=true" >> $GITHUB_OUTPUT
+            echo "needs-hash-update=true" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Validate package script exists
-        id: validate-script
-        if: steps.check-hash-commit.outputs.needs-hash-update == 'true'
-        run: |
-          PACKAGE="${{ steps.package.outputs.package }}"
-          SCRIPT_PATH="bin/update-$PACKAGE"
-
-          echo "Checking for script: $SCRIPT_PATH"
-
-          if [[ ! -f "$SCRIPT_PATH" ]]; then
-            echo "❌ ERROR: Package '$PACKAGE' not supported"
-            echo "Script $SCRIPT_PATH not found"
-            echo "script_exists=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
-          echo "✅ Found update script: $SCRIPT_PATH"
-          echo "script_exists=true" >> $GITHUB_OUTPUT
 
   update-hash:
-    name: "Update Package Hashes"
+    name: Update Package Hashes
     runs-on: ubuntu-latest
     needs: check-state
     if: needs.check-state.outputs.needs-hash-update == 'true'
@@ -106,8 +76,9 @@ jobs:
       hash-update-success: ${{ steps.update-hash.outputs.script_success }}
       has-changes: ${{ steps.check-changes.outputs.has_changes }}
       commit-sha: ${{ steps.commit.outputs.commit_sha }}
+
     steps:
-      - name: Checkout repository
+      - name: Checkout at PR head SHA
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.check-state.outputs.commit-sha }}
@@ -119,119 +90,88 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Configure git
+      - name: Configure git author
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run hash update script
         id: update-hash
+        shell: bash
         run: |
+          set -e
           PACKAGE="${{ needs.check-state.outputs.package }}"
-          SCRIPT_PATH="./bin/update-$PACKAGE"
-
-          echo "=== RUNNING HASH UPDATE FOR $PACKAGE ==="
-          echo "Script: $SCRIPT_PATH"
-          echo "Environment: nix develop (provides go, bun, git, jq, nix-prefetch tools)"
-
-          # Make script executable
-          chmod +x "$SCRIPT_PATH"
-
-          # Run the update script in development shell with proper isolation
-          # from GitHub Actions' pipefail. The script requires tools (go, bun,
-          # etc.) provided by the development shell
-          set +e  # Temporarily disable errexit to prevent premature termination
-          nix develop --command "$SCRIPT_PATH" 2>&1 | tee /tmp/update_output.log
-          SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
-          set -e  # Re-enable errexit
-
-          if [ $SCRIPT_EXIT_CODE -eq 0 ]; then
-            SCRIPT_SUCCESS=true
-          else
-            SCRIPT_SUCCESS=false
+          SCRIPT="./bin/update-$PACKAGE"
+          if [[ ! -x "$SCRIPT" ]]; then
+            if [[ -f "$SCRIPT" ]]; then chmod +x "$SCRIPT"; fi
           fi
-
-          if [ "$SCRIPT_SUCCESS" = "false" ]; then
-            echo "❌ ERROR: Hash update script failed"
-            echo "script_success=false" >> $GITHUB_OUTPUT
-
-            # Capture error details for comment
-            ERROR_DETAILS=$(tail -20 /tmp/update_output.log)
-            echo "error_details<<EOF" >> $GITHUB_OUTPUT
-            echo "$ERROR_DETAILS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+          if [[ ! -f "$SCRIPT" ]]; then
+            echo "Script $SCRIPT not found"
+            echo "script_success=false" >> "$GITHUB_OUTPUT"
             exit 1
           fi
 
-          echo "✅ Hash update script completed successfully"
-          echo "script_success=true" >> $GITHUB_OUTPUT
+          set +e
+          nix develop --command "$SCRIPT" 2>&1 | tee /tmp/update_output.log
+          CODE=${PIPESTATUS[0]}
+          set -e
+
+          if [[ $CODE -eq 0 ]]; then
+            echo "script_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "script_success=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "error_details<<EOF"
+              tail -200 /tmp/update_output.log
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
 
       - name: Check for changes
         id: check-changes
         run: |
-          echo "=== CHECKING FOR CHANGES ==="
-
-          # Check if there are any changes to commit
           if git diff --quiet; then
-            echo "No changes detected"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Changes detected:"
-            git diff --name-only
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-
-            # Stage all changes
-            git add .
+            git add -A
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit hash updates
+      - name: Commit and push changes to PR branch
         id: commit
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           PACKAGE="${{ needs.check-state.outputs.package }}"
-          COMMIT_MESSAGE="chore: update $PACKAGE package hashes"
-
-          echo "=== COMMITTING CHANGES ==="
-          echo "Commit message: $COMMIT_MESSAGE"
-
-          git commit -m "$COMMIT_MESSAGE"
-
-          # Push changes back to PR branch
+          MSG="chore: update $PACKAGE package hashes"
+          git commit -m "$MSG"
+          # Push to the same PR branch to trigger pull_request.synchronize
           git push origin HEAD:${{ needs.check-state.outputs.branch-ref }}
+          NEW_SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$NEW_SHA" >> "$GITHUB_OUTPUT"
 
-          # Get the new commit SHA
-          NEW_COMMIT_SHA=$(git rev-parse HEAD)
-          echo "New commit SHA: $NEW_COMMIT_SHA"
-          echo "commit_sha=$NEW_COMMIT_SHA" >> $GITHUB_OUTPUT
-
-          echo "✅ Successfully committed and pushed hash updates"
-
-      - name: Comment on hash update failure
-        if: >
-          failure() &&
-          steps.update-hash.outputs.script_success == 'false'
+      - name: Comment on failure
+        if: failure() && steps.update-hash.outputs.script_success == 'false'
         uses: actions/github-script@v7
         with:
           script: |
-            const package = '${{ needs.check-state.outputs.package }}';
-            const errorDetails = `${{ steps.update-hash.outputs.error_details }}`;
+            const comment = `❌ Hash Update Failed
 
-            const comment = '❌ **Hash Update Failed**\n\n' +
-              'Package: `' + package + '`\n' +
-              'Error: Hash update script failed to complete successfully\n\n' +
-              '**Error Details:**\n' +
-              '```\n' + errorDetails + '\n```\n\n' +
-              'The hash update script failed to complete successfully. Please check the package configuration and try again.';
+            Package: \`${{ needs.check-state.outputs.package }}\`
 
+            \`\`\`
+            ${{ steps.update-hash.outputs.error_details }}
+            \`\`\`
+            `;
             await github.rest.issues.createComment({
               issue_number: ${{ needs.check-state.outputs.pr-number }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: comment
-             });
+              body: comment,
+            });
 
-  build-matrix:
-    name: "Build Matrix"
+  build:
+    name: Build
     needs: [check-state, update-hash]
     if: |
       needs.check-state.result == 'success' &&
@@ -249,20 +189,15 @@ jobs:
           - platform: aarch64-darwin
             runner: macos-14
     runs-on: ${{ matrix.runner }}
-
     steps:
-      - name: Determine commit SHA for checkout
+      - name: Determine commit SHA to build
         id: commit-sha
         run: |
-          # Use the new commit SHA if hash update created one, otherwise use original
-          if [[ "${{ needs.update-hash.outputs.commit-sha }}" != "" ]]; then
-            CHECKOUT_SHA="${{ needs.update-hash.outputs.commit-sha }}"
-            echo "Using hash update commit SHA: $CHECKOUT_SHA"
+          if [[ -n "${{ needs.update-hash.outputs.commit-sha }}" ]]; then
+            echo "checkout_sha=${{ needs.update-hash.outputs.commit-sha }}" >> "$GITHUB_OUTPUT"
           else
-            CHECKOUT_SHA="${{ needs.check-state.outputs.commit-sha }}"
-            echo "Using original commit SHA: $CHECKOUT_SHA"
+            echo "checkout_sha=${{ needs.check-state.outputs.commit-sha }}" >> "$GITHUB_OUTPUT"
           fi
-          echo "checkout_sha=$CHECKOUT_SHA" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -275,59 +210,25 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Build package on ${{ matrix.platform }}
+        shell: bash
         run: |
           PACKAGE="${{ needs.check-state.outputs.package }}"
           PLATFORM="${{ matrix.platform }}"
+          echo "Building $PACKAGE on $PLATFORM at ${{ steps.commit-sha.outputs.checkout_sha }}"
+          ./bin/build-package --platform "$PLATFORM" --package "$PACKAGE"
 
-          echo "=== Building $PACKAGE on $PLATFORM ==="
-          echo "Package: $PACKAGE"
-          echo "Platform: $PLATFORM"
-          echo "Commit SHA: ${{ steps.commit-sha.outputs.checkout_sha }}"
-
-          # Use the build-package script for consistent builds
-          if ./bin/build-package --platform "$PLATFORM" --package "$PACKAGE"; then
-            echo "✅ Build successful: $PACKAGE on $PLATFORM"
-          else
-            echo "❌ Build failed: $PACKAGE on $PLATFORM"
-            exit 1
-          fi
-
-  workflow-summary:
-    name: "Workflow Summary"
-    runs-on: ubuntu-latest
-    needs: [check-state, update-hash, build-matrix]
-    if: always()
-    steps:
-      - name: Log workflow completion
-        run: |
-          echo "=== RENOVATE PACKAGE UPDATE WORKFLOW SUMMARY ==="
-          echo "Package: ${{ needs.check-state.outputs.package }}"
-          echo "Needed hash update: ${{ needs.check-state.outputs.needs-hash-update }}"
-          echo "Hash update result: ${{ needs.update-hash.result }}"
-          echo "Hash update success: ${{ needs.update-hash.outputs.hash-update-success }}"
-          echo "Had changes: ${{ needs.update-hash.outputs.has-changes }}"
-          echo "New commit SHA: ${{ needs.update-hash.outputs.commit-sha }}"
-          echo "Build matrix result: ${{ needs.build-matrix.result }}"
-
-          # Determine overall workflow status
-          if [[ "${{ needs.check-state.result }}" == "success" && \
-                ("${{ needs.update-hash.result }}" == "success" || "${{ needs.update-hash.result }}" == "skipped") && \
-                "${{ needs.build-matrix.result }}" == "success" ]]; then
-            echo "✅ Unified workflow completed successfully"
-            
-            if [[ "${{ needs.check-state.outputs.needs-hash-update }}" == "true" && \
-                  "${{ needs.update-hash.outputs.has-changes }}" == "true" ]]; then
-              echo "🔄 Hash update was performed and committed"
-            elif [[ "${{ needs.check-state.outputs.needs-hash-update }}" == "false" ]]; then
-              echo "ℹ️ Hash update was skipped - already up to date"
-            else
-              echo "ℹ️ Hash update was performed but no changes were needed"
-            fi
-            
-            echo "🏗️ Build matrix completed successfully on all platforms"
-          else
-            echo "❌ Unified workflow failed - check individual job results"
-            echo "Check state: ${{ needs.check-state.result }}"
-            echo "Update hash: ${{ needs.update-hash.result }}"
-            echo "Build matrix: ${{ needs.build-matrix.result }}"
-          fi
+  # workflow-summary:
+  #   name: Workflow Summary
+  #   runs-on: ubuntu-latest
+  #   needs: [check-state, update-hash, build-matrix]
+  #   if: always()
+  #   steps:
+  #     - name: Summary
+  #       run: |
+  #         echo "Package: ${{ needs.check-state.outputs.package }}"
+  #         echo "Needed hash update: ${{ needs.check-state.outputs.needs-hash-update }}"
+  #         echo "Hash update result: ${{ needs.update-hash.result }}"
+  #         echo "Hash update success: ${{ needs.update-hash.outputs.hash-update-success }}"
+  #         echo "Had changes: ${{ needs.update-hash.outputs.has-changes }}"
+  #         echo "New commit SHA: ${{ needs.update-hash.outputs.commit-sha }}"
+  #         echo "Build matrix result: ${{ needs.build-matrix.result }}"
