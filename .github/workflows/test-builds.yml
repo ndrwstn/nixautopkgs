@@ -99,7 +99,6 @@ jobs:
             core.setOutput('is-secure', 'true');
 
   build-matrix:
-    name: "Build Matrix - ${{ matrix.platform }}"
     needs: security-validation
     if: needs.security-validation.outputs.is-secure == 'true'
     strategy:
