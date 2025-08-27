@@ -25,4 +25,4 @@ Add to your flake inputs:
 
 ## Automatic Updates
 
-Package versions are automatically updated via Renovate when new upstream releases are detected.
+Work in progress, packages are planned to be automatically updated via Renovate and GitHub Actions when a new upstream release is detected.
