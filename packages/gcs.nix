@@ -57,5 +57,9 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     maintainers = with maintainers; [ tomasajt ];
     platforms = platforms.linux ++ platforms.darwin;
     broken = pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isAarch64;
+    nixautopkgs = {
+      upstream = "richardwilkes/gcs";
+      nixpkgsPath = "pkgs/by-name/gc/gcs/package.nix";
+    };
   };
 }

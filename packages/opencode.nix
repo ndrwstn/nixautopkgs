@@ -197,5 +197,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       delafthi
     ];
     mainProgram = "opencode";
+    nixautopkgs = {
+      upstream = "sst/opencode";
+      nixpkgsPath = "pkgs/by-name/op/opencode/package.nix";
+    };
   };
 })

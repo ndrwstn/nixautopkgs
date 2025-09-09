@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-01-09 12:00 <<<"
+echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-01-09 14:30 <<<"
 
 # Colors for output
 RED='\033[0;31m'
@@ -32,12 +32,50 @@ github_api() {
   echo "$response"
 }
 
+# Function to discover packages dynamically
+discover_packages() {
+  ls packages/*.nix 2>/dev/null | sort | while read -r file; do
+    basename "$file" .nix
+  done
+}
+
+# Function to extract metadata from nix file
+get_package_metadata() {
+  local package="$1"
+  local file="packages/${package}.nix"
+  
+  if [[ ! -f "$file" ]]; then
+    echo -e "${YELLOW}Warning: Package file $file not found${NC}" >&2
+    echo '{"upstream": null, "nixpkgsPath": null}'
+    return
+  fi
+
+  # Try to extract nixautopkgs metadata using nix eval
+  local metadata
+  if command -v nix >/dev/null 2>&1; then
+    # Try using the flake output directly
+    metadata=$(nix eval --impure --json ".#$package.meta.nixautopkgs" 2>/dev/null || echo '{"upstream": null, "nixpkgsPath": null}')
+  else
+    echo -e "${YELLOW}Warning: nix command not available, cannot extract metadata${NC}" >&2
+    echo '{"upstream": null, "nixpkgsPath": null}'
+    return
+  fi
+
+  echo "$metadata"
+}
+
 # Function to get latest release from GitHub
 get_latest_release() {
-  local owner="$1"
-  local repo="$2"
-  local release_data
+  local upstream="$1"
+  local owner repo
+  
+  if [[ -z "$upstream" || "$upstream" == "null" ]]; then
+    echo "unknown"
+    return
+  fi
 
+  IFS='/' read -r owner repo <<< "$upstream"
+  local release_data
   release_data=$(github_api "$GITHUB_API/repos/$owner/$repo/releases/latest")
 
   # Check for errors
@@ -62,26 +100,21 @@ get_nix_version() {
 
 # Function to get nixpkgs version
 get_nixpkgs_version() {
-  local package="$1"
-  local nixpkgs_attr=""
-
-  case "$package" in
-  gcs)
-    nixpkgs_attr="gcs"
-    ;;
-  opencode)
-    nixpkgs_attr="opencode"
-    ;;
-  *)
-    echo "unknown"
+  local nixpkgs_path="$1"
+  
+  if [[ -z "$nixpkgs_path" || "$nixpkgs_path" == "null" ]]; then
+    echo "—"
     return
-    ;;
-  esac
+  fi
 
   # Try to get version from nixpkgs-unstable
   if command -v nix >/dev/null 2>&1; then
+    # Extract package name from path (e.g., pkgs/by-name/gc/gcs/package.nix -> gcs)
+    local package_name
+    package_name=$(echo "$nixpkgs_path" | sed -E 's|.*/([^/]+)/package\.nix|\1|')
+    
     local version
-    version=$(nix eval --impure --expr "(import <nixpkgs> {}).${nixpkgs_attr}.version or \"unknown\"" 2>/dev/null | tr -d '"') || echo "unknown"
+    version=$(nix eval --impure --expr "(import <nixpkgs> {}).${package_name}.version or \"unknown\"" 2>/dev/null | tr -d '"') || echo "unknown"
     echo "${version:-unknown}"
   else
     echo "unknown"
@@ -124,15 +157,44 @@ check_platform_support() {
   local package="$1"
   local file="packages/${package}.nix"
 
-  # Check if package is marked as broken for specific platforms
-  local is_broken_linux_aarch64="false"
-  if grep -q "broken.*isLinux.*isAarch64" "$file" 2>/dev/null; then
-    is_broken_linux_aarch64="true"
+  if [[ ! -f "$file" ]]; then
+    echo "x86_64-linux:?"
+    echo "aarch64-linux:?"
+    echo "x86_64-darwin:?"
+    echo "aarch64-darwin:?"
+    return
   fi
 
-  # Default support matrix based on package
-  case "$package" in
-  gcs)
+  # Try to extract broken conditions using nix eval
+  if command -v nix >/dev/null 2>&1; then
+    # Check if meta.broken exists and what it evaluates to for different platforms
+    local platforms=("x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin")
+    for platform in "${platforms[@]}"; do
+      local is_broken
+      # Use flake output with system override
+      is_broken=$(nix eval --impure --json --expr "
+        let
+          flake = builtins.getFlake (toString ./.);
+          pkg = flake.packages.\"$platform\".\"$package\";
+        in
+          pkg.meta.broken or false
+      " 2>/dev/null || echo "null")
+      
+      if [[ "$is_broken" == "true" ]]; then
+        echo "${platform}:—"
+      elif [[ "$is_broken" == "false" ]]; then
+        echo "${platform}:✓"
+      else
+        echo "${platform}:?"
+      fi
+    done
+  else
+    # Fallback: simple grep-based detection
+    local is_broken_linux_aarch64="false"
+    if grep -q "broken.*isLinux.*isAarch64" "$file" 2>/dev/null; then
+      is_broken_linux_aarch64="true"
+    fi
+
     echo "x86_64-linux:✓"
     if [[ "$is_broken_linux_aarch64" == "true" ]]; then
       echo "aarch64-linux:—"
@@ -141,20 +203,7 @@ check_platform_support() {
     fi
     echo "x86_64-darwin:✓"
     echo "aarch64-darwin:✓"
-    ;;
-  opencode)
-    echo "x86_64-linux:✓"
-    echo "aarch64-linux:✓"
-    echo "x86_64-darwin:✓"
-    echo "aarch64-darwin:✓"
-    ;;
-  *)
-    echo "x86_64-linux:?"
-    echo "aarch64-linux:?"
-    echo "x86_64-darwin:?"
-    echo "aarch64-darwin:?"
-    ;;
-  esac
+  fi
 }
 
 # Function to get build status from GitHub Actions
@@ -163,10 +212,7 @@ get_build_status() {
   local pr_number="$2"
 
   if [[ -z "$pr_number" ]]; then
-    echo "x86_64-linux:?"
-    echo "aarch64-linux:?"
-    echo "x86_64-darwin:?"
-    echo "aarch64-darwin:?"
+    check_platform_support "$package"
     return
   fi
 
@@ -216,19 +262,18 @@ get_build_status() {
   done
 }
 
+# Function to normalize version (strip 'v' prefix if present)
+normalize_version() {
+  local version="$1"
+  echo "$version" | sed 's/^v//'
+}
+
 # Main function to generate dashboard
 generate_dashboard() {
   local timestamp
   timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')
 
   echo -e "${GREEN}Generating package dashboard...${NC}" >&2
-
-  # Package information
-  declare -A package_info
-  package_info[gcs_owner]="richardwilkes"
-  package_info[gcs_repo]="gcs"
-  package_info[opencode_owner]="sst"
-  package_info[opencode_repo]="opencode"
 
   # Start building the dashboard content
   local dashboard_content=""
@@ -240,63 +285,99 @@ generate_dashboard() {
   dashboard_content+="| Package | Latest Release | Our Version | Nixpkgs Unstable |"$'\n'
   dashboard_content+="|---------|---------------|-------------|------------------|"$'\n'
 
+  # Discover packages dynamically
+  local packages
+  mapfile -t packages < <(discover_packages)
+  
+  if [[ ${#packages[@]} -eq 0 ]]; then
+    echo -e "${RED}Error: No packages found in packages/ directory${NC}" >&2
+    exit 1
+  fi
+
+  # Store build status for platform table
+  declare -A build_status
+
   # Process each package
-  for package in gcs opencode; do
+  for package in "${packages[@]}"; do
     echo -e "${YELLOW}Processing ${package}...${NC}" >&2
+
+    # Get package metadata
+    local metadata
+    metadata=$(get_package_metadata "$package")
+    local upstream
+    upstream=$(echo "$metadata" | jq -r '.upstream // null')
+    local nixpkgs_path
+    nixpkgs_path=$(echo "$metadata" | jq -r '.nixpkgsPath // null')
+
+    # Validate upstream
+    if [[ -z "$upstream" || "$upstream" == "null" ]]; then
+      echo -e "${YELLOW}Warning: Package $package has no upstream metadata, skipping${NC}" >&2
+      continue
+    fi
 
     # Get versions
     local our_version
     our_version=$(get_nix_version "packages/${package}.nix")
 
     local latest_version
-    latest_version=$(get_latest_release "${package_info[${package}_owner]}" "${package_info[${package}_repo]}")
+    latest_version=$(get_latest_release "$upstream")
 
     local nixpkgs_version
-    nixpkgs_version=$(get_nixpkgs_version "$package")
+    nixpkgs_version=$(get_nixpkgs_version "$nixpkgs_path")
 
     # Find PR for our version
     local pr_number
     pr_number=$(find_version_pr "$package" "$our_version")
 
+    # Extract owner/repo from upstream
+    local owner repo
+    IFS='/' read -r owner repo <<< "$upstream"
+
     # Format versions with links
     local latest_link
     if [[ "$latest_version" != "unknown" ]]; then
-      latest_link="[${latest_version}](https://github.com/${package_info[${package}_owner]}/${package_info[${package}_repo]}/releases/tag/${latest_version})"
+      latest_link="[${latest_version}](https://github.com/${owner}/${repo}/releases/tag/${latest_version})"
     else
       latest_link="unknown"
     fi
 
     local our_link
     if [[ -n "$pr_number" ]]; then
-      our_link="[v${our_version}](https://github.com/ndrwstn/nixautopkgs/pull/${pr_number})"
+      # Handle version normalization for display (add 'v' prefix if not present)
+      local display_version="$our_version"
+      if [[ ! "$our_version" =~ ^v ]]; then
+        display_version="v${our_version}"
+      fi
+      our_link="[${display_version}](https://github.com/ndrwstn/nixautopkgs/pull/${pr_number})"
     else
-      our_link="v${our_version}"
+      local display_version="$our_version"
+      if [[ ! "$our_version" =~ ^v ]]; then
+        display_version="v${our_version}"
+      fi
+      our_link="$display_version"
     fi
 
     local nixpkgs_link
-    if [[ "$nixpkgs_version" != "unknown" ]]; then
-      case "$package" in
-      gcs)
-        nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix)"
-        ;;
-      opencode)
-        nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix)"
-        ;;
-      *)
+    if [[ "$nixpkgs_version" != "unknown" && "$nixpkgs_version" != "—" ]]; then
+      if [[ -n "$nixpkgs_path" && "$nixpkgs_path" != "null" ]]; then
+        local display_nixpkgs_version="$nixpkgs_version"
+        if [[ ! "$nixpkgs_version" =~ ^v ]]; then
+          display_nixpkgs_version="v${nixpkgs_version}"
+        fi
+        nixpkgs_link="[${display_nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/${nixpkgs_path})"
+      else
         nixpkgs_link="v${nixpkgs_version}"
-        ;;
-      esac
+      fi
     else
-      nixpkgs_link="—"
+      nixpkgs_link="$nixpkgs_version"
     fi
 
     # Add row to version table
     dashboard_content+="| [${package}](./packages/${package}.nix) | ${latest_link} | ${our_link} | ${nixpkgs_link} |"$'\n'
 
     # Store build status for platform table
-    declare -A "build_status_${package}"
     while IFS=: read -r platform status; do
-      eval "build_status_${package}[${platform}]=\"${status}\""
+      build_status["${package}_${platform}"]="$status"
     done < <(get_build_status "$package" "$pr_number")
   done
 
@@ -305,18 +386,27 @@ generate_dashboard() {
   dashboard_content+="| Package | x86_64-linux | aarch64-linux | x86_64-darwin | aarch64-darwin |"$'\n'
   dashboard_content+="|---------|-------------|---------------|---------------|----------------|"$'\n'
 
-  for package in gcs opencode; do
+  for package in "${packages[@]}"; do
+    # Skip packages without upstream metadata
+    local metadata
+    metadata=$(get_package_metadata "$package")
+    local upstream
+    upstream=$(echo "$metadata" | jq -r '.upstream // null')
+    
+    if [[ -z "$upstream" || "$upstream" == "null" ]]; then
+      continue
+    fi
+
     local row="| ${package}"
     for platform in x86_64-linux aarch64-linux x86_64-darwin aarch64-darwin; do
-      local status_var="build_status_${package}[${platform}]"
-      local status="${!status_var:-?}"
+      local status="${build_status["${package}_${platform}"]:-?}"
       row+=" | ${status}"
     done
     dashboard_content+="${row} |"$'\n'
   done
 
   dashboard_content+=$'\n'"*Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*"$'\n'
-    dashboard_content+="<!-- DASHBOARD:END -->"$'\n\n\n'
+  dashboard_content+="<!-- DASHBOARD:END -->"$'\n\n\n'
 
   echo "$dashboard_content"
 }
