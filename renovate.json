@@ -11,7 +11,8 @@
   "commitMessageExtra": "to {{newVersion}}",
   "branchPrefix": "update/",
   "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
-  "prBodyTemplate": "PLACEHOLDER",
+  "fetchChangeLogs": "pr",
+  "prBodyTemplate": "## Package Update\n\n**{{depName}}**: {{currentVersion}} → {{newVersion}}\n\n{{#if releaseTimestamp}}**Released**: {{releaseTimestamp}}\n\n{{/if}}{{#if body}}{{{body}}}\n\n{{/if}}{{{table}}}\n\n{{{warnings}}}\n\n{{{footer}}}",
   "customManagers": [
     {
       "customType": "regex",
