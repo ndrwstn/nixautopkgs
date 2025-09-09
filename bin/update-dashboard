@@ -13,395 +13,395 @@ NC='\033[0m' # No Color
 GITHUB_API="https://api.github.com"
 GITHUB_HEADERS=()
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    GITHUB_HEADERS=(-H "Authorization: token $GITHUB_TOKEN")
+  GITHUB_HEADERS=(-H "Authorization: token $GITHUB_TOKEN")
 fi
 
 # Function to make GitHub API calls
 github_api() {
-    local url="$1"
-    local response
-    response=$(curl -s "${GITHUB_HEADERS[@]}" "$url")
-    
-    # Check for rate limit
-    if echo "$response" | jq -e '.message' | grep -q "rate limit" 2>/dev/null; then
-        echo -e "${YELLOW}Warning: GitHub API rate limit reached${NC}" >&2
-        echo '{"error": "rate_limit"}'
-        return
-    fi
-    
-    echo "$response"
+  local url="$1"
+  local response
+  response=$(curl -s "${GITHUB_HEADERS[@]}" "$url")
+
+  # Check for rate limit
+  if echo "$response" | jq -e '.message' | grep -q "rate limit" 2>/dev/null; then
+    echo -e "${YELLOW}Warning: GitHub API rate limit reached${NC}" >&2
+    echo '{"error": "rate_limit"}'
+    return
+  fi
+
+  echo "$response"
 }
 
 # Function to get latest release from GitHub
 get_latest_release() {
-    local owner="$1"
-    local repo="$2"
-    local release_data
-    
-    release_data=$(github_api "$GITHUB_API/repos/$owner/$repo/releases/latest")
-    
-    # Check for errors
-    if [[ $(echo "$release_data" | jq -r '.error // empty') == "rate_limit" ]]; then
-        echo "unknown"
-    elif [[ $(echo "$release_data" | jq -r '.message // empty') == "Not Found" ]]; then
-        echo "unknown"
-    else
-        echo "$release_data" | jq -r '.tag_name // "unknown"'
-    fi
+  local owner="$1"
+  local repo="$2"
+  local release_data
+
+  release_data=$(github_api "$GITHUB_API/repos/$owner/$repo/releases/latest")
+
+  # Check for errors
+  if [[ $(echo "$release_data" | jq -r '.error // empty') == "rate_limit" ]]; then
+    echo "unknown"
+  elif [[ $(echo "$release_data" | jq -r '.message // empty') == "Not Found" ]]; then
+    echo "unknown"
+  else
+    echo "$release_data" | jq -r '.tag_name // "unknown"'
+  fi
 }
 
 # Function to extract version from nix file
 get_nix_version() {
-    local file="$1"
-    if [[ -f "$file" ]]; then
-        grep -E '^\s*version\s*=\s*"[^"]+";' "$file" | sed -E 's/.*"([^"]+)".*/\1/' | head -1
-    else
-        echo "unknown"
-    fi
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    grep -E '^\s*version\s*=\s*"[^"]+";' "$file" | sed -E 's/.*"([^"]+)".*/\1/' | head -1
+  else
+    echo "unknown"
+  fi
 }
 
 # Function to get nixpkgs version
 get_nixpkgs_version() {
-    local package="$1"
-    local nixpkgs_attr=""
-    
-    case "$package" in
-        gcs)
-            nixpkgs_attr="gcs"
-            ;;
-        opencode)
-            nixpkgs_attr="opencode"
-            ;;
-        *)
-            echo "unknown"
-            return
-            ;;
-    esac
-    
-    # Try to get version from nixpkgs-unstable
-    if command -v nix >/dev/null 2>&1; then
-        local version
-        version=$(nix eval --impure --expr "(import <nixpkgs> {}).${nixpkgs_attr}.version or \"unknown\"" 2>/dev/null | tr -d '"') || echo "unknown"
-        echo "${version:-unknown}"
-    else
-        echo "unknown"
-    fi
+  local package="$1"
+  local nixpkgs_attr=""
+
+  case "$package" in
+  gcs)
+    nixpkgs_attr="gcs"
+    ;;
+  opencode)
+    nixpkgs_attr="opencode"
+    ;;
+  *)
+    echo "unknown"
+    return
+    ;;
+  esac
+
+  # Try to get version from nixpkgs-unstable
+  if command -v nix >/dev/null 2>&1; then
+    local version
+    version=$(nix eval --impure --expr "(import <nixpkgs> {}).${nixpkgs_attr}.version or \"unknown\"" 2>/dev/null | tr -d '"') || echo "unknown"
+    echo "${version:-unknown}"
+  else
+    echo "unknown"
+  fi
 }
 
 # Function to find PR that updated package version
 find_version_pr() {
-    local package="$1"
-    local version="$2"
-    
-    # Search for PRs that mention the package and version
-    local search_query="repo:ndrwstn/nixautopkgs is:pr is:merged \"$package\" \"$version\""
-    local pr_data
-    pr_data=$(github_api "$GITHUB_API/search/issues?q=$(echo "$search_query" | jq -sRr @uri)&sort=created&order=desc&per_page=1")
-    
-    if [[ $(echo "$pr_data" | jq -r '.total_count // 0') -gt 0 ]]; then
-        echo "$pr_data" | jq -r '.items[0].number // ""'
-    else
-        # Fallback: look for recent PRs that modified the package file
-        local recent_prs
-        recent_prs=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls?state=closed&sort=updated&direction=desc&per_page=20")
-        
-        for pr_number in $(echo "$recent_prs" | jq -r '.[].number'); do
-            local files_changed
-            files_changed=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls/$pr_number/files")
-            
-            if echo "$files_changed" | jq -r '.[].filename' | grep -q "packages/${package}.nix"; then
-                echo "$pr_number"
-                return
-            fi
-        done
-        
-        echo ""
-    fi
+  local package="$1"
+  local version="$2"
+
+  # Search for PRs that mention the package and version
+  local search_query="repo:ndrwstn/nixautopkgs is:pr is:merged \"$package\" \"$version\""
+  local pr_data
+  pr_data=$(github_api "$GITHUB_API/search/issues?q=$(echo "$search_query" | jq -sRr @uri)&sort=created&order=desc&per_page=1")
+
+  if [[ $(echo "$pr_data" | jq -r '.total_count // 0') -gt 0 ]]; then
+    echo "$pr_data" | jq -r '.items[0].number // ""'
+  else
+    # Fallback: look for recent PRs that modified the package file
+    local recent_prs
+    recent_prs=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls?state=closed&sort=updated&direction=desc&per_page=20")
+
+    for pr_number in $(echo "$recent_prs" | jq -r '.[].number'); do
+      local files_changed
+      files_changed=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls/$pr_number/files")
+
+      if echo "$files_changed" | jq -r '.[].filename' | grep -q "packages/${package}.nix"; then
+        echo "$pr_number"
+        return
+      fi
+    done
+
+    echo ""
+  fi
 }
 
 # Function to check platform support from nix meta
 check_platform_support() {
-    local package="$1"
-    local file="packages/${package}.nix"
-    
-    # Check if package is marked as broken for specific platforms
-    local is_broken_linux_aarch64="false"
-    if grep -q "broken.*isLinux.*isAarch64" "$file" 2>/dev/null; then
-        is_broken_linux_aarch64="true"
+  local package="$1"
+  local file="packages/${package}.nix"
+
+  # Check if package is marked as broken for specific platforms
+  local is_broken_linux_aarch64="false"
+  if grep -q "broken.*isLinux.*isAarch64" "$file" 2>/dev/null; then
+    is_broken_linux_aarch64="true"
+  fi
+
+  # Default support matrix based on package
+  case "$package" in
+  gcs)
+    echo "x86_64-linux:✓"
+    if [[ "$is_broken_linux_aarch64" == "true" ]]; then
+      echo "aarch64-linux:—"
+    else
+      echo "aarch64-linux:✓"
     fi
-    
-    # Default support matrix based on package
-    case "$package" in
-        gcs)
-            echo "x86_64-linux:✓"
-            if [[ "$is_broken_linux_aarch64" == "true" ]]; then
-                echo "aarch64-linux:—"
-            else
-                echo "aarch64-linux:✓"
-            fi
-            echo "x86_64-darwin:✓"
-            echo "aarch64-darwin:✓"
-            ;;
-        opencode)
-            echo "x86_64-linux:✓"
-            echo "aarch64-linux:✓"
-            echo "x86_64-darwin:✓"
-            echo "aarch64-darwin:✓"
-            ;;
-        *)
-            echo "x86_64-linux:?"
-            echo "aarch64-linux:?"
-            echo "x86_64-darwin:?"
-            echo "aarch64-darwin:?"
-            ;;
-    esac
+    echo "x86_64-darwin:✓"
+    echo "aarch64-darwin:✓"
+    ;;
+  opencode)
+    echo "x86_64-linux:✓"
+    echo "aarch64-linux:✓"
+    echo "x86_64-darwin:✓"
+    echo "aarch64-darwin:✓"
+    ;;
+  *)
+    echo "x86_64-linux:?"
+    echo "aarch64-linux:?"
+    echo "x86_64-darwin:?"
+    echo "aarch64-darwin:?"
+    ;;
+  esac
 }
 
 # Function to get build status from GitHub Actions
 get_build_status() {
-    local package="$1"
-    local pr_number="$2"
-    
-    if [[ -z "$pr_number" ]]; then
-        echo "x86_64-linux:?"
-        echo "aarch64-linux:?"
-        echo "x86_64-darwin:?"
-        echo "aarch64-darwin:?"
-        return
-    fi
-    
-    # Get PR data to find the head SHA
-    local pr_data
-    pr_data=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls/$pr_number")
-    local head_sha
-    head_sha=$(echo "$pr_data" | jq -r '.head.sha // ""')
-    
-    if [[ -z "$head_sha" ]]; then
-        check_platform_support "$package"
-        return
-    fi
-    
-    # Get check runs for the commit
-    local check_runs
-    check_runs=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/commits/$head_sha/check-runs")
-    
-    # Parse build status for each platform
-    local platforms=("x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin")
-    for platform in "${platforms[@]}"; do
-        local status="?"
-        local check_name="Build ${platform}"
-        
-        local conclusion
-        conclusion=$(echo "$check_runs" | jq -r ".check_runs[] | select(.name == \"$check_name\") | .conclusion // \"unknown\"")
-        
-        case "$conclusion" in
-            success)
-                status="✓"
-                ;;
-            failure|cancelled|timed_out)
-                status="✗"
-                ;;
-            skipped)
-                status="—"
-                ;;
-            *)
-                # Fall back to platform support check
-                local platform_support
-                platform_support=$(check_platform_support "$package" | grep "^${platform}:" | cut -d: -f2)
-                status="${platform_support:-?}"
-                ;;
-        esac
-        
-        echo "${platform}:${status}"
-    done
+  local package="$1"
+  local pr_number="$2"
+
+  if [[ -z "$pr_number" ]]; then
+    echo "x86_64-linux:?"
+    echo "aarch64-linux:?"
+    echo "x86_64-darwin:?"
+    echo "aarch64-darwin:?"
+    return
+  fi
+
+  # Get PR data to find the head SHA
+  local pr_data
+  pr_data=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/pulls/$pr_number")
+  local head_sha
+  head_sha=$(echo "$pr_data" | jq -r '.head.sha // ""')
+
+  if [[ -z "$head_sha" ]]; then
+    check_platform_support "$package"
+    return
+  fi
+
+  # Get check runs for the commit
+  local check_runs
+  check_runs=$(github_api "$GITHUB_API/repos/ndrwstn/nixautopkgs/commits/$head_sha/check-runs")
+
+  # Parse build status for each platform
+  local platforms=("x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin")
+  for platform in "${platforms[@]}"; do
+    local status="?"
+    local check_name="Build ${platform}"
+
+    local conclusion
+    conclusion=$(echo "$check_runs" | jq -r ".check_runs[] | select(.name == \"$check_name\") | .conclusion // \"unknown\"")
+
+    case "$conclusion" in
+    success)
+      status="✓"
+      ;;
+    failure | cancelled | timed_out)
+      status="✗"
+      ;;
+    skipped)
+      status="—"
+      ;;
+    *)
+      # Fall back to platform support check
+      local platform_support
+      platform_support=$(check_platform_support "$package" | grep "^${platform}:" | cut -d: -f2)
+      status="${platform_support:-?}"
+      ;;
+    esac
+
+    echo "${platform}:${status}"
+  done
 }
 
 # Main function to generate dashboard
 generate_dashboard() {
-    local timestamp
-    timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')
-    
-    echo -e "${GREEN}Generating package dashboard...${NC}" >&2
-    
-    # Package information
-    declare -A package_info
-    package_info[gcs_owner]="richardwilkes"
-    package_info[gcs_repo]="gcs"
-    package_info[opencode_owner]="sst"
-    package_info[opencode_repo]="opencode"
-    
-    # Start building the dashboard content
-    local dashboard_content=""
-    dashboard_content+="<!-- DASHBOARD:START -->"$'\n'
-    dashboard_content+="## 📦 Package Status"$'\n'
-    dashboard_content+="*Last updated: ${timestamp} • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*"$'\n\n'
-    
-    # Version table header
-    dashboard_content+="| Package | Latest Release | Our Version | Nixpkgs Unstable |"$'\n'
-    dashboard_content+="|---------|---------------|-------------|------------------|"$'\n'
-    
-    # Process each package
-    for package in gcs opencode; do
-        echo -e "${YELLOW}Processing ${package}...${NC}" >&2
-        
-        # Get versions
-        local our_version
-        our_version=$(get_nix_version "packages/${package}.nix")
-        
-        local latest_version
-        latest_version=$(get_latest_release "${package_info[${package}_owner]}" "${package_info[${package}_repo]}")
-        
-        local nixpkgs_version
-        nixpkgs_version=$(get_nixpkgs_version "$package")
-        
-        # Find PR for our version
-        local pr_number
-        pr_number=$(find_version_pr "$package" "$our_version")
-        
-        # Format versions with links
-        local latest_link
-        if [[ "$latest_version" != "unknown" ]]; then
-            latest_link="[${latest_version}](https://github.com/${package_info[${package}_owner]}/${package_info[${package}_repo]}/releases/tag/${latest_version})"
-        else
-            latest_link="unknown"
-        fi
-        
-        local our_link
-        if [[ -n "$pr_number" ]]; then
-            our_link="[v${our_version}](https://github.com/ndrwstn/nixautopkgs/pull/${pr_number})"
-        else
-            our_link="v${our_version}"
-        fi
-        
-        local nixpkgs_link
-        if [[ "$nixpkgs_version" != "unknown" ]]; then
-            case "$package" in
-                gcs)
-                    nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix)"
-                    ;;
-                opencode)
-                    nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix)"
-                    ;;
-                *)
-                    nixpkgs_link="v${nixpkgs_version}"
-                    ;;
-            esac
-        else
-            nixpkgs_link="—"
-        fi
-        
-        # Add row to version table
-        dashboard_content+="| [${package}](./packages/${package}.nix) | ${latest_link} | ${our_link} | ${nixpkgs_link} |"$'\n'
-        
-        # Store build status for platform table
-        declare -A "build_status_${package}"
-        while IFS=: read -r platform status; do
-            eval "build_status_${package}[${platform}]=\"${status}\""
-        done < <(get_build_status "$package" "$pr_number")
+  local timestamp
+  timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')
+
+  echo -e "${GREEN}Generating package dashboard...${NC}" >&2
+
+  # Package information
+  declare -A package_info
+  package_info[gcs_owner]="richardwilkes"
+  package_info[gcs_repo]="gcs"
+  package_info[opencode_owner]="sst"
+  package_info[opencode_repo]="opencode"
+
+  # Start building the dashboard content
+  local dashboard_content=""
+  dashboard_content+="<!-- DASHBOARD:START -->"$'\n'
+  dashboard_content+="## 📦 Package Status"$'\n'
+  dashboard_content+="*Last updated: ${timestamp} • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*"$'\n\n'
+
+  # Version table header
+  dashboard_content+="| Package | Latest Release | Our Version | Nixpkgs Unstable |"$'\n'
+  dashboard_content+="|---------|---------------|-------------|------------------|"$'\n'
+
+  # Process each package
+  for package in gcs opencode; do
+    echo -e "${YELLOW}Processing ${package}...${NC}" >&2
+
+    # Get versions
+    local our_version
+    our_version=$(get_nix_version "packages/${package}.nix")
+
+    local latest_version
+    latest_version=$(get_latest_release "${package_info[${package}_owner]}" "${package_info[${package}_repo]}")
+
+    local nixpkgs_version
+    nixpkgs_version=$(get_nixpkgs_version "$package")
+
+    # Find PR for our version
+    local pr_number
+    pr_number=$(find_version_pr "$package" "$our_version")
+
+    # Format versions with links
+    local latest_link
+    if [[ "$latest_version" != "unknown" ]]; then
+      latest_link="[${latest_version}](https://github.com/${package_info[${package}_owner]}/${package_info[${package}_repo]}/releases/tag/${latest_version})"
+    else
+      latest_link="unknown"
+    fi
+
+    local our_link
+    if [[ -n "$pr_number" ]]; then
+      our_link="[v${our_version}](https://github.com/ndrwstn/nixautopkgs/pull/${pr_number})"
+    else
+      our_link="v${our_version}"
+    fi
+
+    local nixpkgs_link
+    if [[ "$nixpkgs_version" != "unknown" ]]; then
+      case "$package" in
+      gcs)
+        nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix)"
+        ;;
+      opencode)
+        nixpkgs_link="[v${nixpkgs_version}](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix)"
+        ;;
+      *)
+        nixpkgs_link="v${nixpkgs_version}"
+        ;;
+      esac
+    else
+      nixpkgs_link="—"
+    fi
+
+    # Add row to version table
+    dashboard_content+="| [${package}](./packages/${package}.nix) | ${latest_link} | ${our_link} | ${nixpkgs_link} |"$'\n'
+
+    # Store build status for platform table
+    declare -A "build_status_${package}"
+    while IFS=: read -r platform status; do
+      eval "build_status_${package}[${platform}]=\"${status}\""
+    done < <(get_build_status "$package" "$pr_number")
+  done
+
+  # Platform support table
+  dashboard_content+=$'\n'"### Platform Support"$'\n\n'
+  dashboard_content+="| Package | x86_64-linux | aarch64-linux | x86_64-darwin | aarch64-darwin |"$'\n'
+  dashboard_content+="|---------|-------------|---------------|---------------|----------------|"$'\n'
+
+  for package in gcs opencode; do
+    local row="| ${package}"
+    for platform in x86_64-linux aarch64-linux x86_64-darwin aarch64-darwin; do
+      local status_var="build_status_${package}[${platform}]"
+      local status="${!status_var:-?}"
+      row+=" | ${status}"
     done
-    
-    # Platform support table
-    dashboard_content+=$'\n'"### Platform Support"$'\n\n'
-    dashboard_content+="| Package | x86_64-linux | aarch64-linux | x86_64-darwin | aarch64-darwin |"$'\n'
-    dashboard_content+="|---------|-------------|---------------|---------------|----------------|"$'\n'
-    
-    for package in gcs opencode; do
-        local row="| ${package}"
-        for platform in x86_64-linux aarch64-linux x86_64-darwin aarch64-darwin; do
-            local status_var="build_status_${package}[${platform}]"
-            local status="${!status_var:-?}"
-            row+=" | ${status}"
-        done
-        dashboard_content+="${row} |"$'\n'
-    done
-    
-    dashboard_content+=$'\n'"*Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*"$'\n'
-    dashboard_content+="<!-- DASHBOARD:END -->"$'\n'
-    
-    echo "$dashboard_content"
+    dashboard_content+="${row} |"$'\n'
+  done
+
+  dashboard_content+=$'\n'"*Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*"$'\n'
+    dashboard_content+="<!-- DASHBOARD:END -->"$'\n\n\n'
+
+  echo "$dashboard_content"
 }
 
 # Update README.md with new dashboard
 update_readme() {
-    local dashboard_content="$1"
-    local readme_file="README.md"
-    
-    if [[ ! -f "$readme_file" ]]; then
-        echo -e "${RED}Error: README.md not found${NC}"
-        exit 1
-    fi
-    
-    # Create backup
-    cp "$readme_file" "${readme_file}.bak"
-    
-    # Save dashboard content to temp file
-    local temp_dashboard=$(mktemp)
-    printf "%s" "$dashboard_content" > "$temp_dashboard"
-    
-    # Create new README content
-    local temp_readme=$(mktemp)
-    
-    # Check if dashboard markers exist
-    if grep -q "<!-- DASHBOARD:START -->" "$readme_file"; then
-        # Replace existing dashboard
-        echo -e "${GREEN}Updating existing dashboard...${NC}"
-        
-        # Process file line by line
-        local in_dashboard=false
-        local dashboard_written=false
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            if [[ "$line" == *"<!-- DASHBOARD:START -->"* ]]; then
-                if [[ "$dashboard_written" == false ]]; then
-                    cat "$temp_dashboard"
-                    dashboard_written=true
-                fi
-                in_dashboard=true
-            elif [[ "$line" == *"<!-- DASHBOARD:END -->"* ]]; then
-                in_dashboard=false
-            elif [[ "$in_dashboard" == false ]]; then
-                echo "$line"
-            fi
-        done < "$readme_file" > "$temp_readme"
-    else
-        # Add dashboard after title and description
-        echo -e "${GREEN}Adding new dashboard...${NC}"
-        
-        # Insert after line 3
-        local line_num=0
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            line_num=$((line_num + 1))
-            echo "$line"
-            if [[ $line_num -eq 3 ]]; then
-                echo ""
-                cat "$temp_dashboard"
-            fi
-        done < "$readme_file" > "$temp_readme"
-    fi
-    
-    # Replace original file with updated content
-    mv "$temp_readme" "$readme_file"
-    
-    # Clean up
-    rm "$temp_dashboard"
-    if [[ -f "${readme_file}.bak" ]]; then
-        rm "${readme_file}.bak"
-    fi
-    
-    echo -e "${GREEN}Dashboard updated successfully!${NC}"
+  local dashboard_content="$1"
+  local readme_file="README.md"
+
+  if [[ ! -f "$readme_file" ]]; then
+    echo -e "${RED}Error: README.md not found${NC}"
+    exit 1
+  fi
+
+  # Create backup
+  cp "$readme_file" "${readme_file}.bak"
+
+  # Save dashboard content to temp file
+  local temp_dashboard=$(mktemp)
+  printf "%s" "$dashboard_content" >"$temp_dashboard"
+
+  # Create new README content
+  local temp_readme=$(mktemp)
+
+  # Check if dashboard markers exist
+  if grep -q "<!-- DASHBOARD:START -->" "$readme_file"; then
+    # Replace existing dashboard
+    echo -e "${GREEN}Updating existing dashboard...${NC}"
+
+    # Process file line by line
+    local in_dashboard=false
+    local dashboard_written=false
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      if [[ "$line" == *"<!-- DASHBOARD:START -->"* ]]; then
+        if [[ "$dashboard_written" == false ]]; then
+          cat "$temp_dashboard"
+          dashboard_written=true
+        fi
+        in_dashboard=true
+      elif [[ "$line" == *"<!-- DASHBOARD:END -->"* ]]; then
+        in_dashboard=false
+      elif [[ "$in_dashboard" == false ]]; then
+        echo "$line"
+      fi
+    done <"$readme_file" >"$temp_readme"
+  else
+    # Add dashboard after title and description
+    echo -e "${GREEN}Adding new dashboard...${NC}"
+
+    # Insert after line 3
+    local line_num=0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      line_num=$((line_num + 1))
+      echo "$line"
+      if [[ $line_num -eq 3 ]]; then
+        echo ""
+        cat "$temp_dashboard"
+      fi
+    done <"$readme_file" >"$temp_readme"
+  fi
+
+  # Replace original file with updated content
+  mv "$temp_readme" "$readme_file"
+
+  # Clean up
+  rm "$temp_dashboard"
+  if [[ -f "${readme_file}.bak" ]]; then
+    rm "${readme_file}.bak"
+  fi
+
+  echo -e "${GREEN}Dashboard updated successfully!${NC}"
 }
 
 # Main execution
 main() {
-    echo -e "${GREEN}Starting dashboard update...${NC}"
-    
-    # Generate dashboard content
-    local dashboard_content
-    dashboard_content=$(generate_dashboard)
-    
-    # Update README
-    update_readme "$dashboard_content"
-    
-    echo -e "${GREEN}Dashboard update complete!${NC}"
+  echo -e "${GREEN}Starting dashboard update...${NC}"
+
+  # Generate dashboard content
+  local dashboard_content
+  dashboard_content=$(generate_dashboard)
+
+  # Update README
+  update_readme "$dashboard_content"
+
+  echo -e "${GREEN}Dashboard update complete!${NC}"
 }
 
 # Run main function
