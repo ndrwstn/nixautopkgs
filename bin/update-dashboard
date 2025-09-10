@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-09-10 16:45 <<<"
+echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-09-10 17:15 <<<"
 
 # Colors for output
 RED='\033[0;31m'
@@ -279,7 +279,7 @@ generate_dashboard() {
 
   # Combined table header with multi-line platform headers
   dashboard_content+="| package | release | nixautopkgs | unstable | x86_64<br>linux | aarch64<br>linux | x86_64<br>darwin | aarch64<br>darwin |"$'\n'
-  dashboard_content+="|---------|---------|-------------|----------|-----------------|-------------------|-------------------|-------------------|"$'\n'
+  dashboard_content+="|---------|:-------:|:-----------:|:--------:|:---------------:|:-----------------:|:-----------------:|:-----------------:|"$'\n'
 
   # Discover packages dynamically
   local packages
@@ -428,6 +428,13 @@ update_readme() {
         in_dashboard=true
       elif [[ "$line" == *"<!-- DASHBOARD:END -->"* ]]; then
         in_dashboard=false
+        # Handle content after the END marker on the same line
+        local after_end="${line#*<!-- DASHBOARD:END -->}"
+        if [[ -n "$after_end" ]]; then
+          # Add a newline before the content to ensure proper separation
+          echo ""
+          echo "$after_end"
+        fi
       elif [[ "$in_dashboard" == false ]]; then
         echo "$line"
       fi
