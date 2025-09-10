@@ -4,7 +4,7 @@ A Nix flake providing up-to-date packages that are often behind in nixpkgs.
 
 <!-- DASHBOARD:START -->
 ## 📦 Package Status
-*Last updated: 2025-09-10 00:40 UTC • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*
+*Last updated: 2025-09-10 01:10 UTC • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*
 
 | Package | Latest Release | Our Version | Nixpkgs Unstable |
 |---------|---------------|-------------|------------------|
@@ -19,8 +19,7 @@ A Nix flake providing up-to-date packages that are often behind in nixpkgs.
 | opencode | ✓ | ✗ | ✓ | ✓ |
 
 *Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*
-<!-- DASHBOARD:END -->```nix
-{
+<!-- DASHBOARD:END -->{
   inputs = {
     # NOTE: nixpkgs-unstable required for packages to build
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
