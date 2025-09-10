@@ -12,7 +12,7 @@
   "branchPrefix": "update/",
   "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
   "fetchChangeLogs": "pr",
-  "prBodyTemplate": "This PR updates {{depName}} from {{currentValue}} to {{newValue}}{{#if releaseTimestamp}} (released {{releaseTimestamp}}){{/if}}, which:\n{{#if changelogs}}{{{changelogs}}}{{/if}}\n{{#if url}}[View release]({{{url}}}){{/if}}",
+  "prBodyTemplate": "This PR updates {{{depName}}} from {{{currentValue}}} to {{{newValue}}}{{#if releaseTimestamp}} (released {{{releaseTimestamp}}}){{/if}}, which:\n{{{changelogs}}}\n\n[View release](https://github.com/{{{depName}}}/releases/tag/v{{{newValue}}})",
   "customManagers": [
     {
       "customType": "regex",
