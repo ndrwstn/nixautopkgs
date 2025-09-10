@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-01-09 14:30 <<<"
+echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-09-10 15:35 <<<"
 
 # Colors for output
 RED='\033[0;31m'
@@ -406,7 +406,7 @@ generate_dashboard() {
   done
 
   dashboard_content+=$'\n'"*Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*"$'\n'
-  dashboard_content+="<!-- DASHBOARD:END -->"$'\n\n\n'
+  dashboard_content+="<!-- DASHBOARD:END -->"$'\n'
 
   echo "$dashboard_content"
 }
