@@ -4,12 +4,12 @@ A Nix flake providing up-to-date packages that are often behind in nixpkgs.
 
 <!-- DASHBOARD:START -->
 ## 📦 Package Status
-*Last updated: 2025-09-10 12:31 UTC • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*
+*Last updated: 2025-09-10 15:01 UTC • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*
 
 | Package | Latest Release | Our Version | Nixpkgs Unstable |
 |---------|---------------|-------------|------------------|
 | [gcs](./packages/gcs.nix) | [v5.38.1](https://github.com/richardwilkes/gcs/releases/tag/v5.38.1) | [v5.38.1](https://github.com/ndrwstn/nixautopkgs/pull/20) | [v5.37.1](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix) |
-| [opencode](./packages/opencode.nix) | [v0.7.0](https://github.com/sst/opencode/releases/tag/v0.7.0) | [v0.6.10](https://github.com/ndrwstn/nixautopkgs/pull/37) | [v0.6.4](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix) |
+| [opencode](./packages/opencode.nix) | [v0.7.0](https://github.com/sst/opencode/releases/tag/v0.7.0) | [v0.7.0](https://github.com/ndrwstn/nixautopkgs/pull/38) | [v0.6.4](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix) |
 
 ### Platform Support
 
@@ -19,8 +19,7 @@ A Nix flake providing up-to-date packages that are often behind in nixpkgs.
 | opencode | ✓ | ✗ | ✓ | ✓ |
 
 *Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*
-<!-- DASHBOARD:END -->    # NOTE: nixpkgs-unstable required for packages to build
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+<!-- DASHBOARD:END -->    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixautopkgs.url = "github:ndrwstn/nixautopkgs";
   };
 
