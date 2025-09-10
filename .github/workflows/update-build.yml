@@ -187,8 +187,10 @@ jobs:
         include:
           - platform: x86_64-linux
             runner: ubuntu-latest
-          - platform: aarch64-linux
-            runner: ubuntu-latest
+          # ARM Linux builds disabled - both gcs and opencode are marked as broken on aarch64-linux
+          # TODO: Re-enable when upstream packages add ARM Linux support
+          # - platform: aarch64-linux
+          #   runner: ubuntu-latest
           - platform: x86_64-darwin
             runner: macos-13
           - platform: aarch64-darwin
