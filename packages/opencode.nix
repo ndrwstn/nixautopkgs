@@ -192,6 +192,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://github.com/sst/opencode";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
+    broken = stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64;
     maintainers = with lib.maintainers; [
       zestsystem
       delafthi
