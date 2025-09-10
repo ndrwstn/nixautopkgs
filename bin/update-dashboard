@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-09-10 15:35 <<<"
+echo ">>> UPDATE DASHBOARD SCRIPT - LAST MODIFIED 2025-09-10 16:45 <<<"
 
 # Colors for output
 RED='\033[0;31m'
@@ -270,20 +270,16 @@ normalize_version() {
 
 # Main function to generate dashboard
 generate_dashboard() {
-  local timestamp
-  timestamp=$(date -u '+%Y-%m-%d %H:%M UTC')
-
   echo -e "${GREEN}Generating package dashboard...${NC}" >&2
 
   # Start building the dashboard content
   local dashboard_content=""
   dashboard_content+="<!-- DASHBOARD:START -->"$'\n'
-  dashboard_content+="## 📦 Package Status"$'\n'
-  dashboard_content+="*Last updated: ${timestamp} • [↻ Update](https://github.com/ndrwstn/nixautopkgs/actions/workflows/update-dashboard.yml)*"$'\n\n'
+  dashboard_content+="## Packages"$'\n\n'
 
-  # Version table header
-  dashboard_content+="| Package | Latest Release | Our Version | Nixpkgs Unstable |"$'\n'
-  dashboard_content+="|---------|---------------|-------------|------------------|"$'\n'
+  # Combined table header with multi-line platform headers
+  dashboard_content+="| package | release | nixautopkgs | unstable | x86_64<br>linux | aarch64<br>linux | x86_64<br>darwin | aarch64<br>darwin |"$'\n'
+  dashboard_content+="|---------|---------|-------------|----------|-----------------|-------------------|-------------------|-------------------|"$'\n'
 
   # Discover packages dynamically
   local packages
@@ -372,32 +368,13 @@ generate_dashboard() {
       nixpkgs_link="$nixpkgs_version"
     fi
 
-    # Add row to version table
-    dashboard_content+="| [${package}](./packages/${package}.nix) | ${latest_link} | ${our_link} | ${nixpkgs_link} |"$'\n'
-
     # Store build status for platform table
     while IFS=: read -r platform status; do
       build_status["${package}_${platform}"]="$status"
     done < <(get_build_status "$package" "$pr_number")
-  done
 
-  # Platform support table
-  dashboard_content+=$'\n'"### Platform Support"$'\n\n'
-  dashboard_content+="| Package | x86_64-linux | aarch64-linux | x86_64-darwin | aarch64-darwin |"$'\n'
-  dashboard_content+="|---------|-------------|---------------|---------------|----------------|"$'\n'
-
-  for package in "${packages[@]}"; do
-    # Skip packages without upstream metadata
-    local metadata
-    metadata=$(get_package_metadata "$package")
-    local upstream
-    upstream=$(echo "$metadata" | jq -r '.upstream // null')
-    
-    if [[ -z "$upstream" || "$upstream" == "null" ]]; then
-      continue
-    fi
-
-    local row="| ${package}"
+    # Add row to combined table with version and platform info
+    local row="| [${package}](./packages/${package}.nix) | ${latest_link} | ${our_link} | ${nixpkgs_link}"
     for platform in x86_64-linux aarch64-linux x86_64-darwin aarch64-darwin; do
       local status="${build_status["${package}_${platform}"]:-?}"
       row+=" | ${status}"
@@ -405,7 +382,10 @@ generate_dashboard() {
     dashboard_content+="${row} |"$'\n'
   done
 
-  dashboard_content+=$'\n'"*Legend: ✓ Built successfully • ✗ Build failed • — Not supported • ? Unknown*"$'\n'
+  # Add timestamp at bottom with America/New_York timezone
+  local timestamp
+  timestamp=$(TZ=America/New_York date '+%m/%d/%Y %I:%M %p %Z')
+  dashboard_content+=$'\n'"*Last updated: ${timestamp}*"$'\n'
   dashboard_content+="<!-- DASHBOARD:END -->"$'\n'
 
   echo "$dashboard_content"
