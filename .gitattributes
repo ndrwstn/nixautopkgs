@@ -1,0 +1,5 @@
+# Exclude all files from linguist detection by default
+* linguist-detectable=false
+
+# Only include .nix files for language detection
+*.nix linguist-detectable=true
