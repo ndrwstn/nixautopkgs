@@ -23,12 +23,12 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  version = "0.7.1";
+  version = "0.7.2";
   src = fetchFromGitHub {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-RU4Qq2xGPOdK/GxHAcAaJYrx31ZhZ/fFuOmvyqqr538=";
+    hash = "sha256-ZeCeYsWPaczubthPfXYyDxkZ/Il1obAQ6IGctpO4Nj8=";
   };
 
   tui = buildGoModule {
@@ -37,7 +37,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     modRoot = "packages/tui";
 
-    vendorHash = "sha256-u7jomV6lzr5QMICJ20ED6oAe7euXjsRUjuPl/YiTBfk=";
+    vendorHash = "sha256-QBuefMWoIweg28BxNlgNKHOaBAci1SDysSz9CfzlCEg=";
 
     subPackages = [ "cmd/opencode" ];
 
