@@ -12,7 +12,6 @@
   "branchPrefix": "update/",
   "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
   "fetchChangeLogs": "pr",
-  "prBodyTemplate": "This PR updates {{{depName}}} from {{{currentValue}}} to {{{newValue}}}{{#if releaseTimestamp}} (released {{{releaseTimestamp}}}){{/if}}, which:\n{{{changelogs}}}\n\n[View release](https://github.com/{{{depName}}}/releases/tag/v{{{newValue}}})",
   "customManagers": [
     {
       "customType": "regex",
@@ -31,6 +30,12 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "sst/opencode",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["sst/opencode", "richardwilkes/gcs"],
+      "prBodyTemplate": "This PR updates {{{depName}}} from {{{currentValue}}} to {{{newValue}}}{{#if releaseTimestamp}} (released {{{releaseTimestamp}}}){{/if}}, which:\n{{{changelogs}}}\n\n[View release](https://github.com/{{{depName}}}/releases/tag/v{{{newValue}}})"
     }
   ],
   "postUpdateOptions": ["nixfmtDisabled"],
