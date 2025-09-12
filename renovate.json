@@ -35,7 +35,10 @@
   "packageRules": [
     {
       "matchPackageNames": ["sst/opencode", "richardwilkes/gcs"],
-      "prBodyTemplate": "This PR updates {{{depName}}} from {{{currentValue}}} to {{{newValue}}}{{#if releaseTimestamp}} (released {{{releaseTimestamp}}}){{/if}}, which:\n{{{changelogs}}}\n\n[View release](https://github.com/{{{depName}}}/releases/tag/v{{{newValue}}})"
+      "prBodyNotes": [
+        "This PR updates a Nix package definition to use the latest release.",
+        "The package hash will be automatically updated by the build workflow."
+      ]
     }
   ],
   "postUpdateOptions": ["nixfmtDisabled"],
