@@ -9,10 +9,11 @@ and Renovate. Use at your own risk, packages are not verified except by building
 | package | release | nixautopkgs | unstable | x86_64<br>linux | aarch64<br>linux | x86_64<br>darwin | aarch64<br>darwin |
 |---------|:-------:|:-----------:|:--------:|:---------------:|:-----------------:|:-----------------:|:-----------------:|
 | [gcs](./packages/gcs.nix) | [v5.39.0](https://github.com/richardwilkes/gcs/releases/tag/v5.39.0) | [v5.39.0](https://github.com/ndrwstn/nixautopkgs/pull/45) | [v5.37.1](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix) | ✓ | — | ✓ | ✓ |
-| [opencode](./packages/opencode.nix) | [v0.8.0](https://github.com/sst/opencode/releases/tag/v0.8.0) | [v0.8.0](https://github.com/ndrwstn/nixautopkgs/pull/47) | [v0.7.1](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix) | ✓ | — | ✓ | ✓ |
+| [opencode](./packages/opencode.nix) | [v0.9.0](https://github.com/sst/opencode/releases/tag/v0.9.0) | [v0.9.0](https://github.com/ndrwstn/nixautopkgs/pull/48) | [v0.7.1](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix) | ✓ | — | ✓ | ✓ |
 
-*Last updated: 09/14/2025 09:16 PM EDT*
-<!-- DASHBOARD:END -->## Usage
+*Last updated: 09/15/2025 07:08 AM EDT*
+<!-- DASHBOARD:END -->
+## Usage
 
 Add this flake to your system configuration:
 
