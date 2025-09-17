@@ -82,10 +82,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
        bun install \
          --filter=opencode \
          --force \
-         --frozen-lockfile \
          --ignore-scripts \
-         --no-progress \
-         --production
+         --no-progress
+         # Remove `--frozen-lockfile` and `--production` — they erroneously report the lockfile needs updating even though `bun install` does not change it.
+         # Related to https://github.com/oven-sh/bun/issues/19088
+         # --frozen-lockfile \
+         # --production \
 
       runHook postBuild
     '';

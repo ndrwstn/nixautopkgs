@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-08-23 16:20 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-09-17 12:48 <<<"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -121,10 +121,12 @@ mkdir -p "$HOME"
 bun install \
 	--filter=opencode \
 	--force \
-	--frozen-lockfile \
 	--ignore-scripts \
-	--no-progress \
-	--production
+	--no-progress
+	# Remove `--frozen-lockfile` and `--production` — they erroneously report the lockfile needs updating even though `bun install` does not change it.
+	# Related to https://github.com/oven-sh/bun/issues/19088
+	# --frozen-lockfile \
+	# --production \
 
 # Create the same directory structure as the Nix derivation
 echo "Creating Nix-compatible directory structure..."
