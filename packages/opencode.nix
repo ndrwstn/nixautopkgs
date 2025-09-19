@@ -13,7 +13,7 @@ let
   testers = pkgs.testers;
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
-  opencode-node-modules-hash = "sha256-JTfm8r4IiV69XIKRVWLqh/jRjqKHyl6tJs0ygbmFwyg=";
+  opencode-node-modules-hash = "sha256-fGf2VldMlxbr9pb3B6zVL+fW1S8bRjefJW+jliTO73A=";
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
     "aarch64-linux" = "bun-linux-arm64";
@@ -28,7 +28,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-NuVv/NToZGeKyYp2kIvN3j3x+R5ZUrd9VtzuZLaD268=";
+    hash = "sha256-ii8hGDz9POkj0ZIDiF+mkaExpTvlj6ea4ggO7i7grXI=";
   };
 
   tui = buildGoModule {
@@ -37,7 +37,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     modRoot = "packages/tui";
 
-    vendorHash = "sha256-KfK3qLt05J2N1DC25E2xyViR+aXsXQ/gEXZoiQ95UuM=";
+    vendorHash = "sha256-H+TybeyyHTbhvTye0PCDcsWkcN8M34EJ2ddxyXEJkZI=";
 
     subPackages = [ "cmd/opencode" ];
 
