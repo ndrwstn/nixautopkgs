@@ -13,7 +13,12 @@ let
   testers = pkgs.testers;
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
-  opencode-node-modules-hash = "sha256-JTfm8r4IiV69XIKRVWLqh/jRjqKHyl6tJs0ygbmFwyg=";
+  opencode-node-modules-hash = {
+    "x86_64-linux" = "sha256-fGf2VldMlxbr9pb3B6zVL+fW1S8bRjefJW+jliTO73A=";
+    "aarch64-linux" = "sha256-PLACEHOLDER_LINUX_ARM64";
+    "x86_64-darwin" = "sha256-sibjZaPzA4r/CjHg0ual5ueEELDUU1jeZjDnZEMrozI=";
+    "aarch64-darwin" = "sha256-sibjZaPzA4r/CjHg0ual5ueEELDUU1jeZjDnZEMrozI=";
+  };
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
     "aarch64-linux" = "bun-linux-arm64";
@@ -23,12 +28,12 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  version = "0.9.0";
+  version = "0.10.2";
   src = fetchFromGitHub {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-NuVv/NToZGeKyYp2kIvN3j3x+R5ZUrd9VtzuZLaD268=";
+    hash = "sha256-pKlw4DPGygEwLuF+s1BDrLn3lnFZIe7HDp6eWmPUItU=";
   };
 
   tui = buildGoModule {
@@ -37,7 +42,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     modRoot = "packages/tui";
 
-    vendorHash = "sha256-KfK3qLt05J2N1DC25E2xyViR+aXsXQ/gEXZoiQ95UuM=";
+    vendorHash = "sha256-H+TybeyyHTbhvTye0PCDcsWkcN8M34EJ2ddxyXEJkZI=";
 
     subPackages = [ "cmd/opencode" ];
 
@@ -104,7 +109,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     # Required else we get errors that our fixed-output derivation references store paths
     dontFixup = true;
 
-    outputHash = opencode-node-modules-hash;
+    outputHash = opencode-node-modules-hash.${stdenv.hostPlatform.system};
     outputHashAlgo = "sha256";
     outputHashMode = "recursive";
   };
@@ -142,6 +147,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       --define OPENCODE_TUI_PATH="'${finalAttrs.tui}/bin/tui'" \
       --define OPENCODE_VERSION="'${finalAttrs.version}'" \
       --compile \
+      --compile-exec-argv="--" \
       --target=${bun-target.${stdenvNoCC.hostPlatform.system}} \
       --outfile=opencode \
       ./packages/opencode/src/index.ts \
