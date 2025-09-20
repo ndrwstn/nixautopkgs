@@ -11,9 +11,8 @@ and Renovate. Use at your own risk, packages are not verified except by building
 | [gcs](./packages/gcs.nix) | [v5.39.0](https://github.com/richardwilkes/gcs/releases/tag/v5.39.0) | [v5.39.0](https://github.com/ndrwstn/nixautopkgs/pull/45) | [v5.37.1](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/gc/gcs/package.nix) | ✓ | — | ✓ | ✓ |
 | [opencode](./packages/opencode.nix) | [v0.10.3](https://github.com/sst/opencode/releases/tag/v0.10.3) | [v0.10.2](https://github.com/ndrwstn/nixautopkgs/pull/57) | [v0.9.9](https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/op/opencode/package.nix) | ✓ | — | ✗ | ✓ |
 
-*Last updated: 09/19/2025 09:08 PM EDT*
-<!-- DASHBOARD:END -->
-## Usage
+*Last updated: 09/20/2025 08:29 AM EDT*
+<!-- DASHBOARD:END -->## Usage
 
 Add this flake to your system configuration:
 
