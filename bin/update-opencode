@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # IMPORTANT: Update this version string every time the script is modified
-echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-09-17 12:48 <<<"
+echo ">>> OPENCODE UPDATE HASH SCRIPT (NO-BUILD VERSION) - LAST MODIFIED 2025-09-27 14:30 <<< # Fixed platform-specific node_modules hash updates"
 
 PACKAGE_FILE="packages/opencode.nix"
 REPO_OWNER="sst"
@@ -174,19 +174,60 @@ update_file "s|hash = \"sha256-[^\"]*\";|hash = \"$MAIN_SOURCE_HASH\";|"
 echo "Updating vendor hash..."
 update_file "s|vendorHash = \"sha256-[^\"]*\";|vendorHash = \"$VENDOR_HASH\";|"
 
-# Update node_modules hash
+# Update node_modules hash (platform-specific)
 echo "Updating node_modules hash..."
-update_file "s|opencode-node-modules-hash = \"sha256-[^\"]*\";|opencode-node-modules-hash = \"$NODE_MODULES_HASH\";|"
+
+# Detect current platform for platform-specific hash update
+if command -v uname &> /dev/null; then
+    ARCH=$(uname -m)
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    
+    case "$ARCH-$OS" in
+        "x86_64-linux"*)
+            PLATFORM="x86_64-linux"
+            ;;
+        "aarch64-linux"*)
+            PLATFORM="aarch64-linux"
+            ;;
+        "x86_64-darwin"*)
+            PLATFORM="x86_64-darwin"
+            ;;
+        "arm64-darwin"*)
+            PLATFORM="aarch64-darwin"
+            ;;
+        *)
+            echo "Warning: Unknown platform $ARCH-$OS, defaulting to x86_64-linux"
+            PLATFORM="x86_64-linux"
+            ;;
+    esac
+else
+    echo "Warning: uname not available, defaulting to x86_64-linux"
+    PLATFORM="x86_64-linux"
+fi
+
+echo "Updating node_modules hash for platform: $PLATFORM"
+update_file "s|\"$PLATFORM\" = \"sha256-[^\"]*\";|\"$PLATFORM\" = \"$NODE_MODULES_HASH\";|"
 
 # ============================================
 # STEP 5: Verification
 # ============================================
 echo "=== Verification ==="
 
-# Show the changes
+# Show the changes and verify updates were made
 echo "Changes made:"
 if command -v diff &> /dev/null; then
-	diff -u "$PACKAGE_FILE.bak" "$PACKAGE_FILE" || true
+	diff -u "$PACKAGE_FILE.bak" "$PACKAGE_FILE"
+	DIFF_EXIT_CODE=$?
+	if [ $DIFF_EXIT_CODE -eq 0 ]; then
+		echo "No changes detected in package file!"
+		echo "This may indicate the sed patterns didn't match the file structure."
+		exit 1
+	elif [ $DIFF_EXIT_CODE -eq 1 ]; then
+		echo "Changes successfully applied!"
+	else
+		echo "Error running diff command"
+		exit 1
+	fi
 else
 	echo "diff not available, showing updated file content:"
 	grep -E "(hash|vendorHash|opencode-node-modules-hash)" "$PACKAGE_FILE"
