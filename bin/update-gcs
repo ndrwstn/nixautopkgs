@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+echo ">>> GCS UPDATE HASH SCRIPT - LAST MODIFIED 2025-09-27 14:30 <<<"
+
 PACKAGE_FILE="packages/gcs.nix"
 REPO_OWNER="richardwilkes"
 REPO_NAME="gcs"
@@ -46,15 +48,15 @@ fi
 echo "Source hash: $SOURCE_HASH"
 
 # Update version and hash in package file
-if [[ "$OSTYPE" == "darwin"* ]]; then
-	# macOS sed
-	sed -i.bak 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
-	sed -i.bak 's|hash = "[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
-else
-	# Linux sed
-	sed -i 's/version = "[^"]*";/version = "'"$VERSION"'";/' "$PACKAGE_FILE"
-	sed -i 's|hash = "[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE"
-fi
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		# macOS sed
+		sed -i.bak 's|version = "[^"]*";|version = "'"$VERSION"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+		sed -i.bak 's|hash = "sha256-[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+	else
+		# Linux sed
+		sed -i 's|version = "[^"]*";|version = "'"$VERSION"'";|' "$PACKAGE_FILE"
+		sed -i 's|hash = "sha256-[^"]*";|hash = "'"$SOURCE_HASH"'";|' "$PACKAGE_FILE"
+	fi
 
 echo "Updated $PACKAGE_FILE with version $VERSION"
 
@@ -66,9 +68,9 @@ if ! nix build .#gcs 2>&1 | tee /tmp/gcs_build.log; then
 		echo "Found new vendorHash: $NEW_VENDOR_HASH"
 
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sed -i.bak 's/vendorHash = "[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
+			sed -i.bak 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$NEW_VENDOR_HASH"'";|' "$PACKAGE_FILE" && rm -f "$PACKAGE_FILE.bak"
 		else
-			sed -i 's/vendorHash = "[^"]*";/vendorHash = "'"$NEW_VENDOR_HASH"'";/' "$PACKAGE_FILE"
+			sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = "'"$NEW_VENDOR_HASH"'";|' "$PACKAGE_FILE"
 		fi
 
 		echo "Updated vendorHash to $NEW_VENDOR_HASH"
