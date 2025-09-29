@@ -8,7 +8,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-S+3lH7huusrGrCA7flwCGT2oE/w58T/0oLJx9kIXDs8=";
+    hash = "sha256-rjJDMa4nka66Udx/zBIT31RSGGJb2357Hz9pVGEVaPg=";
   };
 
   modPostBuild = ''
