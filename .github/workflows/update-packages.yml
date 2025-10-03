@@ -125,13 +125,13 @@ jobs:
 
           echo "Updating hashes for $PACKAGE"
 
-          # Run nix-update with appropriate flags
+          # Run nix-update with appropriate flags within Nix development environment
           if [[ "$PACKAGE" == "opencode" ]]; then
             # opencode has subpackages
-            nix-update --flake --commit --build --subpackage tui --subpackage node_modules "$PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit --build --subpackage tui --subpackage node_modules $PACKAGE"
           else
             # Simple package like gcs
-            nix-update --flake --commit --build "$PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit --build $PACKAGE"
           fi
 
           echo "success=true" >> "$GITHUB_OUTPUT"
