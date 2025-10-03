@@ -71,7 +71,7 @@
                 echo "  • nix-prefetch-* - Nix fetching tools"
                 echo ""
                 echo "💡 Tips:"
-                echo "  • Run update scripts after Renovate updates versions"
+                echo "  • Hash updates are automatic via nix-update when Renovate updates versions"
                 echo "  • Use 'nix flake check' to validate the flake"
                 echo "  • Use 'nix flake show' to see all outputs"
               '';

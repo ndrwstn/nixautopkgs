@@ -4,9 +4,9 @@
 
 - **Build packages**: `nix build .#gcs` or `nix build .#opencode`
 - **Unified build**: `./bin/build-package --platform <platform> --package <package>`
-- **Development shell**: `nix develop` (includes go, bun, git, jq, nix-prefetch tools)
-- **Update packages**: Automated via Renovate
-- **Manual hash updates**: `./bin/update-gcs` or `./bin/update-opencode` (run in `nix develop`)
+- **Development shell**: `nix develop` (includes go, bun, git, jq, nix-prefetch tools, nix-update)
+- **Update packages**: Automated via Renovate + nix-update
+- **Manual hash updates**: `nix-update gcs` or `nix-update opencode` (run in `nix develop`)
 
 ## Code Style
 
@@ -20,19 +20,8 @@
 
 ## Scripts
 
-- **Update GCS**: `./bin/update-gcs`
-- **Update OpenCode**: `./bin/update-opencode`
 - **Build**: `./bin/build-package --platform <platform> --package <package>`
-
-### Script Versioning
-
-**CRITICAL**: When modifying any update script (`bin/update-*`), you MUST update the version string at the top of the script:
-
-```bash
-echo ">>> SCRIPT_NAME UPDATE HASH SCRIPT - LAST MODIFIED YYYY-MM-DD HH:MM <<<"
-```
-
-This helps track which version of the script is running in GitHub Actions logs and debug issues. The timestamp should be the actual modification time, not dynamic.
+- **Update packages**: `nix-update <package>` (uses nix-update tool)
 
 ## Project Structure
 
@@ -43,7 +32,7 @@ This helps track which version of the script is running in GitHub Actions logs a
 
 ## Workflow Pipeline
 
-1. **update-build.yml** - Unified workflow that updates hashes and builds packages from Renovate PRs
+1. **update-packages.yml** - nix-update workflow that updates hashes and builds packages from Renovate PRs
 2. **auto-merge.yml** - Merges successful builds
 
 ## Packages
