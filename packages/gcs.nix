@@ -1,5 +1,9 @@
 { pkgs }:
 
+let
+  nix-update-script = pkgs.nix-update-script;
+in
+
 pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
   pname = "gcs";
   version = "5.40.1";
@@ -47,6 +51,10 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     install -Dm755 $GOPATH/bin/gcs -t $out/bin
     runHook postInstall
   '';
+
+  passthru = {
+    updateScript = nix-update-script { };
+  };
 
   meta = with pkgs.lib; {
     changelog = "https://github.com/richardwilkes/gcs/releases/tag/v${version}";

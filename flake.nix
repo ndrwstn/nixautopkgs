@@ -27,7 +27,7 @@
             default = pkgs.mkShell {
               name = "nixautopkgs-dev";
 
-              buildInputs = with pkgs; [
+              packages = with pkgs; [
                 # Language toolchains
                 go
                 bun
@@ -38,6 +38,7 @@
                 # Nix tools
                 nix-prefetch-git
                 nix-prefetch-github
+                nix-update
 
                 # Utilities
                 jq
@@ -57,8 +58,8 @@
                 echo "╚══════════════════════════════════════════════════════════╝"
                 echo ""
                 echo "📦 Package Commands:"
-                echo "  ./bin/update-gcs       - Update GCS package hashes"
-                echo "  ./bin/update-opencode  - Update OpenCode package hashes"
+                echo "  nix-update gcs         - Update GCS package hashes"
+                echo "  nix-update opencode    - Update OpenCode package hashes"
                 echo "  nix build .#gcs        - Build GCS package"
                 echo "  nix build .#opencode   - Build OpenCode package"
                 echo ""
