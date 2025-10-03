@@ -186,7 +186,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ${{ fromJson(needs.check.outputs.supported-platforms) }}
         include:
           - platform: x86_64-linux
             runner: ubuntu-latest
@@ -225,6 +224,13 @@ jobs:
         run: |
           PACKAGE="${{ needs.check.outputs.package }}"
           PLATFORM="${{ matrix.platform }}"
+
+          # Skip if platform is marked as broken
+          if nix eval .#packages.$PLATFORM.$PACKAGE.meta.broken --json 2>/dev/null | grep -q "true"; then
+            echo "Skipping $PLATFORM - package is marked as broken"
+            exit 0
+          fi
+
            echo "Building $PACKAGE on $PLATFORM at" \
              "${{ steps.commit-sha.outputs.checkout_sha }}"
            nix build .#packages.$PLATFORM.$PACKAGE
