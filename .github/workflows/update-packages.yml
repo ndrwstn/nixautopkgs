@@ -137,13 +137,13 @@ jobs:
 
           echo "success=true" >> "$GITHUB_OUTPUT"
 
-- name: Validate updated hashes
+      - name: Validate updated hashes
         id: validate-hashes
         if: steps.update-hash.outcome == 'success'
         run: |
           PACKAGE="${{ needs.check.outputs.package }}"
           echo "Validating updated hashes for $PACKAGE"
-          
+
           # Try to build the package to validate hashes using current system
           if [[ "$PACKAGE" == "opencode" ]]; then
             # For opencode, validate the main package
@@ -160,7 +160,7 @@ jobs:
               exit 1
             }
           fi
-          
+
           echo "validation_passed=true" >> "$GITHUB_OUTPUT"
 
       - name: Check for changes
