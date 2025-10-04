@@ -33,7 +33,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-m94gdjZQXDmlmP+meTBuaaIvX0BqcfQo2skmJ+UeBMs=";
+    hash = "sha256-rQm2BRY8geXTuXwU1c5fstweK6PYWg4i3WXOyfahnts=";
   };
 
   tui = buildGoModule {
