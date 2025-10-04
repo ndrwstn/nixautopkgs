@@ -16,8 +16,8 @@ let
   opencode-node-modules-hash = {
     "x86_64-linux" = "sha256-ZIwhqdwlUO61ZXDwgjvKTJAB312pJG8bfbIHJcjdX1w=";
     "aarch64-linux" = "sha256-PLACEHOLDER_LINUX_ARM64";
-    "x86_64-darwin" = "sha256-sibjZaPzA4r/CjHg0ual5ueEELDUU1jeZjDnZEMrozI=";
-    "aarch64-darwin" = "sha256-sibjZaPzA4r/CjHg0ual5ueEELDUU1jeZjDnZEMrozI=";
+    "x86_64-darwin" = "sha256-PLACEHOLDER_DARWIN_X86";
+    "aarch64-darwin" = "sha256-KoZd2Plm5lnDCebMZdtCJuy1qwfFJYbeeY8ttIw7oc4=";
   };
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
