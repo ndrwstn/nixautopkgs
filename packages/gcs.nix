@@ -20,7 +20,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     sed -i 's|-lmupdf[^ ]* |-lmupdf |g' vendor/github.com/richardwilkes/pdf/pdf.go
   '';
 
-  vendorHash = "sha256-y4yyj3m6TuDmrr48Ansnc5fXrnV/UfLWaiu2UU8w7ic=";
+  vendorHash = "sha256-1xKRhPPRaCfe00RMool7vmCCnngtAdBCrybyp111BF4=";
 
   nativeBuildInputs = [ pkgs.pkg-config ];
 
