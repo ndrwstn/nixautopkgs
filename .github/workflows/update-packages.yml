@@ -96,7 +96,7 @@ jobs:
     outputs:
       hash-update-success: ${{ steps.update-hash.outputs.success }}
       has-changes: ${{ steps.check-changes.outputs.has_changes }}
-      commit-sha: ${{ steps.commit.outputs.commit_sha }}
+      commit-sha: ${{ steps.commit.outputs.commit_sha || steps.fallback-commit.outputs.commit_sha }}
 
     steps:
       - name: Checkout at PR head SHA
@@ -126,24 +126,53 @@ jobs:
           echo "Updating hashes for $PACKAGE"
 
           # Run nix-update with appropriate flags within Nix development environment
+          # Force hash recomputation to ensure correct hashes
           if [[ "$PACKAGE" == "opencode" ]]; then
             # opencode has subpackages
-            nix develop --command bash -c "nix-update --flake --commit --subpackage tui --subpackage node_modules $PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit --subpackage tui --subpackage node_modules --version skip $PACKAGE"
           else
             # Simple package like gcs
-            nix develop --command bash -c "nix-update --flake --commit $PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit --version skip $PACKAGE"
           fi
 
           echo "success=true" >> "$GITHUB_OUTPUT"
 
+- name: Validate updated hashes
+        id: validate-hashes
+        if: steps.update-hash.outcome == 'success'
+        run: |
+          PACKAGE="${{ needs.check.outputs.package }}"
+          echo "Validating updated hashes for $PACKAGE"
+          
+          # Try to build the package to validate hashes using current system
+          if [[ "$PACKAGE" == "opencode" ]]; then
+            # For opencode, validate the main package
+            nix build .#$PACKAGE --no-link || {
+              echo "Hash validation failed - package build failed"
+              echo "validation_failed=true" >> "$GITHUB_OUTPUT"
+              exit 1
+            }
+          else
+            # For simple packages like gcs
+            nix build .#$PACKAGE --no-link || {
+              echo "Hash validation failed - package build failed"
+              echo "validation_failed=true" >> "$GITHUB_OUTPUT"
+              exit 1
+            }
+          fi
+          
+          echo "validation_passed=true" >> "$GITHUB_OUTPUT"
+
       - name: Check for changes
         id: check-changes
-        if: steps.update-hash.outcome == 'success'
+        if: steps.update-hash.outcome == 'success' && steps.validate-hashes.outcome == 'success'
         run: |
           if git diff --quiet; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No hash changes detected"
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Hash changes detected and validated"
           fi
 
       - name: Push changes to PR branch
@@ -154,9 +183,40 @@ jobs:
           git push origin HEAD:${{ needs.check.outputs.branch-ref }}
           NEW_SHA=$(git rev-parse HEAD)
           echo "commit_sha=$NEW_SHA" >> "$GITHUB_OUTPUT"
+          echo "Pushed commit with updated hashes: $NEW_SHA"
 
-      - name: Comment on failure
-        if: failure()
+      - name: Capture current commit SHA (fallback)
+        id: fallback-commit
+        if: steps.check-changes.outputs.has_changes != 'true' && steps.update-hash.outcome == 'success'
+        run: |
+          # Even if no changes were detected, capture the current commit SHA
+          CURRENT_SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+          echo "Using current commit SHA (no changes): $CURRENT_SHA"
+
+      - name: Comment on hash validation failure
+        if: steps.validate-hashes.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `❌ Hash Validation Failed
+
+             Package: \`${{ needs.check.outputs.package }}\`
+
+            nix-update updated the hashes, but the updated package failed to build.
+            This indicates the computed hashes are incorrect.
+
+            @ndrwstn Manual intervention required to fix hash computation.
+            `;
+             await github.rest.issues.createComment({
+               issue_number: ${{ needs.check.outputs.pr-number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment,
+            });
+
+      - name: Comment on other failures
+        if: failure() && steps.validate-hashes.outcome != 'failure'
         uses: actions/github-script@v7
         with:
           script: |
@@ -201,13 +261,19 @@ jobs:
       - name: Determine commit SHA to build
         id: commit-sha
         run: |
-          if [[ -n "${{ needs.update-hashes.outputs.commit-sha }}" ]]; then
+          if [[ "${{ needs.update-hashes.result }}" == "success" && -n "${{ needs.update-hashes.outputs.commit-sha }}" ]]; then
+            echo "Using hash-updated commit: ${{ needs.update-hashes.outputs.commit-sha }}"
             echo "checkout_sha=${{ needs.update-hashes.outputs.commit-sha }}" \
               >> "$GITHUB_OUTPUT"
-           else
-              echo "checkout_sha=${{ needs.check.outputs.commit-sha }}" \
-                >> "$GITHUB_OUTPUT"
-           fi
+          elif [[ "${{ needs.update-hashes.result }}" == "success" ]]; then
+            echo "Hash update succeeded but no commit SHA available, using original PR commit"
+            echo "checkout_sha=${{ needs.check.outputs.commit-sha }}" \
+              >> "$GITHUB_OUTPUT"
+          else
+            echo "Hash update was skipped or failed, using original PR commit"
+            echo "checkout_sha=${{ needs.check.outputs.commit-sha }}" \
+              >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4
