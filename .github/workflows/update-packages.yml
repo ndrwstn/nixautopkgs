@@ -61,8 +61,8 @@ jobs:
         run: |
           PACKAGE="${{ steps.package.outputs.package }}"
           LATEST_COMMIT_MSG=$(git log -1 --pretty=format:"%s")
-          EXPECTED="chore: update $PACKAGE package hashes"
-          if [[ "$LATEST_COMMIT_MSG" == "$EXPECTED" ]]; then
+          # nix-update creates commits like "package: old_version -> new_version"
+          if [[ "$LATEST_COMMIT_MSG" =~ ^${PACKAGE}:.*->.*$ ]]; then
             echo "needs-hash-update=false" >> "$GITHUB_OUTPUT"
           else
             echo "needs-hash-update=true" >> "$GITHUB_OUTPUT"
@@ -126,13 +126,13 @@ jobs:
           echo "Updating hashes for $PACKAGE"
 
           # Run nix-update with appropriate flags within Nix development environment
-          # Force hash recomputation to ensure correct hashes
+          # nix-update will recompute hashes even when version is current
           if [[ "$PACKAGE" == "opencode" ]]; then
             # opencode has subpackages
-            nix develop --command bash -c "nix-update --flake --commit --subpackage tui --subpackage node_modules --version skip $PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit --subpackage tui --subpackage node_modules $PACKAGE"
           else
             # Simple package like gcs
-            nix develop --command bash -c "nix-update --flake --commit --version skip $PACKAGE"
+            nix develop --command bash -c "nix-update --flake --commit $PACKAGE"
           fi
 
           echo "success=true" >> "$GITHUB_OUTPUT"
