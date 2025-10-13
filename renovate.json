@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":disableDependencyDashboard"],
+  "timezone": "UTC",
+  "schedule": ["at any time"],
+  "labels": ["dependencies"],
+  "assignees": ["ndrwstn"],
+  "commitMessagePrefix": "chore:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{ lookup (split depName '/') 1 }}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "branchPrefix": "update/",
+  "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
+  "fetchChangeLogs": "pr",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update GCS version in packages/gcs.nix",
+      "fileMatch": ["^packages/gcs\\.nix$"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "richardwilkes/gcs",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenCode version in packages/opencode.nix",
+      "fileMatch": ["^packages/opencode\\.nix$"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "sst/opencode",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ]
+}
