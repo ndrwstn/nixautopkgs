@@ -6,7 +6,7 @@ in
 
 pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
   pname = "gcs";
-  version = "5.40.2";
+  version = "5.41.1";
 
   src = pkgs.fetchFromGitHub {
     owner = "richardwilkes";
