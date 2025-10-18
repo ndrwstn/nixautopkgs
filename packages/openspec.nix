@@ -1,6 +1,7 @@
 { pkgs }:
 let
   inherit (pkgs) lib;
+  nix-update-script = pkgs.nix-update-script;
 in
 pkgs.stdenv.mkDerivation (finalAttrs: {
   pname = "openspec";
@@ -50,15 +51,19 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     description = "OpenSpec is a tool for creating and sharing specifications.";
     homepage = "https://github.com/Fission-AI/OpenSpec";
-    license = pkgs.lib.licenses.mit;
-    platforms = pkgs.lib.platforms.unix;
-    maintainers = [ {
-      name = "Thomas Albrighton";
-      github = "thattomperson";
-      githubId = 1112472;
-    } ]; 
+    license = lib.licenses.mit;
+    platforms = lib.platforms.unix;
+    mainProgram = "openspec";
+    nixautopkgs = {
+      upstream = "Fission-AI/OpenSpec";
+      nixpkgsPath = "pkgs/by-name/op/openspec/package.nix";
+    };
   };
 })
