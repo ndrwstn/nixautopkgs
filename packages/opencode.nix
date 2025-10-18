@@ -14,7 +14,7 @@ let
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
   opencode-node-modules-hash = {
-    "x86_64-linux" = "sha256-xqbdh/hqHBphMHXtRIcsWyHL7TjRSO3JAopO7pBCgF0=";
+    "x86_64-linux" = "sha256-+KNCWelwdjqDNTAq/KaT/X6LTjLFhJaCk8VU9ZvsEbA=";
     "aarch64-linux" = "sha256-PLACEHOLDER_LINUX_ARM64";
     "x86_64-darwin" = "sha256-PLACEHOLDER_DARWIN_X86";
     "aarch64-darwin" = "sha256-I9D/cy1npt4FmFe70Fl0w0kOx+lpIIfEoPFatO83CTQ=";
