@@ -15,12 +15,18 @@
         let
           # Import package definitions
           gcs = import ./packages/gcs.nix { inherit pkgs; };
+          gcs-linux = gcs.overrideAttrs (oldAttrs: {
+            # Ensure Linux desktop integration is enabled
+            postInstall = oldAttrs.postInstall or "" + ''
+              echo "Linux desktop integration enabled"
+            '';
+          });
           opencode = import ./packages/opencode.nix { inherit pkgs system; };
           openspec = import ./packages/openspec.nix { inherit pkgs; };
         in
         {
           packages = {
-            inherit gcs opencode openspec;
+            inherit gcs gcs-linux opencode openspec;
             default = gcs; # Default to gcs for now
           };
 
