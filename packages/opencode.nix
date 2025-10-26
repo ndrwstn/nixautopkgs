@@ -17,7 +17,7 @@ let
     "x86_64-linux" = "sha256-zb9/x8HfGO25X/6ojyoTlSEo2/diwFbXYN2ZEwxROuI=";
     "aarch64-linux" = "sha256-PLACEHOLDER_LINUX_ARM64";
     "x86_64-darwin" = "sha256-PLACEHOLDER_DARWIN_X86";
-    "aarch64-darwin" = "sha256-LnbC9sF4DQCuQYyojbLAUNoIkanIQ7cmxjBdQosupz8=";
+    "aarch64-darwin" = "sha256-ZBRzLsxUTu1eL+I5HtxrdvNBLqsoR/PaqzXs0ZVGStw=";
   };
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
@@ -33,7 +33,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-7kv8LGWQ0QKudUDtc5h+lIyhN5DYlP7B4XQxu7SmBeU=";
+    hash = "sha256-yQfOgLJkSeBDTMS7MHuEQVzd8oG8EzQZRFYFHRO/08o=";
   };
 
   tui = buildGoModule {
