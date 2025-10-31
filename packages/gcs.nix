@@ -33,7 +33,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-PPlz3DRwkKN0nZSFKJvl/axow6LxqyA3JPzZmfEkIsM=";
+    hash = "sha256-eCWMaO1iv917aHcdln2B10oCSbmzpXvQIF/luztHwRc=";
   };
 
   modPostBuild = ''
@@ -41,7 +41,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     sed -i 's|-lmupdf[^ ]* |-lmupdf |g' vendor/github.com/richardwilkes/pdf/pdf.go
   '';
 
-  vendorHash = "sha256-LfRzNmjJe6hBhWuN5fUfFpB3nKmURZhM/wpdrcYr9jU=";
+  vendorHash = "sha256-pbt4zNbFYTXKVe9D70Lg3XVsjadnUIuPwbbV1CJNLc8=";
 
   nativeBuildInputs = [ pkgs.pkg-config ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
