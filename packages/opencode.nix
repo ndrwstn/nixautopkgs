@@ -14,10 +14,10 @@ let
   writableTmpDirAsHomeHook = pkgs.writableTmpDirAsHomeHook;
 
   opencode-node-modules-hash = {
-    "x86_64-linux" = "sha256-OGXweb3HILseJpjxsbiKuE5/M0a9/uM8gEdToydT/BE=";
+    "x86_64-linux" = "sha256-Hoqp4qdhkOJt5T22obt6X4oZcZf1ailelhiyGOoweGc=";
     "aarch64-linux" = "sha256-PLACEHOLDER_LINUX_ARM64";
     "x86_64-darwin" = "sha256-PLACEHOLDER_DARWIN_X86";
-    "aarch64-darwin" = "sha256-SQCahxOwZ/8iCA4CtrbuLf1r3QDTmmnugc+YzU/9uvo=";
+    "aarch64-darwin" = "sha256-Xs9u2iGMmKhLIEsSvbqK8aV9YuVYn9rawzgeosuT7JM=";
   };
   bun-target = {
     "aarch64-darwin" = "bun-darwin-arm64";
@@ -28,12 +28,12 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  version = "0.15.29";
+  version = "0.15.31";
   src = fetchFromGitHub {
     owner = "sst";
     repo = "opencode";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-L3IcADx0fbtnqlf8Ysc1J5DVJp6ZQtN2faBJqAFMD3g=";
+    hash = "sha256-sPi4P801iLtYXRA8zJ/Iqa23bePaoCpaswFsZCHhmf0=";
   };
 
   tui = buildGoModule {
