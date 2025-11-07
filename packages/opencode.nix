@@ -83,16 +83,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
        export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
 
-       # Disable post-install scripts to avoid shebang issues
        bun install \
          --filter=opencode \
-         --force \
+         --frozen-lockfile \
          --ignore-scripts \
          --no-progress
-         # Remove `--frozen-lockfile` and `--production` — they erroneously report the lockfile needs updating even though `bun install` does not change it.
-         # Related to https://github.com/oven-sh/bun/issues/19088
-         # --frozen-lockfile \
-         # --production \
 
       runHook postBuild
     '';
