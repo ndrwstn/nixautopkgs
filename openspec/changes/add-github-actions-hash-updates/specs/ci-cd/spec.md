@@ -11,12 +11,12 @@ The system SHALL automatically update package hashes in Nix package definitions 
 - **AND** commits the updated hash to the PR branch
 - **AND** verifies the package builds successfully on all platforms
 
-#### Scenario: OpenCode TUI component hash update
+#### Scenario: OpenSpec package hash update
 
-- **WHEN** Renovate creates a PR updating OpenCode package version
-- **THEN** the system automatically runs `nix-update --version=skip --subpackage tui opencode`
-- **AND** commits the updated TUI hash to the PR branch
-- **AND** verifies the TUI component builds successfully
+- **WHEN** Renovate creates a PR updating OpenSpec package version
+- **THEN** the system automatically runs `nix-update --version=skip openspec`
+- **AND** commits the updated hash to the PR branch
+- **AND** verifies the package builds successfully on all platforms
 
 #### Scenario: Multi-platform hash consistency
 

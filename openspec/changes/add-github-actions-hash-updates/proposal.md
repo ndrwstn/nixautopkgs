@@ -8,8 +8,7 @@ Currently, when Renovate creates PRs to update package versions, the hashes in t
 - Implement automatic hash updates using `nix-update --version=skip` for compatible packages
 - Add build verification step to ensure updated packages compile successfully
 - Support multi-platform hash updates (aarch64-darwin, x86_64-linux, x86_64-darwin, aarch64-linux)
-- Focus on packages that don't require manual intervention (starting with GCS)
-- Handle opencode package partially (TUI component works, main package requires manual intervention)
+- Focus on packages that don't require manual intervention (GCS and OpenSpec)
 
 ## Impact
 

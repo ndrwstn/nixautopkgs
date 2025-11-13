@@ -10,7 +10,7 @@
 - [ ] 2.1 Implement detection logic for affected packages in PR
 - [ ] 2.2 Create script to run `nix-update --version=skip` for detected packages
 - [ ] 2.3 Handle GCS package updates (fully automated)
-- [ ] 2.4 Handle opencode package updates (TUI component automated, main package manual)
+- [ ] 2.4 Handle OpenSpec package updates (fully automated)
 - [ ] 2.5 Implement proper error handling for failed hash updates
 
 ## 3. Build Verification
@@ -30,7 +30,7 @@
 ## 5. Testing and Validation
 
 - [ ] 5.1 Test workflow with sample Renovate PR for GCS package
-- [ ] 5.2 Test workflow with opencode package (expecting partial success)
+- [ ] 5.2 Test workflow with OpenSpec package
 - [ ] 5.3 Validate multi-platform hash updates work correctly
 - [ ] 5.4 Test error handling for various failure scenarios
 

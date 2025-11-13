@@ -8,7 +8,7 @@ The project uses Renovate for automated dependency updates, but Nix package defi
 
 - Automate hash updates for renovate PRs using GitHub Actions
 - Support multi-platform builds (aarch64-darwin, x86_64-linux, x86_64-darwin, aarch64-linux)
-- Focus on packages that don't require manual intervention (GCS works fully, OpenCode TUI works)
+- Focus on packages that don't require manual intervention (GCS and OpenSpec work fully)
 - Provide build verification after hash updates
 - Maintain PR author information and commit structure
 
@@ -41,10 +41,10 @@ The project uses Renovate for automated dependency updates, but Nix package defi
 - **Rationale**: Matches current manual process, handles hash-only updates
 - **Alternatives considered**: Full version updates - rejected due to complexity and manual intervention requirements
 
-**Decision: Separate handling for GCS vs OpenCode packages**
+**Decision: Consistent handling for all packages**
 
-- **Rationale**: GCS updates work fully automated, OpenCode requires partial manual intervention
-- **Alternatives considered**: One-size-fits-all approach - rejected due to package-specific requirements
+- **Rationale**: GCS and OpenSpec updates work fully automated with standard hash update process
+- **Alternatives considered**: Package-specific handling - rejected in favor of consistent approach
 
 ## Risks / Trade-offs
 
@@ -67,7 +67,7 @@ The project uses Renovate for automated dependency updates, but Nix package defi
 ## Migration Plan
 
 1. **Phase 1**: Implement basic workflow for GCS package only
-2. **Phase 2**: Add OpenCode TUI component support
+2. **Phase 2**: Add OpenSpec package support
 3. **Phase 3**: Add comprehensive error handling and reporting
 4. **Phase 4**: Test with real renovate PRs and refine based on feedback
 
