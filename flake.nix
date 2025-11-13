@@ -21,12 +21,11 @@
               echo "Linux desktop integration enabled"
             '';
           });
-          opencode = import ./packages/opencode.nix { inherit pkgs system; };
           openspec = import ./packages/openspec.nix { inherit pkgs; };
         in
         {
           packages = {
-            inherit gcs gcs-linux opencode openspec;
+            inherit gcs gcs-linux openspec;
             default = gcs; # Default to gcs for now
           };
 
@@ -66,10 +65,8 @@
                 echo ""
                  echo "📦 Package Commands:"
                  echo "  nix-update gcs         - Update GCS package hashes"
-                 echo "  nix-update opencode    - Update OpenCode package hashes"
                  echo "  nix-update openspec    - Update OpenSpec package hashes"
                  echo "  nix build .#gcs        - Build GCS package"
-                 echo "  nix build .#opencode   - Build OpenCode package"
                  echo "  nix build .#openspec   - Build OpenSpec package"
                 echo ""
                 echo "🛠️  Available Tools:"

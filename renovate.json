@@ -24,15 +24,6 @@
     },
     {
       "customType": "regex",
-      "description": "Update OpenCode version in packages/opencode.nix",
-      "fileMatch": ["^packages/opencode\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "sst/opencode",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
       "description": "Update OpenSpec version in packages/openspec.nix",
       "fileMatch": ["^packages/openspec\\.nix$"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
