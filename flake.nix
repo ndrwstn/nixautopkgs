@@ -5,6 +5,7 @@
     # NOTE: nixpkgs-unstable required for packages to build
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    opencode.url = "github:sst/opencode";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
@@ -26,6 +27,7 @@
         {
           packages = {
             inherit gcs gcs-linux openspec;
+            opencode = inputs.opencode.packages.${system}.default;
             default = gcs; # Default to gcs for now
           };
 

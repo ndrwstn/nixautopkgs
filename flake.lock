@@ -49,10 +49,45 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1764733908,
+        "narHash": "sha256-QJiih52NU+nm7XQWCj+K8SwUdIEayDQ1FQgjkYISt4I=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "cadcc8de247676e4751c9d4a935acb2c0b059113",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "opencode": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1764853008,
+        "narHash": "sha256-UK7CffG3TfrjctES7YgLateCetjEddPxAbQxAjrwE1Y=",
+        "owner": "sst",
+        "repo": "opencode",
+        "rev": "1d6e3d477b00df5c114903d30da31a3405f9ad5d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sst",
+        "repo": "opencode",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "opencode": "opencode"
       }
     }
   },

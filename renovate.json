@@ -12,24 +12,12 @@
   "branchPrefix": "update/",
   "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
   "fetchChangeLogs": "pr",
-  "customManagers": [
+  "packageRules": [
     {
-      "customType": "regex",
-      "description": "Update GCS version in packages/gcs.nix",
-      "fileMatch": ["^packages/gcs\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "richardwilkes/gcs",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Update OpenSpec version in packages/openspec.nix",
-      "fileMatch": ["^packages/openspec\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "Fission-AI/OpenSpec",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "matchManagers": ["nix"],
+      "matchPackageNames": ["sst/opencode"],
+      "automerge": true,
+      "automergeType": "pr"
     }
   ]
 }
