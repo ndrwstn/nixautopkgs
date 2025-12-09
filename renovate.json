@@ -45,7 +45,7 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["nix"],
+      "matchManagers": ["regex"],
       "matchPackageNames": ["sst/opencode"],
       "automerge": true,
       "automergeType": "pr"
