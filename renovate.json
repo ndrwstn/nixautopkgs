@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":disableDependencyDashboard"],
+  "gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
   "timezone": "UTC",
   "schedule": ["at any time"],
   "labels": ["dependencies"],
