@@ -37,17 +37,17 @@
       "description": "Update opencode version in flake.nix",
       "fileMatch": ["^flake\\.nix$"],
       "matchStrings": [
-        "opencode\\.url = \"github:sst/opencode/v(?<currentValue>.*?)\";"
+        "opencode\\.url = \"github:anomalyco/opencode/v(?<currentValue>.*?)\";"
       ],
       "datasourceTemplate": "github-releases",
-      "depNameTemplate": "sst/opencode",
+      "depNameTemplate": "anomalyco/opencode",
       "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "packageRules": [
     {
       "matchManagers": ["regex"],
-      "matchPackageNames": ["sst/opencode"],
+      "matchPackageNames": ["anomalyco/opencode"],
       "automerge": true,
       "automergeType": "pr"
     }
