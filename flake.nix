@@ -5,7 +5,7 @@
     # NOTE: nixpkgs-unstable required for packages to build
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    opencode.url = "github:anomalyco/opencode/v1.0.223";
+    opencode.url = "github:anomalyco/opencode/v1.1.1";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
