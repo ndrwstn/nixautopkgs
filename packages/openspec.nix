@@ -11,7 +11,7 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
     owner = "Fission-AI";
     repo = "OpenSpec";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-BhbKhcJgM1WlePx9P6/9owZLosFmjL36cgKkZiBIqQM=";
+    hash = "sha256-OvD9i1MN5U9YqL+JmLETessvatI8Eu2Rwze3ONJqZXc=";
   };
 
   nativeBuildInputs = [
@@ -23,7 +23,7 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
   pnpmDeps = pkgs.pnpm.fetchDeps {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
-    hash = "sha256-k6SkpPk16csxJmj1Zct4wl6QnOYs5K47ecKXgW+PPAY=";
+    hash = "sha256-LCXEwhhvVyuJV/rBHoo4IMrfqMgbPrbdtT3U24CpzO0=";
   };
 
   buildPhase = ''
