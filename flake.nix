@@ -28,6 +28,7 @@
           packages = {
             inherit gcs gcs-linux openspec;
             opencode = inputs.opencode.packages.${system}.default;
+            opencode-desktop = inputs.opencode.packages.${system}.desktop;
             default = gcs; # Default to gcs for now
           };
 
