@@ -5,7 +5,7 @@ let
 in
 pkgs.stdenv.mkDerivation (finalAttrs: {
   pname = "openspec";
-  version = "0.17.2";
+  version = "0.19.0";
 
   src = pkgs.fetchFromGitHub {
     owner = "Fission-AI";
