@@ -70,16 +70,16 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1769109746,
-        "narHash": "sha256-XwiQq62QltzJjZzRy49BRibhLGB30eKEwIBNlmjO/aE=",
+        "lastModified": 1769135913,
+        "narHash": "sha256-MWIwCRwEPLb2+XrNlMZ/QhV6tW4FnDfqsFbDRS4wdJo=",
         "owner": "anomalyco",
         "repo": "opencode",
-        "rev": "71ef43f9a0b820212944f73eb84908ead7d11dd9",
+        "rev": "2e53697da01d1417845567296774166350e786f1",
         "type": "github"
       },
       "original": {
         "owner": "anomalyco",
-        "ref": "v1.1.32",
+        "ref": "v1.1.33",
         "repo": "opencode",
         "type": "github"
       }
