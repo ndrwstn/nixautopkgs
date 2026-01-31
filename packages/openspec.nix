@@ -11,7 +11,7 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
     owner = "Fission-AI";
     repo = "OpenSpec";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-InoHfLQHItOFceWB0nReqxH8Az/QlBVh8T1FDIdjavs=";
+    hash = "sha256-XdE8WGXdBm9FQKZJIJtnPCqpD20ontpINlfmqFmts3U=";
   };
 
   nativeBuildInputs = [
