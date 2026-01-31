@@ -16,6 +16,7 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pkgs.nodejs
+    pkgs.pnpm
     (if pkgs ? pnpmConfigHook then pkgs.pnpmConfigHook else pkgs.pnpm.configHook)
     pkgs.makeWrapper
   ];
