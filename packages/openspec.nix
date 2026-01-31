@@ -16,11 +16,11 @@ pkgs.stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pkgs.nodejs
-    pkgs.pnpmConfigHook
+    (if pkgs ? pnpmConfigHook then pkgs.pnpmConfigHook else pkgs.pnpm.configHook)
     pkgs.makeWrapper
   ];
 
-  pnpmDeps = pkgs.fetchPnpmDeps {
+  pnpmDeps = (if pkgs ? fetchPnpmDeps then pkgs.fetchPnpmDeps else pkgs.pnpm.fetchDeps) {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
     hash = "sha256-Tj2vGOTm1Uk1iQUu1NRbMf2S02TUm/bs7Gj1l/TIGXY=";
