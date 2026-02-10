@@ -5,13 +5,13 @@ let
 in
 pkgs.stdenv.mkDerivation (finalAttrs: {
   pname = "openspec";
-  version = "1.0.2";
+  version = "1.1.1";
 
   src = pkgs.fetchFromGitHub {
     owner = "Fission-AI";
     repo = "OpenSpec";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-InoHfLQHItOFceWB0nReqxH8Az/QlBVh8T1FDIdjavs=";
+    hash = "sha256-XdE8WGXdBm9FQKZJIJtnPCqpD20ontpINlfmqFmts3U=";
   };
 
   nativeBuildInputs = [
