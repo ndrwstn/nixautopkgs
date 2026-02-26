@@ -29,14 +29,14 @@ let
 
   desktopAssetBySystem = {
     aarch64-darwin = {
-      name = "opencode-desktop-darwin-aarch64.app.tar.gz";
-      hash = "sha256-dWM7gFBeO7S9quefSsK7fElIn2ewTFeIGAXh2Hvm1dA=";
-      archiveType = "darwin-app-tar";
+      name = "opencode-desktop-darwin-aarch64.dmg";
+      hash = "sha256-veTQ8jD64TpYyGYDauwZdjWRUGKhoo8ZwTn+A8Af/u4=";
+      archiveType = "darwin-dmg";
     };
     x86_64-darwin = {
-      name = "opencode-desktop-darwin-x64.app.tar.gz";
-      hash = "sha256-b0yYuzGufXGq+0tc7W59QFNXfmEHTLBzHWXX2ruiiIo=";
-      archiveType = "darwin-app-tar";
+      name = "opencode-desktop-darwin-x64.dmg";
+      hash = "sha256-B6KCXgyfnVoU88EOCIM6WwBHnFIrhlMJBBp/swrpELw=";
+      archiveType = "darwin-dmg";
     };
     aarch64-linux = {
       name = "opencode-desktop-linux-arm64.deb";
@@ -107,18 +107,27 @@ in
     version = opencodeVersion;
     src = desktopSrc;
 
-    nativeBuildInputs = [ pkgs.binutils ];
+    nativeBuildInputs = [ pkgs.binutils ] ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.undmg ];
 
     dontUnpack = true;
+    dontStrip = true;
 
     installPhase = ''
       runHook preInstall
 
       mkdir -p "$out"
 
-      if [ "${desktopAsset.archiveType}" = "darwin-app-tar" ]; then
+      if [ "${desktopAsset.archiveType}" = "darwin-dmg" ]; then
         mkdir -p "$out/Applications" "$out/bin"
-        tar -xzf "$src" -C "$out/Applications"
+
+        mkdir -p "$TMPDIR/opencode-desktop"
+        cp "$src" "$TMPDIR/opencode-desktop/opencode-desktop.dmg"
+        (
+          cd "$TMPDIR/opencode-desktop"
+          undmg opencode-desktop.dmg
+        )
+
+        cp -R "$TMPDIR/opencode-desktop/OpenCode.app" "$out/Applications/OpenCode.app"
         ln -s "$out/Applications/OpenCode.app/Contents/MacOS/OpenCode" "$out/bin/opencode-desktop"
       else
         mkdir -p "$TMPDIR/opencode-desktop"
