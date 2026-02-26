@@ -25,15 +25,6 @@
     },
     {
       "customType": "regex",
-      "description": "Update OpenSpec version in packages/openspec.nix",
-      "fileMatch": ["^packages/openspec\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "Fission-AI/OpenSpec",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
       "description": "Update opencode version in flake.nix",
       "fileMatch": ["^flake\\.nix$"],
       "matchStrings": [

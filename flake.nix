@@ -22,11 +22,10 @@
               echo "Linux desktop integration enabled"
             '';
           });
-          openspec = import ./packages/openspec.nix { inherit pkgs; };
         in
         {
           packages = {
-            inherit gcs gcs-linux openspec;
+            inherit gcs gcs-linux;
             opencode = inputs.opencode.packages.${system}.default;
             opencode-desktop = inputs.opencode.packages.${system}.desktop;
             default = gcs; # Default to gcs for now
@@ -68,9 +67,7 @@
                 echo ""
                  echo "📦 Package Commands:"
                  echo "  nix-update gcs         - Update GCS package hashes"
-                 echo "  nix-update openspec    - Update OpenSpec package hashes"
                  echo "  nix build .#gcs        - Build GCS package"
-                 echo "  nix build .#openspec   - Build OpenSpec package"
                 echo ""
                 echo "🛠️  Available Tools:"
                 echo "  • go $(go version | cut -d' ' -f3) - Go programming language"

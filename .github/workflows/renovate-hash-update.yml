@@ -43,9 +43,6 @@ jobs:
           if echo "$CHANGED_FILES" | grep -q "packages/gcs.nix"; then
             PACKAGES="$PACKAGES gcs"
           fi
-          if echo "$CHANGED_FILES" | grep -q "packages/openspec.nix"; then
-            PACKAGES="$PACKAGES openspec"
-          fi
 
           # Check for flake.nix changes (opencode input)
           FLAKE_CHANGED="false"
