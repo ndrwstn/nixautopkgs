@@ -16,6 +16,23 @@
         let
           # Import package definitions
           gcs = import ./packages/gcs.nix { inherit pkgs; };
+          opencodeVersion = "1.2.15";
+          opencodeBin = import ./packages/opencode-bin.nix {
+            inherit pkgs system;
+            inherit opencodeVersion;
+          };
+
+          # Manual alias switches for default package attrs.
+          # Set either value to false to switch back to build-based outputs.
+          preferOpencodeCliBin = true;
+          preferOpencodeDesktopBin = true;
+
+          opencodeCliBuild = inputs.opencode.packages.${system}.default;
+          opencodeDesktopBuild = inputs.opencode.packages.${system}.desktop;
+
+          opencodeCliBin = opencodeBin."opencode-cli-bin";
+          opencodeDesktopBin = opencodeBin."opencode-desktop-bin";
+
           gcs-linux = gcs.overrideAttrs (oldAttrs: {
             # Ensure Linux desktop integration is enabled
             postInstall = oldAttrs.postInstall or "" + ''
@@ -26,8 +43,13 @@
         {
           packages = {
             inherit gcs gcs-linux;
-            opencode = inputs.opencode.packages.${system}.default;
-            opencode-desktop = inputs.opencode.packages.${system}.desktop;
+            opencode-cli-build = opencodeCliBuild;
+            opencode-desktop-build = opencodeDesktopBuild;
+            opencode-cli-bin = opencodeCliBin;
+            opencode-desktop-bin = opencodeDesktopBin;
+
+            opencode = if preferOpencodeCliBin then opencodeCliBin else opencodeCliBuild;
+            opencode-desktop = if preferOpencodeDesktopBin then opencodeDesktopBin else opencodeDesktopBuild;
             default = gcs; # Default to gcs for now
           };
 
