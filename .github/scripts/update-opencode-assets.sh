@@ -139,6 +139,6 @@ jq -S -n \
         archiveType: "deb"
       }
     }
-  }' >packages/opencode-assets.json
+  }' >packages/opencode/assets.json
 
-echo "Updated packages/opencode-assets.json for OpenCode v${version}"
+echo "Updated packages/opencode/assets.json for OpenCode v${version}"

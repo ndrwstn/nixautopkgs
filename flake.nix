@@ -9,39 +9,17 @@
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
-    let
-      opencodeAssets = builtins.fromJSON (builtins.readFile ./packages/opencode-assets.json);
-      opencodeRouting = builtins.fromJSON (builtins.readFile ./packages/opencode-routing.json);
-    in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ];
 
       perSystem = { pkgs, system, ... }:
         let
           # Import package definitions
-          gcs = import ./packages/gcs.nix { inherit pkgs; };
-          opencodeBin = import ./packages/opencode-bin.nix {
+          gcs = import ./packages/gcs/default.nix { inherit pkgs; };
+          opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
-            inherit opencodeAssets;
+            opencodeInput = inputs.opencode;
           };
-
-          routeForSystem = opencodeRouting.${system}
-            or (throw "opencode routing: unsupported system ${system}");
-
-          opencodeCliBuild = inputs.opencode.packages.${system}.default;
-          opencodeDesktopBuild = inputs.opencode.packages.${system}.desktop;
-
-          opencodeCliBin = opencodeBin."opencode-cli-bin";
-          opencodeDesktopBin = opencodeBin."opencode-desktop-bin";
-
-          resolveOpencodeRoute = target: buildPackage: binPackage:
-            let
-              route = routeForSystem.${target}
-                or (throw "opencode routing: missing `${target}` route for ${system}");
-            in
-            if route == "build" then buildPackage
-            else if route == "bin" then binPackage
-            else throw "opencode routing: invalid route `${route}` for ${system}.${target}";
 
           gcs-linux = gcs.overrideAttrs (oldAttrs: {
             # Ensure Linux desktop integration is enabled
@@ -53,13 +31,7 @@
         {
           packages = {
             inherit gcs gcs-linux;
-            opencode-cli-build = opencodeCliBuild;
-            opencode-desktop-build = opencodeDesktopBuild;
-            opencode-cli-bin = opencodeCliBin;
-            opencode-desktop-bin = opencodeDesktopBin;
-
-            opencode = resolveOpencodeRoute "cli" opencodeCliBuild opencodeCliBin;
-            opencode-desktop = resolveOpencodeRoute "desktop" opencodeDesktopBuild opencodeDesktopBin;
+          } // opencodePackages // {
             default = gcs; # Default to gcs for now
           };
 

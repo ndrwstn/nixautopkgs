@@ -5,9 +5,9 @@ on:
     branches: [master]
     paths:
       - "flake.nix"
-      - "packages/opencode-assets.json"
-      - "packages/opencode-routing.json"
-      - "packages/opencode-bin.nix"
+      - "packages/opencode/assets.json"
+      - "packages/opencode/routing.json"
+      - "packages/opencode/bin.nix"
       - ".github/scripts/*.sh"
       - ".github/workflows/opencode-routing-update.yml"
 
@@ -103,7 +103,7 @@ jobs:
       - name: Compute routing decisions
         id: routing
         run: |
-          unresolved="$(./.github/scripts/compute-opencode-routing.sh route-results packages/opencode-routing.json)"
+          unresolved="$(./.github/scripts/compute-opencode-routing.sh route-results packages/opencode/routing.json)"
           echo "unresolved=${unresolved}" >> "$GITHUB_OUTPUT"
           echo "Unresolved targets: ${unresolved}"
 
@@ -112,7 +112,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add flake.lock packages/opencode-assets.json packages/opencode-routing.json
+          git add flake.lock packages/opencode/assets.json packages/opencode/routing.json
 
           if git diff --cached --quiet; then
             echo "No OpenCode changes to commit"

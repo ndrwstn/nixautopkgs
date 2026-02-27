@@ -1,20 +1,20 @@
 { pkgs
 , system
-, opencodeAssets ? builtins.fromJSON (builtins.readFile ./opencode-assets.json)
+, opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)
 ,
 }:
 
 let
   lib = pkgs.lib;
   opencodeVersion = opencodeAssets.version
-    or (throw "opencode-bin: missing `version` in packages/opencode-assets.json");
+    or (throw "opencode-bin: missing `version` in packages/opencode/assets.json");
   releaseBaseUrl = "https://github.com/anomalyco/opencode/releases/download/v${opencodeVersion}";
 
   cliAssetBySystem = opencodeAssets.cli
-    or (throw "opencode-bin: missing `cli` map in packages/opencode-assets.json");
+    or (throw "opencode-bin: missing `cli` map in packages/opencode/assets.json");
 
   desktopAssetBySystem = opencodeAssets.desktop
-    or (throw "opencode-bin: missing `desktop` map in packages/opencode-assets.json");
+    or (throw "opencode-bin: missing `desktop` map in packages/opencode/assets.json");
 
   cliAsset = cliAssetBySystem.${system}
     or (throw "opencode-cli-bin: unsupported system ${system}");

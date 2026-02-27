@@ -89,14 +89,14 @@ jobs:
       - name: Compute routing decisions
         id: routing
         run: |
-          unresolved="$(./.github/scripts/compute-opencode-routing.sh route-results packages/opencode-routing.json)"
+          unresolved="$(./.github/scripts/compute-opencode-routing.sh route-results packages/opencode/routing.json)"
           echo "unresolved=${unresolved}" >> "$GITHUB_OUTPUT"
           echo "Unresolved targets: ${unresolved}"
 
       - name: Detect routing changes
         id: changes
         run: |
-          if [[ -n "$(git status --porcelain packages/opencode-assets.json packages/opencode-routing.json)" ]]; then
+          if [[ -n "$(git status --porcelain packages/opencode/assets.json packages/opencode/routing.json)" ]]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
@@ -116,16 +116,16 @@ jobs:
             Automated OpenCode route reconciliation.
 
             This PR updates:
-            - `packages/opencode-assets.json`
-            - `packages/opencode-routing.json`
+            - `packages/opencode/assets.json`
+            - `packages/opencode/routing.json`
 
             Routing policy:
             - prefer `build` when it succeeds
             - fallback to `bin` when `build` fails and `bin` succeeds
             - preserve previous route when both fail
           add-paths: |
-            packages/opencode-assets.json
-            packages/opencode-routing.json
+            packages/opencode/assets.json
+            packages/opencode/routing.json
 
       - name: Enable pull request automerge
         if: steps.cpr.outputs.pull-request-number != ''

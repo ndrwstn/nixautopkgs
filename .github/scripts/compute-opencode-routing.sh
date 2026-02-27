@@ -3,7 +3,7 @@
 set -euo pipefail
 
 results_dir="${1:-route-results}"
-routing_file="${2:-packages/opencode-routing.json}"
+routing_file="${2:-packages/opencode/routing.json}"
 
 systems=(
 	"aarch64-darwin"

@@ -16,8 +16,8 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Update GCS version in packages/gcs.nix",
-      "fileMatch": ["^packages/gcs\\.nix$"],
+      "description": "Update GCS version in packages/gcs/default.nix",
+      "fileMatch": ["^packages/gcs/default\\.nix$"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "richardwilkes/gcs",
