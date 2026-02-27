@@ -19,10 +19,11 @@ jobs:
   # Keep this job package-specific for now to avoid coupling unrelated package
   # update behavior, but the structure is reusable for other packages.
   update-gcs-hash:
-    if: startsWith(github.head_ref, 'update/')
+    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -33,18 +34,28 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
+
+      - name: Assert Renovate branch context
+        run: |
+          echo "head_ref=${GITHUB_HEAD_REF}"
+          echo "head_repo=${{ github.event.pull_request.head.repo.full_name }}"
+          echo "base_repo=${{ github.repository }}"
+          [[ "${GITHUB_HEAD_REF}" == update/* ]]
+          [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]
 
       - name: Update gcs hashes
         run: nix run nixpkgs#nix-update -- --flake --version=skip gcs
 
       - name: Commit and push changes
+        id: commit-push
         run: |
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No hash changes detected"
+            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -53,3 +64,13 @@ jobs:
           git add packages/gcs/default.nix
           git commit -m "chore: update gcs hashes"
           git push
+          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Report check status on latest commit
+        if: steps.commit-push.outputs.new_sha != ''
+        uses: LouisBrunner/checks-action@6b626ffbad7cc56fd58627f774b9067e6118af23 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: renovate-gcs-hash-update
+          sha: ${{ steps.commit-push.outputs.new_sha }}
+          conclusion: success

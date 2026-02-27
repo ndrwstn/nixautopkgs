@@ -4,9 +4,11 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - "flake.lock"
       - "flake.nix"
       - "packages/opencode/assets.json"
       - "packages/opencode/routing.json"
+      - "packages/opencode/default.nix"
       - "packages/opencode/bin.nix"
       - ".github/scripts/*.sh"
       - ".github/workflows/opencode-routing-update.yml"
@@ -41,10 +43,10 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
 
       - name: Sync OpenCode lock and asset hashes
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
@@ -66,6 +68,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -76,10 +79,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
+
+      - name: Assert Renovate branch context
+        run: |
+          echo "head_ref=${GITHUB_HEAD_REF}"
+          echo "head_repo=${{ github.event.pull_request.head.repo.full_name }}"
+          echo "base_repo=${{ github.repository }}"
+          [[ "${GITHUB_HEAD_REF}" == update/* ]]
+          [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]
 
       - name: Sync OpenCode lock and asset hashes
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
@@ -114,6 +125,7 @@ jobs:
           exit 1
 
       - name: Commit and push updates
+        id: commit-push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -122,8 +134,19 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No OpenCode changes to commit"
+            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git commit -m "chore: update opencode assets and routing"
           git push
+          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Report check status on latest commit
+        if: steps.commit-push.outputs.new_sha != ''
+        uses: LouisBrunner/checks-action@6b626ffbad7cc56fd58627f774b9067e6118af23 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: opencode-routing-update
+          sha: ${{ steps.commit-push.outputs.new_sha }}
+          conclusion: success
