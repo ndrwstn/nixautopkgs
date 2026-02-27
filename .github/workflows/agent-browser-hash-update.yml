@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - "packages/agent-browser/default.nix"
+      - "packages/agent-browser/package-lock.json"
       - ".github/scripts/update-agent-browser-hashes.sh"
       - ".github/workflows/agent-browser-hash-update.yml"
 
@@ -56,7 +57,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add packages/agent-browser/default.nix
+          git add packages/agent-browser/default.nix packages/agent-browser/package-lock.json
           git commit -m "chore: update agent-browser hashes"
           git push
           echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

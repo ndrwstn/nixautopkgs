@@ -5,11 +5,50 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
-nix run nixpkgs#nix-update -- --flake --version=skip agent-browser
-
 package_file="packages/agent-browser/default.nix"
+lockfile_path="packages/agent-browser/package-lock.json"
 build_log="$(mktemp)"
 max_attempts=8
+
+extract_version() {
+	python3 - "$package_file" <<'PY'
+import pathlib
+import re
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+match = re.search(r'^\s*version\s*=\s*"([^"]+)";', text, re.MULTILINE)
+if not match:
+    raise SystemExit("Could not find version in packages/agent-browser/default.nix")
+
+print(match.group(1))
+PY
+}
+
+sync_lockfile_from_upstream() {
+	local version="$1"
+	local tarball_url="https://github.com/vercel-labs/agent-browser/archive/refs/tags/v${version}.tar.gz"
+	local temp_dir
+	temp_dir="$(mktemp -d)"
+	local source_dir="$temp_dir/agent-browser-${version}"
+
+	trap 'rm -rf "$temp_dir"' RETURN
+
+	echo "Generating package-lock.json for v${version}"
+	curl -fsSL "$tarball_url" | tar -xzf - -C "$temp_dir"
+
+	if [[ ! -f "$source_dir/package.json" ]]; then
+		echo "Expected package.json at $source_dir/package.json" >&2
+		exit 1
+	fi
+
+	(
+		cd "$source_dir"
+		nix shell nixpkgs#nodejs --command npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+	)
+
+	cp "$source_dir/package-lock.json" "$lockfile_path"
+}
 
 update_hash_field() {
 	local field="$1"
@@ -65,6 +104,11 @@ else:
 print(f"{field}|{got_hash}|{drv}")
 PY
 }
+
+version="$(extract_version)"
+sync_lockfile_from_upstream "$version"
+
+nix run nixpkgs#nix-update -- --flake --version=skip agent-browser
 
 echo "Converging agent-browser hashes"
 
