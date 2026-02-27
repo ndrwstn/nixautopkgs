@@ -33,12 +33,27 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "anomalyco/opencode",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update agent-browser version in packages/agent-browser/default.nix",
+      "fileMatch": ["^packages/agent-browser/default\\.nix$"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "vercel-labs/agent-browser",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "packageRules": [
     {
       "matchManagers": ["regex"],
       "matchPackageNames": ["anomalyco/opencode"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["vercel-labs/agent-browser"],
       "automerge": true,
       "automergeType": "pr"
     }
