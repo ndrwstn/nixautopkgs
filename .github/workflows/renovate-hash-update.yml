@@ -1,21 +1,22 @@
-name: Update Nix Hashes on Renovate PRs
+name: Update GCS Hashes on Renovate PRs
 
 on:
   pull_request:
     branches: [master]
     paths:
-      - "packages/*.nix"
-      - "flake.nix"
+      - "packages/gcs.nix"
+      - ".github/workflows/renovate-hash-update.yml"
+
+concurrency:
+  group: renovate-hash-update-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  update-hashes:
-    # Only run on Renovate PRs
+  update-gcs-hash:
     if: startsWith(github.head_ref, 'update/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
-      pull-requests: write
-      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -31,69 +32,18 @@ jobs:
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Detect changed packages
-        id: changes
-        run: |
-          # Get list of changed .nix files
-          CHANGED_FILES=$(git diff --name-only origin/master...HEAD)
-          echo "Changed files: $CHANGED_FILES"
-
-          # Check for package changes
-          PACKAGES=""
-          if echo "$CHANGED_FILES" | grep -q "packages/gcs.nix"; then
-            PACKAGES="$PACKAGES gcs"
-          fi
-
-          # Check for flake.nix changes (opencode input)
-          FLAKE_CHANGED="false"
-          if echo "$CHANGED_FILES" | grep -q "flake.nix"; then
-            FLAKE_CHANGED="true"
-          fi
-
-          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
-          echo "flake_changed=$FLAKE_CHANGED" >> $GITHUB_OUTPUT
-          echo "Packages to update: $PACKAGES"
-          echo "Flake changed: $FLAKE_CHANGED"
-
-      - name: Update package hashes
-        if: steps.changes.outputs.packages != ''
-        run: |
-          for pkg in ${{ steps.changes.outputs.packages }}; do
-            echo "Updating hashes for $pkg..."
-            nix run nixpkgs#nix-update -- --flake --version=skip "$pkg" || true
-          done
-
-      - name: Update flake.lock for opencode
-        if: steps.changes.outputs.flake_changed == 'true'
-        run: |
-          echo "Updating flake.lock for opencode input..."
-          nix flake update opencode
-
-      - name: Check for changes
-        id: git-check
-        run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Update gcs hashes
+        run: nix run nixpkgs#nix-update -- --flake --version=skip gcs
 
       - name: Commit and push changes
-        id: commit-push
-        if: steps.git-check.outputs.has_changes == 'true'
         run: |
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No hash changes detected"
+            exit 0
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "chore: update nix hashes"
+          git add packages/gcs.nix
+          git commit -m "chore: update gcs hashes"
           git push
-          echo "new_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Report check status on new commit
-        if: steps.git-check.outputs.has_changes == 'true'
-        uses: LouisBrunner/checks-action@v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: update-hashes
-          sha: ${{ steps.commit-push.outputs.new_sha }}
-          conclusion: success

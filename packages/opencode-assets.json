@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "aarch64-darwin": {
+      "archiveType": "zip",
+      "hash": "sha256-QUTNt65NGDlk17I73TcGHtUnYbveflV2Pg69EpmMHl4=",
+      "name": "opencode-darwin-arm64.zip"
+    },
+    "aarch64-linux": {
+      "archiveType": "tar.gz",
+      "hash": "sha256-3UyldkoJP5LYUVgz1cWOq8ZX5yzcPvK6OsEeDbdJuA0=",
+      "name": "opencode-linux-arm64.tar.gz"
+    },
+    "x86_64-darwin": {
+      "archiveType": "zip",
+      "hash": "sha256-ukTTi3x6FWdSRtlfJfH8T2tvv1IpwI1HgTq5jzUDp+M=",
+      "name": "opencode-darwin-x64.zip"
+    },
+    "x86_64-linux": {
+      "archiveType": "tar.gz",
+      "hash": "sha256-eLAZRkZOk1ybeSYe2kpI9AZiGweHo1j+YHtscTBfMg4=",
+      "name": "opencode-linux-x64.tar.gz"
+    }
+  },
+  "desktop": {
+    "aarch64-darwin": {
+      "archiveType": "darwin-dmg",
+      "hash": "sha256-veTQ8jD64TpYyGYDauwZdjWRUGKhoo8ZwTn+A8Af/u4=",
+      "name": "opencode-desktop-darwin-aarch64.dmg"
+    },
+    "aarch64-linux": {
+      "archiveType": "deb",
+      "hash": "sha256-wlEfUjNASbo0xkC4gfwTwmWghkv1rEahKvOLhWJUL2c=",
+      "name": "opencode-desktop-linux-arm64.deb"
+    },
+    "x86_64-darwin": {
+      "archiveType": "darwin-dmg",
+      "hash": "sha256-B6KCXgyfnVoU88EOCIM6WwBHnFIrhlMJBBp/swrpELw=",
+      "name": "opencode-desktop-darwin-x64.dmg"
+    },
+    "x86_64-linux": {
+      "archiveType": "deb",
+      "hash": "sha256-TJmFT+ZUtnb3O7LG2xrJJKJBt+VNkTs4jk45j8mnHPE=",
+      "name": "opencode-desktop-linux-amd64.deb"
+    }
+  },
+  "version": "1.2.15"
+}

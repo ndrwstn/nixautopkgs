@@ -1,54 +1,20 @@
-{ pkgs, system, opencodeVersion ? "1.2.15" }:
+{ pkgs
+, system
+, opencodeAssets ? builtins.fromJSON (builtins.readFile ./opencode-assets.json)
+,
+}:
 
 let
   lib = pkgs.lib;
+  opencodeVersion = opencodeAssets.version
+    or (throw "opencode-bin: missing `version` in packages/opencode-assets.json");
   releaseBaseUrl = "https://github.com/anomalyco/opencode/releases/download/v${opencodeVersion}";
 
-  cliAssetBySystem = {
-    aarch64-darwin = {
-      name = "opencode-darwin-arm64.zip";
-      hash = "sha256-QUTNt65NGDlk17I73TcGHtUnYbveflV2Pg69EpmMHl4=";
-      archiveType = "zip";
-    };
-    x86_64-darwin = {
-      name = "opencode-darwin-x64.zip";
-      hash = "sha256-ukTTi3x6FWdSRtlfJfH8T2tvv1IpwI1HgTq5jzUDp+M=";
-      archiveType = "zip";
-    };
-    aarch64-linux = {
-      name = "opencode-linux-arm64.tar.gz";
-      hash = "sha256-3UyldkoJP5LYUVgz1cWOq8ZX5yzcPvK6OsEeDbdJuA0=";
-      archiveType = "tar.gz";
-    };
-    x86_64-linux = {
-      name = "opencode-linux-x64.tar.gz";
-      hash = "sha256-eLAZRkZOk1ybeSYe2kpI9AZiGweHo1j+YHtscTBfMg4=";
-      archiveType = "tar.gz";
-    };
-  };
+  cliAssetBySystem = opencodeAssets.cli
+    or (throw "opencode-bin: missing `cli` map in packages/opencode-assets.json");
 
-  desktopAssetBySystem = {
-    aarch64-darwin = {
-      name = "opencode-desktop-darwin-aarch64.dmg";
-      hash = "sha256-veTQ8jD64TpYyGYDauwZdjWRUGKhoo8ZwTn+A8Af/u4=";
-      archiveType = "darwin-dmg";
-    };
-    x86_64-darwin = {
-      name = "opencode-desktop-darwin-x64.dmg";
-      hash = "sha256-B6KCXgyfnVoU88EOCIM6WwBHnFIrhlMJBBp/swrpELw=";
-      archiveType = "darwin-dmg";
-    };
-    aarch64-linux = {
-      name = "opencode-desktop-linux-arm64.deb";
-      hash = "sha256-wlEfUjNASbo0xkC4gfwTwmWghkv1rEahKvOLhWJUL2c=";
-      archiveType = "deb";
-    };
-    x86_64-linux = {
-      name = "opencode-desktop-linux-amd64.deb";
-      hash = "sha256-TJmFT+ZUtnb3O7LG2xrJJKJBt+VNkTs4jk45j8mnHPE=";
-      archiveType = "deb";
-    };
-  };
+  desktopAssetBySystem = opencodeAssets.desktop
+    or (throw "opencode-bin: missing `desktop` map in packages/opencode-assets.json");
 
   cliAsset = cliAssetBySystem.${system}
     or (throw "opencode-cli-bin: unsupported system ${system}");

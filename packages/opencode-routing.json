@@ -1,0 +1,18 @@
+{
+  "aarch64-darwin": {
+    "cli": "bin",
+    "desktop": "bin"
+  },
+  "x86_64-darwin": {
+    "cli": "bin",
+    "desktop": "bin"
+  },
+  "aarch64-linux": {
+    "cli": "bin",
+    "desktop": "bin"
+  },
+  "x86_64-linux": {
+    "cli": "bin",
+    "desktop": "bin"
+  }
+}

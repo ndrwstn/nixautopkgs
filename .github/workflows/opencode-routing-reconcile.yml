@@ -1,0 +1,142 @@
+name: Reconcile OpenCode Routing
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: opencode-routing-reconcile
+  cancel-in-progress: true
+
+jobs:
+  build-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: aarch64-darwin
+            runner: macos-15
+          - system: x86_64-darwin
+            runner: macos-15-intel
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Sync OpenCode asset hashes
+        run: ./.github/scripts/update-opencode-assets.sh
+
+      - name: Run OpenCode build/bin checks
+        run: ./.github/scripts/run-opencode-checks.sh "${{ matrix.system }}" result.json
+
+      - name: Upload system result
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-result-${{ matrix.system }}
+          path: result.json
+          retention-days: 1
+
+  reconcile:
+    needs: build-matrix
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Sync OpenCode asset hashes
+        run: ./.github/scripts/update-opencode-assets.sh
+
+      - name: Download matrix results
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: route-result-*
+
+      - name: Normalize matrix artifacts
+        run: |
+          mkdir -p route-results
+          for result_dir in artifacts/route-result-*; do
+            if [[ -d "$result_dir" ]]; then
+              system_name="${result_dir##*route-result-}"
+              cp "$result_dir/result.json" "route-results/${system_name}.json"
+            fi
+          done
+
+      - name: Compute routing decisions
+        id: routing
+        run: |
+          unresolved="$(./.github/scripts/compute-opencode-routing.sh route-results packages/opencode-routing.json)"
+          echo "unresolved=${unresolved}" >> "$GITHUB_OUTPUT"
+          echo "Unresolved targets: ${unresolved}"
+
+      - name: Detect routing changes
+        id: changes
+        run: |
+          if [[ -n "$(git status --porcelain packages/opencode-assets.json packages/opencode-routing.json)" ]]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create reconciliation pull request
+        id: cpr
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/opencode-routing-reconcile
+          delete-branch: true
+          title: "chore: reconcile opencode routing"
+          commit-message: "chore: reconcile opencode routing"
+          body: |
+            Automated OpenCode route reconciliation.
+
+            This PR updates:
+            - `packages/opencode-assets.json`
+            - `packages/opencode-routing.json`
+
+            Routing policy:
+            - prefer `build` when it succeeds
+            - fallback to `bin` when `build` fails and `bin` succeeds
+            - preserve previous route when both fail
+          add-paths: |
+            packages/opencode-assets.json
+            packages/opencode-routing.json
+
+      - name: Enable pull request automerge
+        if: steps.cpr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
+
+      - name: Fail when no viable route exists
+        if: steps.routing.outputs.unresolved != '0'
+        run: |
+          echo "::error::One or more system/target pairs had neither build nor bin available."
+          exit 1
