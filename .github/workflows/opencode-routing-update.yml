@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-matrix:
-    if: startsWith(github.head_ref, 'update/') && contains(github.head_ref, 'anomalyco-opencode')
+    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -60,7 +60,7 @@ jobs:
           retention-days: 1
 
   aggregate-and-commit:
-    if: startsWith(github.head_ref, 'update/') && contains(github.head_ref, 'anomalyco-opencode')
+    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
     needs: build-matrix
     runs-on: ubuntu-24.04
     permissions:
@@ -107,6 +107,12 @@ jobs:
           echo "unresolved=${unresolved}" >> "$GITHUB_OUTPUT"
           echo "Unresolved targets: ${unresolved}"
 
+      - name: Fail when no viable route exists
+        if: steps.routing.outputs.unresolved != '0'
+        run: |
+          echo "::error::One or more system/target pairs had neither build nor bin available."
+          exit 1
+
       - name: Commit and push updates
         run: |
           git config user.name "github-actions[bot]"
@@ -121,9 +127,3 @@ jobs:
 
           git commit -m "chore: update opencode assets and routing"
           git push
-
-      - name: Fail when no viable route exists
-        if: steps.routing.outputs.unresolved != '0'
-        run: |
-          echo "::error::One or more system/target pairs had neither build nor bin available."
-          exit 1
