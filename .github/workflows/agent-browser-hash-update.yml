@@ -31,9 +31,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
-
       - name: Assert Renovate branch context
         run: |
           echo "head_ref=${GITHUB_HEAD_REF}"
