@@ -3,6 +3,10 @@ name: Update GCS Hashes on Renovate PRs
 on:
   pull_request:
     branches: [master]
+    # This workflow is intentionally scoped to GCS right now.
+    # It is the generic hash-refresh pattern for Renovate PRs and can be
+    # expanded to additional package paths as more packages need post-update
+    # hash regeneration.
     paths:
       - "packages/gcs/default.nix"
       - ".github/workflows/renovate-hash-update.yml"
@@ -12,6 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Keep this job package-specific for now to avoid coupling unrelated package
+  # update behavior, but the structure is reusable for other packages.
   update-gcs-hash:
     if: startsWith(github.head_ref, 'update/')
     runs-on: ubuntu-24.04
