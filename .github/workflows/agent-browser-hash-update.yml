@@ -67,6 +67,6 @@ jobs:
         uses: LouisBrunner/checks-action@6b626ffbad7cc56fd58627f774b9067e6118af23 # v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: renovate-agent-browser-hash-update
+          name: update-hashes
           sha: ${{ steps.commit-push.outputs.new_sha }}
           conclusion: success
