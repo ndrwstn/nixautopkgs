@@ -17,6 +17,8 @@
           # Import package definitions
           gcs = import ./packages/gcs/default.nix { inherit pkgs; };
           agent-browser = pkgs.callPackage ./packages/agent-browser/default.nix { };
+          surya = pkgs.callPackage ./packages/surya/default.nix { };
+          marker = pkgs.callPackage ./packages/marker/default.nix { inherit surya; };
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
             opencodeInput = inputs.opencode;
@@ -31,7 +33,7 @@
         in
         {
           packages = {
-            inherit gcs gcs-linux agent-browser;
+            inherit gcs gcs-linux agent-browser surya marker;
           } // opencodePackages // {
             default = gcs; # Default to gcs for now
           };
