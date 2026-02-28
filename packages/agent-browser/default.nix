@@ -1,6 +1,7 @@
 { lib
 , buildNpmPackage
 , fetchFromGitHub
+, fetchNpmDeps
 , chromium
 , makeBinaryWrapper
 , nodejs-slim
@@ -37,7 +38,13 @@ buildNpmPackage {
   pname = "agent-browser";
   inherit version src;
 
-  inherit npmDepsHash;
+  npmDeps = fetchNpmDeps {
+    inherit src;
+    hash = npmDepsHash;
+    postPatch = ''
+      cp ${./package-lock.json} package-lock.json
+    '';
+  };
   makeCacheWritable = true;
 
   nativeBuildInputs = [ makeBinaryWrapper ];
@@ -47,7 +54,7 @@ buildNpmPackage {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmFlags = [ "--ignore-scripts" ];
+  npmFlags = [ "--ignore-scripts" "--legacy-peer-deps" ];
 
   buildPhase = ''
     runHook preBuild

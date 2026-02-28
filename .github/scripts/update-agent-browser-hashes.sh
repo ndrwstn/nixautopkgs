@@ -11,6 +11,11 @@ build_log="$(mktemp)"
 max_attempts=8
 
 extract_version() {
+	if [[ -n "${AGENT_BROWSER_VERSION:-}" ]]; then
+		echo "$AGENT_BROWSER_VERSION"
+		return
+	fi
+
 	python3 - "$package_file" <<'PY'
 import pathlib
 import re
@@ -27,14 +32,14 @@ PY
 
 sync_lockfile_from_upstream() {
 	local version="$1"
-	local tarball_url="https://github.com/vercel-labs/agent-browser/archive/refs/tags/v${version}.tar.gz"
+	local tarball_url="https://registry.npmjs.org/agent-browser/-/agent-browser-${version}.tgz"
 	local temp_dir
 	temp_dir="$(mktemp -d)"
-	local source_dir="$temp_dir/agent-browser-${version}"
+	local source_dir="$temp_dir/package"
 
 	trap 'rm -rf "$temp_dir"' RETURN
 
-	echo "Generating package-lock.json for v${version}"
+	echo "Syncing package-lock.json for v${version} from npm tarball"
 	curl -fsSL "$tarball_url" | tar -xzf - -C "$temp_dir"
 
 	if [[ ! -f "$source_dir/package.json" ]]; then
@@ -42,9 +47,15 @@ sync_lockfile_from_upstream() {
 		exit 1
 	fi
 
+	if [[ -f "$source_dir/package-lock.json" ]]; then
+		cp "$source_dir/package-lock.json" "$lockfile_path"
+		return
+	fi
+
+	echo "npm tarball does not include package-lock.json; generating with npm"
 	(
 		cd "$source_dir"
-		nix shell nixpkgs#nodejs --command npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+		nix shell nixpkgs#nodejs --command npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
 	)
 
 	cp "$source_dir/package-lock.json" "$lockfile_path"
