@@ -15,6 +15,11 @@ let
       hash = "sha256-XnxiPi10lBBccm3RD2+QwsmaVevobu9yM3ZavQyxxSk=";
     };
 
+    postPatch = ''
+      substituteInPlace src/transformers/dependency_versions_table.py \
+        --replace-fail '"huggingface-hub>=0.34.0,<1.0"' '"huggingface-hub>=0.34.0,<2.0"'
+    '';
+
     nativeBuildInputs = with python3Packages; [
       setuptools
       wheel
