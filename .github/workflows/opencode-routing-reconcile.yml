@@ -44,7 +44,7 @@ jobs:
         run: ./.github/scripts/run-opencode-checks.sh "${{ matrix.system }}" result.json
 
       - name: Upload system result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: route-result-${{ matrix.system }}
           path: result.json
@@ -71,7 +71,7 @@ jobs:
         run: ./.github/scripts/update-opencode-assets.sh
 
       - name: Download matrix results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: route-result-*
