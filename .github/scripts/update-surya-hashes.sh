@@ -24,7 +24,7 @@ value = sys.argv[3]
 
 pattern = re.compile(rf'(^\s*{re.escape(field)}\s*=\s*")[^"]*(";\s*$)', re.MULTILINE)
 text = path.read_text()
-updated, count = pattern.subn(rf'\1{value}\2', text, count=1)
+updated, count = pattern.subn(lambda m: f'{m.group(1)}{value}{m.group(2)}', text, count=1)
 
 if count != 1:
     raise SystemExit(f"Could not update field: {field}")
