@@ -42,24 +42,6 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "vercel-labs/agent-browser",
       "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Update marker version in packages/marker/default.nix",
-      "fileMatch": ["^packages/marker/default\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "datalab-to/marker",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "description": "Update surya version in packages/surya/default.nix",
-      "fileMatch": ["^packages/surya/default\\.nix$"],
-      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "datalab-to/surya",
-      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "packageRules": [
@@ -72,18 +54,6 @@
     {
       "matchManagers": ["regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
-      "automerge": true,
-      "automergeType": "pr"
-    },
-    {
-      "matchManagers": ["regex"],
-      "matchPackageNames": ["datalab-to/marker"],
-      "automerge": true,
-      "automergeType": "pr"
-    },
-    {
-      "matchManagers": ["regex"],
-      "matchPackageNames": ["datalab-to/surya"],
       "automerge": true,
       "automergeType": "pr"
     }
