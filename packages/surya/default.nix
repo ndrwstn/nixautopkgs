@@ -4,14 +4,38 @@
 }:
 
 let
-  transformersCompat = python3Packages.transformers.overridePythonAttrs (_: rec {
+  transformersCompat = python3Packages.buildPythonPackage rec {
+    pname = "transformers";
     version = "4.56.2";
+    format = "setuptools";
+
     src = python3Packages.fetchPypi {
       pname = "transformers";
       inherit version;
       hash = "sha256-XnxiPi10lBBccm3RD2+QwsmaVevobu9yM3ZavQyxxSk=";
     };
-  });
+
+    nativeBuildInputs = with python3Packages; [
+      setuptools
+      wheel
+    ];
+
+    dependencies = with python3Packages; [
+      filelock
+      huggingface-hub
+      numpy
+      packaging
+      pyyaml
+      regex
+      requests
+      safetensors
+      tokenizers
+      tqdm
+    ];
+
+    pythonImportsCheck = [ "transformers" "transformers.onnx" ];
+    doCheck = false;
+  };
 in
 python3Packages.buildPythonPackage rec {
   pname = "surya-ocr";
