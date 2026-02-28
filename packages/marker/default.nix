@@ -68,6 +68,7 @@ python3Packages.buildPythonPackage rec {
     anthropic
     click
     filetype
+    fastapi
     ftfy
     google-genai
     markdown2
@@ -76,28 +77,44 @@ python3Packages.buildPythonPackage rec {
     pillow
     pydantic
     pydantic-settings
+    python-multipart
     python-dotenv
     rapidfuzz
     regex
     scikit-learn
     surya
+    streamlit
     pdftext
     torch
     tqdm
     transformersCompat
+    uvicorn
   ];
+
+  postPatch = ''
+    substituteInPlace marker/scripts/run_streamlit_app.py \
+      --replace-fail '"streamlit",' '"${python3Packages.streamlit}/bin/streamlit",'
+  '';
 
   doCheck = false;
   doInstallCheck = true;
   installCheckPhase = ''
         runHook preInstallCheck
         $out/bin/marker --help >/dev/null
+        ${python3Packages.streamlit}/bin/streamlit --help >/dev/null
+        $out/bin/marker_server --help >/dev/null
         ${python3Packages.python.interpreter} - <<'PY'
     from transformers.onnx import OnnxConfig
+    import fastapi
     import marker
+    import multipart
+    import uvicorn
 
     print(OnnxConfig)
+    print(fastapi.__name__)
     print(marker.__name__)
+    print(multipart.__name__)
+    print(uvicorn.__name__)
     PY
         runHook postInstallCheck
   '';

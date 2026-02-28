@@ -73,9 +73,18 @@ python3Packages.buildPythonPackage rec {
     pydantic-settings
     pypdfium2
     python-dotenv
+    streamlit
     torch
     transformersCompat
   ];
+
+  postPatch = ''
+    substituteInPlace surya/scripts/run_streamlit_app.py \
+      --replace-fail '["streamlit", "run",' '["${python3Packages.streamlit}/bin/streamlit", "run",'
+
+    substituteInPlace surya/scripts/run_texify_app.py \
+      --replace-fail '["streamlit", "run",' '["${python3Packages.streamlit}/bin/streamlit", "run",'
+  '';
 
   postInstall = ''
     ln -s $out/bin/surya_ocr $out/bin/surya
@@ -86,6 +95,7 @@ python3Packages.buildPythonPackage rec {
   installCheckPhase = ''
         runHook preInstallCheck
         $out/bin/surya --help >/dev/null
+        ${python3Packages.streamlit}/bin/streamlit --help >/dev/null
         ${python3Packages.python.interpreter} - <<'PY'
     from transformers.onnx import OnnxConfig
     import surya
