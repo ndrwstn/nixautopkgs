@@ -3,6 +3,16 @@
 , python3Packages
 }:
 
+let
+  transformersCompat = python3Packages.transformers.overridePythonAttrs (_: rec {
+    version = "4.56.2";
+    src = python3Packages.fetchPypi {
+      pname = "transformers";
+      inherit version;
+      hash = "sha256-XnxiPi10lBBccm3RD2+QwsmaVevobu9yM3ZavQyxxSk=";
+    };
+  });
+in
 python3Packages.buildPythonPackage rec {
   pname = "surya-ocr";
   version = "0.17.1";
@@ -35,13 +45,32 @@ python3Packages.buildPythonPackage rec {
     pypdfium2
     python-dotenv
     torch
-    transformers
+    transformersCompat
   ];
 
-  pythonImportsCheck = [ "surya" ];
-  doCheck = false;
+  postInstall = ''
+    ln -s $out/bin/surya_ocr $out/bin/surya
+  '';
 
-  passthru.category = "Utilities";
+  doCheck = false;
+  doInstallCheck = true;
+  installCheckPhase = ''
+        runHook preInstallCheck
+        $out/bin/surya --help >/dev/null
+        ${python3Packages.python.interpreter} - <<'PY'
+    from transformers.onnx import OnnxConfig
+    import surya
+
+    print(OnnxConfig)
+    print(surya.__name__)
+    PY
+        runHook postInstallCheck
+  '';
+
+  passthru = {
+    category = "Utilities";
+    inherit transformersCompat;
+  };
 
   meta = {
     description = "OCR, layout, reading order, and table recognition toolkit";
@@ -49,6 +78,6 @@ python3Packages.buildPythonPackage rec {
     license = lib.licenses.gpl3Only;
     sourceProvenance = with lib.sourceTypes; [ fromSource ];
     platforms = lib.platforms.all;
-    mainProgram = "surya_ocr";
+    mainProgram = "surya";
   };
 }

@@ -41,6 +41,8 @@ let
     pythonImportsCheck = [ "pdftext" ];
     doCheck = false;
   };
+
+  transformersCompat = surya.passthru.transformersCompat or python3Packages.transformers;
 in
 python3Packages.buildPythonPackage rec {
   pname = "marker-pdf";
@@ -82,11 +84,23 @@ python3Packages.buildPythonPackage rec {
     pdftext
     torch
     tqdm
-    transformers
+    transformersCompat
   ];
 
-  pythonImportsCheck = [ "marker" ];
   doCheck = false;
+  doInstallCheck = true;
+  installCheckPhase = ''
+        runHook preInstallCheck
+        $out/bin/marker --help >/dev/null
+        ${python3Packages.python.interpreter} - <<'PY'
+    from transformers.onnx import OnnxConfig
+    import marker
+
+    print(OnnxConfig)
+    print(marker.__name__)
+    PY
+        runHook postInstallCheck
+  '';
 
   passthru.category = "Utilities";
 
