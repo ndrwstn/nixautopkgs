@@ -10,7 +10,7 @@
 }:
 
 let
-  version = "0.15.2";
+  version = "0.15.3";
   hash = "sha256-3KTZpAa1qNrOG2fswRT2JKysENKoUHgSeCUgGOvUNiY=";
   cargoHash = "sha256-EKY/7I7FPpPd1JXRwBy5wDcxlSSczFFtYDf3TFP7VNk=";
   npmDepsHash = "sha256-8dMqF1BXVNzSoaGzbidxQLqdqwTdag+NIyqMpDJ2qIE=";
