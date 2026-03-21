@@ -37,7 +37,6 @@ stdenv.mkDerivation (finalAttrs: {
   patches = [
     ./sample-configuration-file-install-location.patch
     ./use-non-existent-file-with-proper-permissions.patch
-    ./certs-install-location.patch
   ];
 
   enableParallelBuilding = true;
@@ -71,6 +70,7 @@ stdenv.mkDerivation (finalAttrs: {
   cmakeFlags = [
     "-DSYSTEMD_UNIT_DIR=${placeholder "out"}/lib/systemd"
     "-DAPP_CONFIG_DIRECTORY=/etc/clamav"
+    "-DCVD_CERTS_DIRECTORY=${placeholder "out"}/etc/clamav/certs"
   ];
 
   # Seems to only fail on x86_64-darwin with sandboxing
