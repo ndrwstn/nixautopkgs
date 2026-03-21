@@ -1,14 +1,11 @@
-name: Update GCS Hashes on Renovate PRs
+name: Update Package Hashes on Renovate PRs
 
 on:
   pull_request:
     branches: [master]
-    # This workflow is intentionally scoped to GCS right now.
-    # It is the generic hash-refresh pattern for Renovate PRs and can be
-    # expanded to additional package paths as more packages need post-update
-    # hash regeneration.
     paths:
       - "packages/gcs/default.nix"
+      - "packages/clamav/default.nix"
       - ".github/workflows/renovate-hash-update.yml"
 
 concurrency:
@@ -16,9 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Keep this job package-specific for now to avoid coupling unrelated package
-  # update behavior, but the structure is reusable for other packages.
-  update-gcs-hash:
+  update-package-hashes:
     if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
@@ -47,12 +42,46 @@ jobs:
           [[ "${GITHUB_HEAD_REF}" == update/* ]]
           [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]
 
+      - name: Detect package paths updated in PR
+        id: detect-packages
+        run: |
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+          CHANGED_FILES="$(git diff --name-only "${{ github.base_ref }}...HEAD")"
+
+          echo "Changed files:"
+          printf '%s\n' "$CHANGED_FILES"
+
+          run_gcs=false
+          run_clamav=false
+
+          if printf '%s\n' "$CHANGED_FILES" | grep -qx "packages/gcs/default.nix"; then
+            run_gcs=true
+          fi
+
+          if printf '%s\n' "$CHANGED_FILES" | grep -qx "packages/clamav/default.nix"; then
+            run_clamav=true
+          fi
+
+          echo "run_gcs=$run_gcs" >> "$GITHUB_OUTPUT"
+          echo "run_clamav=$run_clamav" >> "$GITHUB_OUTPUT"
+
       - name: Update gcs hashes
+        if: steps.detect-packages.outputs.run_gcs == 'true'
         run: nix run nixpkgs#nix-update -- --flake --version=skip gcs
+
+      - name: Update clamav hashes
+        if: steps.detect-packages.outputs.run_clamav == 'true'
+        run: nix run nixpkgs#nix-update -- --flake --version=skip clamav
 
       - name: Commit and push changes
         id: commit-push
         run: |
+          if [[ "${{ steps.detect-packages.outputs.run_gcs }}" != "true" && "${{ steps.detect-packages.outputs.run_clamav }}" != "true" ]]; then
+            echo "No updateable package paths changed in PR"
+            echo "new_sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No hash changes detected"
             echo "new_sha=" >> "$GITHUB_OUTPUT"
@@ -61,8 +90,8 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add packages/gcs/default.nix
-          git commit -m "chore: update gcs hashes"
+          git add packages/gcs/default.nix packages/clamav/default.nix
+          git commit -m "chore: update package hashes"
           git push
           echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -71,6 +100,6 @@ jobs:
         uses: LouisBrunner/checks-action@6b626ffbad7cc56fd58627f774b9067e6118af23 # v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: renovate-gcs-hash-update
+          name: renovate-hash-update
           sha: ${{ steps.commit-push.outputs.new_sha }}
           conclusion: success
