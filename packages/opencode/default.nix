@@ -15,7 +15,14 @@ let
   routeForSystem = opencodeRouting.${system}
     or (throw "opencode routing: unsupported system ${system}");
 
-  opencodeCliBuild = opencodeInput.packages.${system}.default;
+  # Upstream source build defaults OPENCODE_CHANNEL to "local", which causes
+  # a channel-suffixed DB filename (opencode-local.db). Override to latest so
+  # CLI and desktop share opencode.db when desktop is using release semantics.
+  opencodeCliBuild = opencodeInput.packages.${system}.default.overrideAttrs (old: {
+    env = (old.env or { }) // {
+      OPENCODE_CHANNEL = "latest";
+    };
+  });
   opencodeDesktopBuild = opencodeInput.packages.${system}.desktop;
 
   opencodeCliBin = opencodeBin."opencode-cli-bin";
