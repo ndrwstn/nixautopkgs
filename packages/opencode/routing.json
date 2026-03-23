@@ -8,7 +8,7 @@
     "desktop": "bin"
   },
   "x86_64-darwin": {
-    "cli": "build",
+    "cli": "bin",
     "desktop": "bin"
   },
   "x86_64-linux": {
