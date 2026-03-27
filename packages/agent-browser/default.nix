@@ -27,6 +27,13 @@ let
     inherit version src cargoHash;
     sourceRoot = "source/cli";
 
+    # Required for auth/encryption tests
+    AGENT_BROWSER_ENCRYPTION_KEY = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    preCheck = ''
+      export HOME=$(mktemp -d)
+    '';
+
     meta = {
       description = "Native Rust CLI for agent-browser";
       license = lib.licenses.asl20;
