@@ -49,6 +49,8 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
 
       - name: Sync OpenCode lock and asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
 
       - name: Run OpenCode build/bin checks
@@ -93,6 +95,8 @@ jobs:
           [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]
 
       - name: Sync OpenCode lock and asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
 
       - name: Download matrix results

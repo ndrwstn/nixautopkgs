@@ -23,7 +23,11 @@ fi
 release_json="$(mktemp)"
 trap 'rm -f "$release_json"' EXIT
 
-curl -fsSL "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${version}" >"$release_json"
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${version}" >"$release_json"
+else
+	curl -fsSL "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${version}" >"$release_json"
+fi
 
 digest_for_asset() {
 	local asset_name="$1"
