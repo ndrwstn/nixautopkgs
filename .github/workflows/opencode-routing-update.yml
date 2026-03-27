@@ -46,7 +46,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
+        uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
 
       - name: Sync OpenCode lock and asset hashes
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
@@ -82,7 +82,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@d96bc962e61b3049ce8128d03d57a1144fa96539 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@cec65ff6f104850203b152861d3f9e5f1747885d # main
+        uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
 
       - name: Assert Renovate branch context
         run: |
