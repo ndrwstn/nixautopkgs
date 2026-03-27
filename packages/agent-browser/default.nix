@@ -42,6 +42,9 @@ buildNpmPackage {
   pname = "agent-browser";
   inherit version src;
 
+  # v0.23.0+ doesn't have a build script - package is just a wrapper
+  dontNpmBuild = true;
+
   npmDeps = fetchNpmDeps {
     inherit src;
     hash = npmDepsHash;
@@ -60,17 +63,11 @@ buildNpmPackage {
 
   npmFlags = [ "--ignore-scripts" "--legacy-peer-deps" ];
 
-  buildPhase = ''
-    runHook preBuild
-    npm run build
-    runHook postBuild
-  '';
-
   installPhase = ''
     runHook preInstall
 
     mkdir -p $out/share/agent-browser
-    cp -r dist node_modules scripts $out/share/agent-browser/
+    cp -r bin node_modules scripts $out/share/agent-browser/
 
     mkdir -p $out/etc/agent-browser
     cp -r skills $out/etc/agent-browser/
@@ -78,7 +75,6 @@ buildNpmPackage {
     mkdir -p $out/bin
     cp ${agent-browser-native-binary}/bin/agent-browser $out/bin/.agent-browser-unwrapped
 
-    ln -s $out/share/agent-browser/dist $out/dist
     ln -s $out/share/agent-browser/node_modules $out/node_modules
 
     makeWrapper $out/bin/.agent-browser-unwrapped $out/bin/agent-browser \
