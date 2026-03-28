@@ -73,10 +73,27 @@ in
     version = opencodeVersion;
     src = desktopSrc;
 
-    nativeBuildInputs = [ pkgs.binutils ] ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.undmg ];
+    nativeBuildInputs = [ pkgs.binutils pkgs.makeWrapper ]
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.undmg ]
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook ];
+
+    buildInputs = lib.optionals pkgs.stdenv.isLinux [
+      pkgs.webkitgtk_4_1
+      pkgs.gtk3
+      pkgs.glib
+      pkgs.gdk-pixbuf
+      pkgs.cairo
+      pkgs.libsoup_3
+      pkgs.stdenv.cc.cc.lib # libstdc++ for native modules
+    ];
 
     dontUnpack = true;
     dontStrip = true;
+
+    postFixup = lib.optionalString pkgs.stdenv.isLinux ''
+      wrapProgram "$out/bin/opencode-desktop" \
+        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}"
+    '';
 
     installPhase = ''
       runHook preInstall
