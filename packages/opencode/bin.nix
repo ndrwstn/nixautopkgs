@@ -94,8 +94,14 @@ in
       pkgs.stdenv.cc.cc.lib # libstdc++ for native modules
     ];
 
+    dontWrapGApps = pkgs.stdenv.isLinux;
+
     dontUnpack = true;
     dontStrip = true;
+
+    preFixup = lib.optionalString pkgs.stdenv.isLinux ''
+      makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
+    '';
 
     installPhase = ''
       runHook preInstall
@@ -130,12 +136,13 @@ in
     '';
 
     postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-      # Manually wrap OpenCode with GTK environment
-      # wrapGAppsHook doesn't work because the opencode-desktop symlink 
-      # doesn't exist yet during fixupPhase
+      # Manually wrap OpenCode with the GTK environment from wrapGAppsHook3.
+      # The opencode-desktop symlink does not exist yet during fixupPhase,
+      # so the hook cannot wrap the final entrypoint for us.
       mv "$out/bin/OpenCode" "$out/bin/.OpenCode-unwrapped"
 
       makeWrapper "$out/bin/.OpenCode-unwrapped" "$out/bin/OpenCode" \
+        "''${makeWrapperArgs[@]}" \
         --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
         --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
 
