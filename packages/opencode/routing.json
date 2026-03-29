@@ -4,7 +4,7 @@
     "desktop": "bin"
   },
   "aarch64-linux": {
-    "cli": "bin",
+    "cli": "build",
     "desktop": "bin"
   },
   "x86_64-darwin": {
@@ -12,7 +12,7 @@
     "desktop": "bin"
   },
   "x86_64-linux": {
-    "cli": "bin",
+    "cli": "build",
     "desktop": "bin"
   }
 }
