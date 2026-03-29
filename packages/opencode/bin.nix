@@ -75,7 +75,7 @@ in
 
     nativeBuildInputs = [ pkgs.binutils pkgs.makeWrapper ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.undmg ]
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook pkgs.wrapGAppsHook ];
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook pkgs.wrapGAppsHook3 ];
 
     buildInputs = lib.optionals pkgs.stdenv.isLinux [
       pkgs.webkitgtk_4_1
