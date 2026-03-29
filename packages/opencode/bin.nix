@@ -75,25 +75,27 @@ in
 
     nativeBuildInputs = [ pkgs.binutils pkgs.makeWrapper ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.undmg ]
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook ];
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook pkgs.wrapGAppsHook ];
 
     buildInputs = lib.optionals pkgs.stdenv.isLinux [
       pkgs.webkitgtk_4_1
       pkgs.gtk3
       pkgs.glib
-      pkgs.gdk-pixbuf
-      pkgs.cairo
+      pkgs.dbus
+      pkgs.librsvg
+      pkgs.libappindicator
+      pkgs.glib-networking
+      pkgs.openssl
       pkgs.libsoup_3
+      pkgs.gst_all_1.gstreamer
+      pkgs.gst_all_1.gst-plugins-base
+      pkgs.gst_all_1.gst-plugins-good
+      pkgs.gst_all_1.gst-plugins-bad
       pkgs.stdenv.cc.cc.lib # libstdc++ for native modules
     ];
 
     dontUnpack = true;
     dontStrip = true;
-
-    postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-      wrapProgram "$out/bin/opencode-desktop" \
-        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}"
-    '';
 
     installPhase = ''
       runHook preInstall
@@ -122,12 +124,23 @@ in
             --replace-fail "Exec=OpenCode" "Exec=opencode-desktop"
         fi
 
-        if [ -f "$out/bin/OpenCode" ]; then
-          ln -s "$out/bin/OpenCode" "$out/bin/opencode-desktop"
-        fi
       fi
 
       runHook postInstall
+    '';
+
+    postFixup = lib.optionalString pkgs.stdenv.isLinux ''
+      # Manually wrap OpenCode with GTK environment
+      # wrapGAppsHook doesn't work because the opencode-desktop symlink 
+      # doesn't exist yet during fixupPhase
+      mv "$out/bin/OpenCode" "$out/bin/.OpenCode-unwrapped"
+
+      makeWrapper "$out/bin/.OpenCode-unwrapped" "$out/bin/OpenCode" \
+        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
+        --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
+
+      # Create the opencode-desktop symlink pointing to the wrapped binary
+      ln -s "$out/bin/OpenCode" "$out/bin/opencode-desktop"
     '';
 
     meta = with lib; {
