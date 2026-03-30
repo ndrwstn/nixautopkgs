@@ -11,9 +11,9 @@
 
 let
   version = "0.23.1";
-  hash = "sha256-ZUcPPsLueMPEiCVXE9N4oBf5xwYvxQ71jfkbo9t/8xs=";
-  cargoHash = "sha256-Ha+R/tlSYfCb/POuoOauQqYXxmY7Dypn/wp1WwZPQ4w=";
-  npmDepsHash = "sha256-BmMMQLqYxunVL0iXZwZ4+4qvKKDCXCaBADhM9qohTAM=";
+  hash = "sha256-3m3WVYufqoIpkgAWR5a7BSiHzXkNJLl/I/io5AtFccA=";
+  cargoHash = "sha256-zszxZXtyr+Ix7sLciheOTgH42xG8oN03Sxv79IocrL8=";
+  npmDepsHash = "sha256-R425ekPIVV1ffn262TqYZ2Q7YPFfUjRfAYrgr7VsXfc=";
 
   src = fetchFromGitHub {
     owner = "vercel-labs";
