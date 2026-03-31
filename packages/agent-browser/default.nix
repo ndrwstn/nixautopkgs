@@ -68,7 +68,13 @@ buildNpmPackage {
     runHook preInstall
 
     mkdir -p $out/share/agent-browser
-    cp -r bin node_modules scripts $out/share/agent-browser/
+    cp -r bin scripts $out/share/agent-browser/
+    # node_modules may not exist if there are no npm dependencies
+    if [ -d node_modules ]; then
+      cp -r node_modules $out/share/agent-browser/
+    else
+      mkdir -p $out/share/agent-browser/node_modules
+    fi
 
     mkdir -p $out/etc/agent-browser
     cp -r skills $out/etc/agent-browser/
@@ -76,7 +82,10 @@ buildNpmPackage {
     mkdir -p $out/bin
     cp ${agent-browser-native-binary}/bin/agent-browser $out/bin/.agent-browser-unwrapped
 
-    ln -s $out/share/agent-browser/node_modules $out/node_modules
+    # Only create symlink if node_modules exists (may be empty for versions with no deps)
+    if [ -d $out/share/agent-browser/node_modules ]; then
+      ln -s $out/share/agent-browser/node_modules $out/node_modules
+    fi
 
     makeWrapper $out/bin/.agent-browser-unwrapped $out/bin/agent-browser \
       --prefix PATH : ${lib.makeBinPath [ nodejs-slim ]} \
