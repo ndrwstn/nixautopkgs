@@ -2,46 +2,46 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-lEpJcPDpYhMgJ2YsR2nnCHO4o1irjbSSZ2qvmlJ617k=",
+      "hash": "sha256-IqpxUu6zfHia1tLg1j+X802YTb0/+nE3rtWwohZssGM=",
       "name": "opencode-darwin-arm64.zip"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-LZozkOl4oBMGqbC2al4PICRBJAWxkgIouogBb6kyDyg=",
+      "hash": "sha256-WWIA3gfpvOyf7j9zuEvCEapYKU4UPIN5oAuIVaut2ek=",
       "name": "opencode-linux-arm64.tar.gz"
     },
     "x86_64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-OsQ3kh8cOIeehb4Pu7qq9heV/1rbQ0fmrPJcp5DAp+s=",
+      "hash": "sha256-/3pJxVbFWWjM99MPBi4wL9khgQecW3CDILOGZoxM5vg=",
       "name": "opencode-darwin-x64.zip"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-ulMZbeYyFCqGsd93oHd/rjE2IKyP5U0RyDwxDUruynQ=",
+      "hash": "sha256-pTMwfIbBtpPJvFLbJwK8ESIeVbXJE3uItinwmaJUMfo=",
       "name": "opencode-linux-x64.tar.gz"
     }
   },
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-oA4XtPFdS2nevFbPF+P0PEOVzKFFaH5WyCVp1Lr3kIg=",
+      "hash": "sha256-QpJlt8CNmFi6DpIs8L01UlBLqeAtqUcM8x9ycpHviwk=",
       "name": "opencode-desktop-darwin-aarch64.dmg"
     },
     "aarch64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-se4LsjL0E3je0mdI+xobPP7pNpvbmC1ltqQNkBq5C7A=",
+      "hash": "sha256-kPkHEmFGnZberkShcSV4ck32lSWYgFGH5R+w8Fu8Si0=",
       "name": "opencode-desktop-linux-arm64.deb"
     },
     "x86_64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-PG5T9Hk0g7yPl2cGhZltdK4SwDrBGrTw8HJzdh2lRAI=",
+      "hash": "sha256-5qWV0A7dFUTr+s3Mhak1yyBX7wlMeKT9v0Lv0cVmYCU=",
       "name": "opencode-desktop-darwin-x64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-TTGsQMBgSP4ZOK4UR/TBXmrxHBJjzYqmeh4M11njTuI=",
+      "hash": "sha256-rlWTz6B+6JqZWqaGTo/BHHYIMWCZ2xcDs4Fga+L7PhQ=",
       "name": "opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "1.3.10"
+  "version": "1.3.11"
 }
