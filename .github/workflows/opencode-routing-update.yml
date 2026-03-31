@@ -154,3 +154,17 @@ jobs:
           name: opencode-routing-update
           sha: ${{ steps.commit-push.outputs.new_sha }}
           conclusion: success
+
+  enable-automerge:
+    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [aggregate-and-commit]
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}

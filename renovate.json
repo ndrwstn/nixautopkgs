@@ -49,13 +49,15 @@
       "matchManagers": ["regex"],
       "matchPackageNames": ["anomalyco/opencode"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
     },
     {
       "matchManagers": ["regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
     }
   ]
 }
