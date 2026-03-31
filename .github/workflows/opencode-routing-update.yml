@@ -43,7 +43,7 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # main
+        uses: DeterminateSystems/nix-installer-action@430608d219b9321ec0c98eb6c37245a39aa6756e # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
@@ -81,7 +81,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # main
+        uses: DeterminateSystems/nix-installer-action@430608d219b9321ec0c98eb6c37245a39aa6756e # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
