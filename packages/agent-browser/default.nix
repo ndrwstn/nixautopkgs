@@ -48,6 +48,7 @@ buildNpmPackage {
   npmDeps = fetchNpmDeps {
     inherit src;
     hash = npmDepsHash;
+    forceEmptyCache = true; # Handle versions with no npm dependencies
     postPatch = ''
       cp ${./package-lock.json} package-lock.json
     '';
