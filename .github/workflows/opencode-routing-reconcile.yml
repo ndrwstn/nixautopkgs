@@ -38,6 +38,8 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
 
       - name: Sync OpenCode asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./.github/scripts/update-opencode-assets.sh
 
       - name: Run OpenCode build/bin checks
@@ -68,6 +70,8 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@1828eb4e5414b8dfe36daae53ea3e4b8c3fdec7a # main
 
       - name: Sync OpenCode asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./.github/scripts/update-opencode-assets.sh
 
       - name: Download matrix results
