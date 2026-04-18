@@ -18,6 +18,7 @@
           gcs = import ./packages/gcs/default.nix { inherit pkgs; };
           agent-browser = pkgs.callPackage ./packages/agent-browser/default.nix { };
           clamav = pkgs.callPackage ./packages/clamav/default.nix { };
+          ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
             opencodeInput = inputs.opencode;
@@ -32,7 +33,7 @@
         in
         {
           packages = {
-            inherit gcs gcs-linux agent-browser clamav;
+            inherit gcs gcs-linux agent-browser clamav ocrit;
           } // opencodePackages // {
             default = gcs; # Default to gcs for now
           };

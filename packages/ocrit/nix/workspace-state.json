@@ -1,0 +1,59 @@
+{
+  "object": {
+    "artifacts": [],
+    "dependencies": [
+      {
+        "basedOn": null,
+        "packageRef": {
+          "identity": "pathkit",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/kylef/PathKit",
+          "name": "PathKit"
+        },
+        "state": {
+          "checkoutState": {
+            "revision": "3bfd2737b700b9a36565a8c94f4ad2b050a5e574",
+            "version": "1.0.1"
+          },
+          "name": "sourceControlCheckout"
+        },
+        "subpath": "PathKit"
+      },
+      {
+        "basedOn": null,
+        "packageRef": {
+          "identity": "spectre",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/kylef/Spectre.git",
+          "name": "Spectre"
+        },
+        "state": {
+          "checkoutState": {
+            "revision": "26cc5e9ae0947092c7139ef7ba612e34646086c7",
+            "version": "0.10.1"
+          },
+          "name": "sourceControlCheckout"
+        },
+        "subpath": "Spectre"
+      },
+      {
+        "basedOn": null,
+        "packageRef": {
+          "identity": "swift-argument-parser",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/apple/swift-argument-parser.git",
+          "name": "swift-argument-parser"
+        },
+        "state": {
+          "checkoutState": {
+            "revision": "f3c9084a71ef4376f2fabbdf1d3d90a49f1fabdb",
+            "version": "1.1.2"
+          },
+          "name": "sourceControlCheckout"
+        },
+        "subpath": "swift-argument-parser"
+      }
+    ]
+  },
+  "version": 6
+}
