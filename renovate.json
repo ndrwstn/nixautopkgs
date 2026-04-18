@@ -42,6 +42,15 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "vercel-labs/agent-browser",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update ocrit version in packages/ocrit/default.nix",
+      "fileMatch": ["^packages/ocrit/default\\.nix$"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "insidegui/ocrit",
+      "extractVersionTemplate": "^(?<version>.*)$"
     }
   ],
   "packageRules": [

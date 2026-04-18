@@ -6,6 +6,7 @@
 , swiftpm2nix
 , swiftPackages
 , stdenv
+, nix-update-script
 }:
 
 let
@@ -130,10 +131,13 @@ else
       runHook postInstall
     '';
 
-    passthru.nixautopkgs.upstream = {
-      type = "github";
-      owner = "insidegui";
-      repo = "ocrit";
+    passthru = {
+      updateScript = nix-update-script { };
+      nixautopkgs.upstream = {
+        type = "github";
+        owner = "insidegui";
+        repo = "ocrit";
+      };
     };
 
     meta = meta // {
