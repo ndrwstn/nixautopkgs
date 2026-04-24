@@ -6,7 +6,6 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 package_file="packages/agent-browser/default.nix"
-lockfile_path="packages/agent-browser/package-lock.json"
 build_log="$(mktemp)"
 max_attempts=8
 
@@ -28,37 +27,6 @@ if not match:
 
 print(match.group(1))
 PY
-}
-
-sync_lockfile_from_upstream() {
-	local version="$1"
-	local tarball_url="https://registry.npmjs.org/agent-browser/-/agent-browser-${version}.tgz"
-	local temp_dir
-	temp_dir="$(mktemp -d)"
-	local source_dir="$temp_dir/package"
-
-	trap 'rm -rf "$temp_dir"' RETURN
-
-	echo "Syncing package-lock.json for v${version} from npm tarball"
-	curl -fsSL "$tarball_url" | tar -xzf - -C "$temp_dir"
-
-	if [[ ! -f "$source_dir/package.json" ]]; then
-		echo "Expected package.json at $source_dir/package.json" >&2
-		exit 1
-	fi
-
-	if [[ -f "$source_dir/package-lock.json" ]]; then
-		cp "$source_dir/package-lock.json" "$lockfile_path"
-		return
-	fi
-
-	echo "npm tarball does not include package-lock.json; generating with npm"
-	(
-		cd "$source_dir"
-		nix shell nixpkgs#nodejs --command npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
-	)
-
-	cp "$source_dir/package-lock.json" "$lockfile_path"
 }
 
 update_hash_field() {
@@ -107,8 +75,8 @@ if not matches:
 drv, got_hash = matches[-1].group(1), matches[-1].group(3)
 if "vendor-staging" in drv:
     field = "cargoHash"
-elif "npm-deps" in drv:
-    field = "npmDepsHash"
+elif "pnpm-deps" in drv:
+    field = "pnpmDepsHash"
 else:
     field = "hash"
 
@@ -117,7 +85,8 @@ PY
 }
 
 version="$(extract_version)"
-sync_lockfile_from_upstream "$version"
+
+echo "Preparing hash update for agent-browser v${version}"
 
 nix run nixpkgs#nix-update -- --flake --version=skip agent-browser
 
