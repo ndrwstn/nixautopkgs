@@ -1,6 +1,7 @@
 { lib
 , chromium
 , fetchFromGitHub
+, geist-font
 , makeBinaryWrapper
 , nodejs_22
 , pnpm_10
@@ -54,6 +55,19 @@ rustPlatform.buildRustPackage {
 
   postUnpack = ''
     chmod -R u+w source
+
+    # Replace Google Fonts fetch with a local font from nixpkgs since
+    # the Nix sandbox has no network access.
+    substituteInPlace source/packages/dashboard/src/app/layout.tsx \
+      --replace-fail '{ Geist } from "next/font/google"' \
+      'localFont from "next/font/local"'
+
+    substituteInPlace source/packages/dashboard/src/app/layout.tsx \
+      --replace-fail 'const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });' \
+      'const geist = localFont({ src: "./Geist-Regular.otf", variable: "--font-sans" });'
+
+    cp "${geist-font}/share/fonts/opentype/Geist-Regular.otf" \
+      source/packages/dashboard/src/app/Geist-Regular.otf
   '';
 
   preBuild = ''
