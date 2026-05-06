@@ -134,31 +134,41 @@ in
         else
           ar p "$src" "$data_tar" | tar -xf - -C "$TMPDIR/opencode-desktop"
         fi
-        cp -R "$TMPDIR/opencode-desktop/usr/." "$out/"
-
-        if [ -f "$out/share/applications/OpenCode.desktop" ]; then
-          substituteInPlace "$out/share/applications/OpenCode.desktop" \
-            --replace-fail "Exec=OpenCode" "Exec=opencode-desktop"
-        fi
-
+        cp -R "$TMPDIR/opencode-desktop/usr/." "$out/" 2>/dev/null || true
+        cp -R "$TMPDIR/opencode-desktop/opt/." "$out/" 2>/dev/null || true
       fi
 
       runHook postInstall
     '';
 
     postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-      # Manually wrap OpenCode with the GTK environment from wrapGAppsHook3.
-      # The opencode-desktop symlink does not exist yet during fixupPhase,
-      # so the hook cannot wrap the final entrypoint for us.
-      mv "$out/bin/OpenCode" "$out/bin/.OpenCode-unwrapped"
+      if [ -f "$out/bin/OpenCode" ]; then
+        # Tauri packaging: wrap the binary directly
+        mv "$out/bin/OpenCode" "$out/bin/.OpenCode-unwrapped"
 
-      makeWrapper "$out/bin/.OpenCode-unwrapped" "$out/bin/OpenCode" \
-        "''${makeWrapperArgs[@]}" \
-        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
-        --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
+        makeWrapper "$out/bin/.OpenCode-unwrapped" "$out/bin/OpenCode" \
+          "''${makeWrapperArgs[@]}" \
+          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
+          --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
 
-      # Create the opencode-desktop symlink pointing to the wrapped binary
-      ln -s "$out/bin/OpenCode" "$out/bin/opencode-desktop"
+        ln -s "$out/bin/OpenCode" "$out/bin/opencode-desktop"
+      elif [ -f "$out/opt/OpenCode/@opencode-aidesktop" ]; then
+        # Electron packaging: wrap the binary in opt/
+        makeWrapper "$out/opt/OpenCode/@opencode-aidesktop" "$out/bin/opencode-desktop" \
+          "''${makeWrapperArgs[@]}" \
+          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
+          --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
+      fi
+
+      # Patch any .desktop files to point to our wrapper
+      for desktop_file in "$out/share/applications/"*.desktop; do
+        if [ -f "$desktop_file" ]; then
+          substituteInPlace "$desktop_file" \
+            --replace-fail 'Exec="/opt/OpenCode/@opencode-aidesktop"' 'Exec=opencode-desktop' \
+            --replace-fail 'Exec=OpenCode' 'Exec=opencode-desktop' \
+            --replace-fail '/opt/OpenCode/' "$out/opt/OpenCode/"
+        fi
+      done
     '';
 
     meta = with lib; {
