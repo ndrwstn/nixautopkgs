@@ -31,9 +31,13 @@ fi
 
 digest_for_asset() {
 	local asset_name="$1"
+	local optional="${2:-0}"
 	local digest
 	digest="$(jq -r --arg name "$asset_name" 'first(.assets[] | select(.name == $name) | .digest) // empty' "$release_json")"
 	if [[ -z "$digest" || "$digest" == "null" ]]; then
+		if [[ "$optional" -eq 1 ]]; then
+			return 0
+		fi
 		echo "Missing digest for release asset: $asset_name" >&2
 		exit 1
 	fi
@@ -64,8 +68,8 @@ cli_darwin_x64_name="opencode-darwin-x64.zip"
 cli_linux_arm64_name="opencode-linux-arm64.tar.gz"
 cli_linux_x64_name="opencode-linux-x64.tar.gz"
 
-desktop_darwin_arm64_name="opencode-desktop-darwin-aarch64.dmg"
-desktop_darwin_x64_name="opencode-desktop-darwin-x64.dmg"
+desktop_darwin_arm64_name="opencode-desktop-mac-arm64.dmg"
+desktop_darwin_x64_name="opencode-desktop-mac-x64.dmg"
 desktop_linux_arm64_name="opencode-desktop-linux-arm64.deb"
 desktop_linux_x64_name="opencode-desktop-linux-amd64.deb"
 
@@ -76,73 +80,105 @@ cli_linux_x64_hash="$(digest_for_asset "$cli_linux_x64_name")"
 
 desktop_darwin_arm64_hash="$(digest_for_asset "$desktop_darwin_arm64_name")"
 desktop_darwin_x64_hash="$(digest_for_asset "$desktop_darwin_x64_name")"
-desktop_linux_arm64_hash="$(digest_for_asset "$desktop_linux_arm64_name")"
+desktop_linux_arm64_hash="$(digest_for_asset "$desktop_linux_arm64_name" 1)"
 desktop_linux_x64_hash="$(digest_for_asset "$desktop_linux_x64_name")"
 
-jq -S -n \
-	--arg version "$version" \
-	--arg cliDarwinArm64Name "$cli_darwin_arm64_name" \
-	--arg cliDarwinArm64Hash "$cli_darwin_arm64_hash" \
-	--arg cliDarwinX64Name "$cli_darwin_x64_name" \
-	--arg cliDarwinX64Hash "$cli_darwin_x64_hash" \
-	--arg cliLinuxArm64Name "$cli_linux_arm64_name" \
-	--arg cliLinuxArm64Hash "$cli_linux_arm64_hash" \
-	--arg cliLinuxX64Name "$cli_linux_x64_name" \
-	--arg cliLinuxX64Hash "$cli_linux_x64_hash" \
-	--arg desktopDarwinArm64Name "$desktop_darwin_arm64_name" \
-	--arg desktopDarwinArm64Hash "$desktop_darwin_arm64_hash" \
-	--arg desktopDarwinX64Name "$desktop_darwin_x64_name" \
-	--arg desktopDarwinX64Hash "$desktop_darwin_x64_hash" \
-	--arg desktopLinuxArm64Name "$desktop_linux_arm64_name" \
-	--arg desktopLinuxArm64Hash "$desktop_linux_arm64_hash" \
-	--arg desktopLinuxX64Name "$desktop_linux_x64_name" \
-	--arg desktopLinuxX64Hash "$desktop_linux_x64_hash" \
-	'{
-    version: $version,
+if [[ -z "$desktop_linux_arm64_hash" ]]; then
+	echo "Note: optional desktop asset '$desktop_linux_arm64_name' is missing from release v${version}. Omitting aarch64-linux desktop entry." >&2
+fi
+
+jq_args=(
+	-S -n
+	--arg version "$version"
+	--arg cliDarwinArm64Name "$cli_darwin_arm64_name"
+	--arg cliDarwinArm64Hash "$cli_darwin_arm64_hash"
+	--arg cliDarwinX64Name "$cli_darwin_x64_name"
+	--arg cliDarwinX64Hash "$cli_darwin_x64_hash"
+	--arg cliLinuxArm64Name "$cli_linux_arm64_name"
+	--arg cliLinuxArm64Hash "$cli_linux_arm64_hash"
+	--arg cliLinuxX64Name "$cli_linux_x64_name"
+	--arg cliLinuxX64Hash "$cli_linux_x64_hash"
+	--arg desktopDarwinArm64Name "$desktop_darwin_arm64_name"
+	--arg desktopDarwinArm64Hash "$desktop_darwin_arm64_hash"
+	--arg desktopDarwinX64Name "$desktop_darwin_x64_name"
+	--arg desktopDarwinX64Hash "$desktop_darwin_x64_hash"
+	--arg desktopLinuxX64Name "$desktop_linux_x64_name"
+	--arg desktopLinuxX64Hash "$desktop_linux_x64_hash"
+)
+
+desktop_filter='{
+  "aarch64-darwin": {
+    name: $desktopDarwinArm64Name,
+    hash: $desktopDarwinArm64Hash,
+    archiveType: "darwin-dmg"
+  },
+  "x86_64-darwin": {
+    name: $desktopDarwinX64Name,
+    hash: $desktopDarwinX64Hash,
+    archiveType: "darwin-dmg"
+  },
+  "x86_64-linux": {
+    name: $desktopLinuxX64Name,
+    hash: $desktopLinuxX64Hash,
+    archiveType: "deb"
+  }
+}'
+
+if [[ -n "$desktop_linux_arm64_hash" ]]; then
+	jq_args+=(
+		--arg desktopLinuxArm64Name "$desktop_linux_arm64_name"
+		--arg desktopLinuxArm64Hash "$desktop_linux_arm64_hash"
+	)
+	desktop_filter='{
+  "aarch64-darwin": {
+    name: $desktopDarwinArm64Name,
+    hash: $desktopDarwinArm64Hash,
+    archiveType: "darwin-dmg"
+  },
+  "aarch64-linux": {
+    name: $desktopLinuxArm64Name,
+    hash: $desktopLinuxArm64Hash,
+    archiveType: "deb"
+  },
+  "x86_64-darwin": {
+    name: $desktopDarwinX64Name,
+    hash: $desktopDarwinX64Hash,
+    archiveType: "darwin-dmg"
+  },
+  "x86_64-linux": {
+    name: $desktopLinuxX64Name,
+    hash: $desktopLinuxX64Hash,
+    archiveType: "deb"
+  }
+}'
+fi
+
+jq "${jq_args[@]}" \
+	"{
+    version: \$version,
     cli: {
-      "aarch64-darwin": {
-        name: $cliDarwinArm64Name,
-        hash: $cliDarwinArm64Hash,
-        archiveType: "zip"
+      \"aarch64-darwin\": {
+        name: \$cliDarwinArm64Name,
+        hash: \$cliDarwinArm64Hash,
+        archiveType: \"zip\"
       },
-      "x86_64-darwin": {
-        name: $cliDarwinX64Name,
-        hash: $cliDarwinX64Hash,
-        archiveType: "zip"
+      \"x86_64-darwin\": {
+        name: \$cliDarwinX64Name,
+        hash: \$cliDarwinX64Hash,
+        archiveType: \"zip\"
       },
-      "aarch64-linux": {
-        name: $cliLinuxArm64Name,
-        hash: $cliLinuxArm64Hash,
-        archiveType: "tar.gz"
+      \"aarch64-linux\": {
+        name: \$cliLinuxArm64Name,
+        hash: \$cliLinuxArm64Hash,
+        archiveType: \"tar.gz\"
       },
-      "x86_64-linux": {
-        name: $cliLinuxX64Name,
-        hash: $cliLinuxX64Hash,
-        archiveType: "tar.gz"
+      \"x86_64-linux\": {
+        name: \$cliLinuxX64Name,
+        hash: \$cliLinuxX64Hash,
+        archiveType: \"tar.gz\"
       }
     },
-    desktop: {
-      "aarch64-darwin": {
-        name: $desktopDarwinArm64Name,
-        hash: $desktopDarwinArm64Hash,
-        archiveType: "darwin-dmg"
-      },
-      "x86_64-darwin": {
-        name: $desktopDarwinX64Name,
-        hash: $desktopDarwinX64Hash,
-        archiveType: "darwin-dmg"
-      },
-      "aarch64-linux": {
-        name: $desktopLinuxArm64Name,
-        hash: $desktopLinuxArm64Hash,
-        archiveType: "deb"
-      },
-      "x86_64-linux": {
-        name: $desktopLinuxX64Name,
-        hash: $desktopLinuxX64Hash,
-        archiveType: "deb"
-      }
-    }
-  }' >packages/opencode/assets.json
+    desktop: ${desktop_filter}
+  }" >packages/opencode/assets.json
 
 echo "Updated packages/opencode/assets.json for OpenCode v${version}"
