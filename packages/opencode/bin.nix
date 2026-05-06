@@ -127,7 +127,13 @@ in
           echo "ERROR: could not find data.tar.* inside $src" >&2
           exit 1
         fi
-        ar p "$src" "$data_tar" | tar -xf - -C "$TMPDIR/opencode-desktop"
+        if [[ "$data_tar" == *.xz ]]; then
+          ar p "$src" "$data_tar" | tar -xJf - -C "$TMPDIR/opencode-desktop"
+        elif [[ "$data_tar" == *.gz ]]; then
+          ar p "$src" "$data_tar" | tar -xzf - -C "$TMPDIR/opencode-desktop"
+        else
+          ar p "$src" "$data_tar" | tar -xf - -C "$TMPDIR/opencode-desktop"
+        fi
         cp -R "$TMPDIR/opencode-desktop/usr/." "$out/"
 
         if [ -f "$out/share/applications/OpenCode.desktop" ]; then
