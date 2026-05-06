@@ -32,6 +32,10 @@ for system in "${systems[@]}"; do
 			exit 1
 		fi
 
+		if [[ "$previous_route" == "null" ]]; then
+			continue
+		fi
+
 		build_status="failure"
 		bin_status="failure"
 
