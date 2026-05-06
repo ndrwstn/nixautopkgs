@@ -135,7 +135,10 @@ in
           ar p "$src" "$data_tar" | tar -xf - -C "$TMPDIR/opencode-desktop"
         fi
         cp -R "$TMPDIR/opencode-desktop/usr/." "$out/" 2>/dev/null || true
-        cp -R "$TMPDIR/opencode-desktop/opt/." "$out/" 2>/dev/null || true
+        if [ -d "$TMPDIR/opencode-desktop/opt" ]; then
+          mkdir -p "$out/opt"
+          cp -R "$TMPDIR/opencode-desktop/opt/." "$out/opt/"
+        fi
       fi
 
       runHook postInstall
@@ -164,9 +167,9 @@ in
       for desktop_file in "$out/share/applications/"*.desktop; do
         if [ -f "$desktop_file" ]; then
           substituteInPlace "$desktop_file" \
-            --replace-fail 'Exec="/opt/OpenCode/@opencode-aidesktop"' 'Exec=opencode-desktop' \
-            --replace-fail 'Exec=OpenCode' 'Exec=opencode-desktop' \
-            --replace-fail '/opt/OpenCode/' "$out/opt/OpenCode/"
+            --replace '/opt/OpenCode/@opencode-aidesktop' 'opencode-desktop' \
+            --replace 'Exec=OpenCode' 'Exec=opencode-desktop' \
+            --replace '/opt/OpenCode/' "$out/opt/OpenCode/"
         fi
       done
     '';
