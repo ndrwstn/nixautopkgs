@@ -92,6 +92,9 @@ in
       pkgs.gst_all_1.gst-plugins-good
       pkgs.gst_all_1.gst-plugins-bad
       pkgs.stdenv.cc.cc.lib # libstdc++ for native modules
+      pkgs.nspr
+      pkgs.nss
+      pkgs.alsa-lib
     ];
 
     dontWrapGApps = pkgs.stdenv.isLinux;
