@@ -2,46 +2,41 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-rpFCEVyhmYlBzkHuN55QLBOntIYcgP1cGnBHel+F26M=",
+      "hash": "sha256-frjdJhBIyszocQhG43wwhAMRjnk2IwayWjWg4Ay/LOU=",
       "name": "opencode-darwin-arm64.zip"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-PPpZPe/iuPv7VfBfFnGmRmauyizsG+ganbfTuxaUtO0=",
+      "hash": "sha256-9m//v1Emcb87kh1iiIDosQHSKSSlW6sNpLN0x9e087Y=",
       "name": "opencode-linux-arm64.tar.gz"
     },
     "x86_64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-VsJSsL0gpDDos9OeMXY69xdUDQehSWP7NkIfOr3+f4Y=",
+      "hash": "sha256-rrdjfaWU4obvaHpLWd8KdawzbVRU87QzkUaPKmmne7A=",
       "name": "opencode-darwin-x64.zip"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-qz3j1ApnVzQZ7HSRYhDPkNz4wYDcnYBS23Gsn1XCiBA=",
+      "hash": "sha256-80vaSoGn4P4p9jIJ09mhJCiZoiaRgeLI4REGVYZRuHg=",
       "name": "opencode-linux-x64.tar.gz"
     }
   },
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-Fx6ign/40hgtMt5NEih7Hu4M97NQPxIKdCyJeMZ2UFo=",
-      "name": "opencode-desktop-darwin-aarch64.dmg"
-    },
-    "aarch64-linux": {
-      "archiveType": "deb",
-      "hash": "sha256-QiNdPUdAW4XG8jVBPJco9KN5+R8d0TfonHoDR6b3ecw=",
-      "name": "opencode-desktop-linux-arm64.deb"
+      "hash": "sha256-dmhHtkWstVixHnvbBfRvliqBCcI2kY0B79BkUXIewjg=",
+      "name": "opencode-desktop-mac-arm64.dmg"
     },
     "x86_64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-JT9EhAFJoLtGCUAKuUot6FO9/x5iGnmgC27EJR6+aDA=",
-      "name": "opencode-desktop-darwin-x64.dmg"
+      "hash": "sha256-eOfuByKIXLbSveRJ0SkTwAkmncGxcvGHAksJVyzCwpI=",
+      "name": "opencode-desktop-mac-x64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-gU1ynOMCvvX7IFO508sM2gH8EeFLqW942YyRmja6FTQ=",
+      "hash": "sha256-PYHDm/ud5pq7XdJ5dlAYANfUb8PRMq1MIl8HL/vTNOg=",
       "name": "opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "1.14.33"
+  "version": "1.14.39"
 }

@@ -96,10 +96,20 @@ except Exception as e:
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode build/bin checks for ${system}" >&2
 
+routing_file="${repo_root}/packages/opencode/routing.json"
+desktop_route="$(jq -r --arg system "$system" '.[$system].desktop // empty' "$routing_file")"
+
 cli_build="$(run_build_with_timeout "opencode-cli-build")"
 cli_bin="$(run_build_with_timeout "opencode-cli-bin")"
-desktop_build="$(run_build_with_timeout "opencode-desktop-build")"
-desktop_bin="$(run_build_with_timeout "opencode-desktop-bin")"
+
+if [[ "$desktop_route" == "null" ]]; then
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping desktop checks for ${system} (route is null)" >&2
+	desktop_build="skipped"
+	desktop_bin="skipped"
+else
+	desktop_build="$(run_build_with_timeout "opencode-desktop-build")"
+	desktop_bin="$(run_build_with_timeout "opencode-desktop-bin")"
+fi
 
 if [[ "$desktop_bin" == "success" && "$system" == *"-darwin" ]]; then
 	desktop_out="$(nix path-info ".#packages.${system}.opencode-desktop-bin" 2>/dev/null)"

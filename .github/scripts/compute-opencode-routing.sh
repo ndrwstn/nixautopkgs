@@ -26,7 +26,10 @@ for system in "${systems[@]}"; do
 	result_file="${results_dir}/${system}.json"
 
 	for target in "${targets[@]}"; do
-		previous_route="$(jq -r --arg system "$system" --arg target "$target" '.[$system][$target] // empty' "$routing_file")"
+		previous_route="$(jq -r --arg system "$system" --arg target "$target" '.[$system][$target]' "$routing_file")"
+		if [[ "$previous_route" == "null" ]]; then
+			continue
+		fi
 		if [[ -z "$previous_route" ]]; then
 			echo "Missing previous route for ${system}.${target}" >&2
 			exit 1

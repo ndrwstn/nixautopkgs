@@ -35,6 +35,7 @@ let
     in
     if route == "build" then buildPackage
     else if route == "bin" then binPackage
+    else if route == null then throw "opencode-desktop is not available for ${system} in this version; upstream dropped ARM64 Linux desktop builds starting with v1.14.34"
     else throw "opencode routing: invalid route `${route}` for ${system}.${target}";
 in
 {
