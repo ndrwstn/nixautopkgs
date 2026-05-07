@@ -97,7 +97,7 @@ except Exception as e:
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode build/bin checks for ${system}" >&2
 
 routing_file="${repo_root}/packages/opencode/routing.json"
-desktop_route="$(jq -r --arg system "$system" '.[$system].desktop // empty' "$routing_file")"
+desktop_route="$(jq -r --arg system "$system" '.[$system].desktop' "$routing_file")"
 
 cli_build="$(run_build_with_timeout "opencode-cli-build")"
 cli_bin="$(run_build_with_timeout "opencode-cli-bin")"

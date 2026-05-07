@@ -101,6 +101,7 @@ in
 
     dontUnpack = true;
     dontStrip = true;
+    autoPatchelfIgnoreMissingDeps = [ "libc.musl-x86_64.so.1" ];
 
     preFixup = lib.optionalString pkgs.stdenv.isLinux ''
       makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
