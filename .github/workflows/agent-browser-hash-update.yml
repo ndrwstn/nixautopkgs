@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@4a754ab0c192f4d12cf88b5954b9dd13fd2d612e # main
+        uses: DeterminateSystems/nix-installer-action@b6e4494ddccc51b56de1189099089a3514a69245 # main
 
       - name: Assert Renovate branch context
         run: |
