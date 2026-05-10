@@ -2,41 +2,41 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-D9HAaUNFo/hTnjD099qPslE6+ggMzbTz4iH+zYjMumc=",
+      "hash": "sha256-e0t3S8Keq2jmc//FV4ZI11fNXzEwuP6uMk8UkPSB36w=",
       "name": "opencode-darwin-arm64.zip"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-Jcf+hv11kQEKJZNxQeYUqYV8scj4h2K7dftD44Ab6v8=",
+      "hash": "sha256-XiVQLyxKw8kf1iIh3FnXg3Chp+dRWNcERohtQr/5jBk=",
       "name": "opencode-linux-arm64.tar.gz"
     },
     "x86_64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-yf1w44fyssUzHe0WfTes3Jyhl/Jz8Eff9fhRHrhQpQg=",
+      "hash": "sha256-j08prhuePyu6P2e3SNo/j+xsH8gmWk5bcTO/60c4CpQ=",
       "name": "opencode-darwin-x64.zip"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-Von/iT/M6lqHEPkDz2VbVUXP4ws43tN9+z2xMbATfbs=",
+      "hash": "sha256-7gZuM5HJRjBHLQTuPUHJGV1xC4YZy+uUdtur+GF4P14=",
       "name": "opencode-linux-x64.tar.gz"
     }
   },
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-G3LRU4VNiAYXcgVNIkYCesPFVyeLFWIF1BJNOH+0J+w=",
+      "hash": "sha256-K32rBpdkMdLdZDj0H2XHReardw7ZNhCAHsI7iiEtZVE=",
       "name": "opencode-desktop-mac-arm64.dmg"
     },
     "x86_64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-az7J/ay35d29ro2xnU+cHbvgpGSGL9xJ1zSi6ooaNSI=",
+      "hash": "sha256-RYEK12Y7cpxHVzY3eSowY+Lk+HarLv2O+G80zcvesy8=",
       "name": "opencode-desktop-mac-x64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-a6GwX+5vpdCC1tQbDS/INyZnibC8trBMZUrHWdsDxv0=",
+      "hash": "sha256-977rGpTr0+8PSONj7aGOXexmQv2+vcT6d7WKIf7FQN8=",
       "name": "opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "1.14.44"
+  "version": "1.14.45"
 }
