@@ -51,6 +51,18 @@
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "insidegui/ocrit",
       "extractVersionTemplate": "^(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update pinned nixpkgs rev",
+      "fileMatch": ["^flake\\.nix$"],
+      "matchStrings": [
+        "nixpkgs\\.url = \"github:NixOS/nixpkgs/(?<currentValue>[a-f0-9]{40})\""
+      ],
+      "datasourceTemplate": "git-refs",
+      "depNameTemplate": "NixOS/nixpkgs",
+      "currentValueTemplate": "nixpkgs-unstable",
+      "branchNameTemplate": "update/nixpkgs"
     }
   ],
   "packageRules": [
@@ -67,6 +79,11 @@
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
+    },
+    {
+      "matchDepNames": ["NixOS/nixpkgs"],
+      "schedule": ["0 4 * * 6"],
+      "timezone": "UTC"
     }
   ]
 }
