@@ -4,9 +4,9 @@
   inputs = {
     # NOTE: nixpkgs-unstable required for packages to build
     # NOTE: nixpkgs-unstable required for packages to build
-    # Pinned to May 7, 2025 (dc704e6102e76aad573f63b74c742cd96f8f1e6c) - go_1_25 required for GCS
+    # Pinned to May 1, 2026 (5018d858b9b0de64a5bb29e58efee2a57f0fa70b) - keeps go_1_25 for GCS while picking up transformers 5.x
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/dc704e6102e76aad573f63b74c742cd96f8f1e6c";
+    nixpkgs.url = "github:NixOS/nixpkgs/5018d858b9b0de64a5bb29e58efee2a57f0fa70b";
     flake-parts.url = "github:hercules-ci/flake-parts";
     opencode.url = "github:anomalyco/opencode/v1.14.50";
   };
