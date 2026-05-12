@@ -40,6 +40,8 @@ else
 
     disabled = pythonOlder "3.13" || pythonAtLeast "3.14";
 
+    pythonRemoveDeps = [ "mlx-metal" ];
+
     src =
       let
         pyShortVersion = "cp${builtins.replaceStrings [ "." ] [ "" ] python.pythonVersion}";

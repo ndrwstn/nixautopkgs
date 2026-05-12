@@ -50,8 +50,6 @@ else
 
     nativeBuildInputs = [ setuptools ];
 
-    pythonRelaxDeps = [ "transformers" ];
-
     dependencies = [
       mlx
       numpy
