@@ -1,9 +1,11 @@
 { lib
 , chromium
 , fetchFromGitHub
+, fetchPnpmDeps
 , geist-font
 , makeBinaryWrapper
 , nodejs_22
+, pnpmConfigHook
 , pnpm_10
 , rustPlatform
 , stdenv
@@ -14,7 +16,7 @@ let
   version = "0.27.0";
   hash = "sha256-c+AJAXMX88t+zzFsEAtFJDjDY5EbhmEyMRGFL4t63nE=";
   cargoHash = "sha256-2u7yokHCxIVq16370Mg+n5kf03yUDYJmctFxN1fnaAA=";
-  pnpmDepsHash = "sha256-p9xpkR15JRq3zzx0GtICpETqRWLyHT7RTgkQ0Y9qWsY=";
+  pnpmDepsHash = "sha256-xNxNFvaw5sdX0ZaBIUf449wIHQNifMPK3I+qi+yp+UU=";
 
   pnpm = pnpm_10.override {
     nodejs = nodejs_22;
@@ -32,10 +34,10 @@ rustPlatform.buildRustPackage {
   sourceRoot = "source/cli";
   pnpmRoot = "..";
 
-  pnpmDeps = pnpm.fetchDeps {
+  pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
-    inherit pnpm;
-    fetcherVersion = 2;
+    pnpm = pnpm_10;
+    fetcherVersion = 3;
     hash = pnpmDepsHash;
   };
 
@@ -43,7 +45,7 @@ rustPlatform.buildRustPackage {
     makeBinaryWrapper
     nodejs_22
     pnpm
-    pnpm.configHook
+    pnpmConfigHook
   ];
   buildInputs = lib.optional stdenv.isLinux chromium;
 
