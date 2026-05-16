@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@aa0e5400805113bf2d5d8f9ba11ff9148bd372a3 # main
+        uses: DeterminateSystems/nix-installer-action@00199f951aeb9404028a6e4b95ad42546f73296a # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@5626df0a8b8f16cb060538f6d3041500a2d10cb0 # main
