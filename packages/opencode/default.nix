@@ -22,6 +22,20 @@ let
     env = (old.env or { }) // {
       OPENCODE_CHANNEL = "latest";
     };
+    postFixup = (old.postFixup or "") + ''
+            # Upstream wraps opencode with a binary wrapper, which leaves tmux showing
+            # the hidden .opencode-wrapped path. Replace only the final launcher with
+            # a tiny shell wrapper that preserves upstream PATH setup and argv[0].
+            if [ -f "$out/bin/.opencode-wrapped" ]; then
+              rm -f "$out/bin/opencode"
+              cat > "$out/bin/opencode" <<EOF
+      #!${pkgs.runtimeShell}
+      export PATH="${pkgs.lib.makeBinPath ([ pkgs.ripgrep ] ++ pkgs.lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl)}:\$PATH"
+      exec -a opencode "$out/bin/.opencode-wrapped" "\$@"
+      EOF
+              chmod 755 "$out/bin/opencode"
+            fi
+    '';
   });
   opencodeDesktopBuild = opencodeInput.packages.${system}.desktop;
 
