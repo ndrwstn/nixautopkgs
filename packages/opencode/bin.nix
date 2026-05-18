@@ -6,6 +6,7 @@
 
 let
   lib = pkgs.lib;
+  opencodeRuntimePath = lib.makeBinPath ([ pkgs.ripgrep ] ++ lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl);
   opencodeVersion = opencodeAssets.version
     or (throw "opencode-bin: missing `version` in packages/opencode/assets.json");
   releaseBaseUrl = "https://github.com/anomalyco/opencode/releases/download/v${opencodeVersion}";
@@ -45,7 +46,7 @@ in
     installPhase = ''
       runHook preInstall
 
-      mkdir -p "$out/bin" "$TMPDIR/opencode-cli"
+      mkdir -p "$out/bin" "$out/libexec" "$TMPDIR/opencode-cli"
 
       if [ "${cliAsset.archiveType}" = "zip" ]; then
         unzip -q "$src" -d "$TMPDIR/opencode-cli"
@@ -53,7 +54,14 @@ in
         tar -xzf "$src" -C "$TMPDIR/opencode-cli"
       fi
 
-      install -Dm755 "$TMPDIR/opencode-cli/opencode" "$out/bin/opencode"
+      install -Dm755 "$TMPDIR/opencode-cli/opencode" "$out/libexec/opencode"
+
+      cat > "$out/bin/opencode" <<EOF
+      #!${pkgs.runtimeShell}
+      export PATH="${opencodeRuntimePath}:\$PATH"
+      exec -a opencode "$out/libexec/opencode" "\$@"
+      EOF
+      chmod 755 "$out/bin/opencode"
 
       runHook postInstall
     '';

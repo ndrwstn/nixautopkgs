@@ -5,6 +5,7 @@
 }:
 
 let
+  opencodeRuntimePath = pkgs.lib.makeBinPath ([ pkgs.ripgrep ] ++ pkgs.lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl);
   opencodeAssets = builtins.fromJSON (builtins.readFile ./assets.json);
   opencodeRouting = builtins.fromJSON (builtins.readFile ./routing.json);
 
@@ -23,15 +24,20 @@ let
       OPENCODE_CHANNEL = "latest";
     };
     postFixup = (old.postFixup or "") + ''
-            # Upstream wraps opencode with a binary wrapper, which leaves tmux showing
-            # the hidden .opencode-wrapped path. Replace only the final launcher with
-            # a tiny shell wrapper that preserves upstream PATH setup and argv[0].
+            # Upstream wraps opencode by renaming the real executable to
+            # .opencode-wrapped. That leaves tmux on macOS showing the hidden
+            # basename because it ignores argv[0] and uses the actual exec path.
+            # Move the real executable to libexec/opencode and keep a small
+            # launcher in bin/opencode so both tmux and ps see "opencode"
+            # cross-platform.
             if [ -f "$out/bin/.opencode-wrapped" ]; then
+              mkdir -p "$out/libexec"
+              mv "$out/bin/.opencode-wrapped" "$out/libexec/opencode"
               rm -f "$out/bin/opencode"
               cat > "$out/bin/opencode" <<EOF
       #!${pkgs.runtimeShell}
-      export PATH="${pkgs.lib.makeBinPath ([ pkgs.ripgrep ] ++ pkgs.lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl)}:\$PATH"
-      exec -a opencode "$out/bin/.opencode-wrapped" "\$@"
+      export PATH="${opencodeRuntimePath}:\$PATH"
+      exec -a opencode "$out/libexec/opencode" "\$@"
       EOF
               chmod 755 "$out/bin/opencode"
             fi
