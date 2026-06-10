@@ -2,46 +2,46 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-AVhf9NFYIL06h45Lx8rPsep14jbR/tjC9fNZXtyLerU=",
+      "hash": "sha256-cyfIVWmxDp7FJJqWQ/D9R34RfbVsRndtlXN8vASG+VA=",
       "name": "opencode-darwin-arm64.zip"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-6x1YdscGdc/ak8ShxDhdcnQS+ucxVPHwBdFVYm31tVk=",
+      "hash": "sha256-ahritE0VtTG34KocYjnxb4oV7J+SFFe/qKKxLiI1jtM=",
       "name": "opencode-linux-arm64.tar.gz"
     },
     "x86_64-darwin": {
       "archiveType": "zip",
-      "hash": "sha256-GES7bLunide7TmtBf+/3NAf4ZM5o1vttc8soYIcCRPw=",
+      "hash": "sha256-ihnTM/HDf1MhupB239BE3qsIv1/glPx9LGD5WBmzrBM=",
       "name": "opencode-darwin-x64.zip"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-BqecW7f40BcWskQHEs9n+s0221kYiAmusjI3SyBr1Ck=",
+      "hash": "sha256-XIL2CCB66CVMQ+Mx2Q2WkVrqGeeEdOMRssiLa7t8k/A=",
       "name": "opencode-linux-x64.tar.gz"
     }
   },
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-v6Nu06P5UVOK13WbD9fhVhQj/agxb6P1NV19SsnKX8k=",
+      "hash": "sha256-NQfZEjfmBhm9JdHJpxkUQUFmi0hJ6kh7ZF5fU9eqOl8=",
       "name": "opencode-desktop-mac-arm64.dmg"
     },
     "aarch64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-jh5p7Pz+M/kVaDxVf4ddBFuF1OTPlz8X9ukJcjKla3Y=",
+      "hash": "sha256-WPDmArzCFzT6XJoHN97j9+gpt7n4kNHkm+fP6s1nucA=",
       "name": "opencode-desktop-linux-arm64.deb"
     },
     "x86_64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-g98rDwyI11UVFQqF7IWBrgUl3e0omV8iSp3RmOiAOUg=",
+      "hash": "sha256-AydYv8B3eqYfyB9/AD87azbhsFf3ZWZAeEipmBA863Q=",
       "name": "opencode-desktop-mac-x64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-8bgyEz+xKpvkNBbrNVhpY9aAc4l3qKldHaCAKjbk1d4=",
+      "hash": "sha256-42ZSkLsj+uoYDXzAmcPVSRS8uCwJMkWDEF5KSartSMo=",
       "name": "opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "1.16.2"
+  "version": "1.17.0"
 }
