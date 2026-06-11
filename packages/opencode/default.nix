@@ -43,7 +43,7 @@ let
             fi
     '';
   });
-  opencodeDesktopBuild = opencodeInput.packages.${system}.desktop;
+  opencodeDesktopBuild = opencodeInput.packages.${system}.opencode-desktop;
 
   opencodeCliBin = opencodeBin."opencode-cli-bin";
   opencodeDesktopBin = opencodeBin."opencode-desktop-bin";
