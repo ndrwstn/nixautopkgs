@@ -26,6 +26,7 @@
             inherit mlx;
           };
           ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
+          television = pkgs.callPackage ./packages/television/default.nix { };
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
             opencodeInput = inputs.opencode;
@@ -40,7 +41,7 @@
         in
         {
           packages = {
-            inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit;
+            inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit television;
           } // opencodePackages // {
             default = gcs; # Default to gcs for now
           };

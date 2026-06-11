@@ -59,6 +59,15 @@
     },
     {
       "customType": "regex",
+      "description": "Update television version in packages/television/default.nix",
+      "managerFilePatterns": ["/^packages/television/default\\.nix$/"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "alexpasmantier/television",
+      "extractVersionTemplate": "^(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Update pinned nixpkgs rev",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
@@ -80,6 +89,13 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["alexpasmantier/television"],
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"

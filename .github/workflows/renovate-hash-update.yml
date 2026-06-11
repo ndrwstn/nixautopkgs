@@ -6,6 +6,7 @@ on:
     paths:
       - "packages/gcs/default.nix"
       - "packages/clamav/default.nix"
+      - "packages/television/default.nix"
       - ".github/workflows/renovate-hash-update.yml"
 
 concurrency:
@@ -53,6 +54,7 @@ jobs:
 
           run_gcs=false
           run_clamav=false
+          run_television=false
 
           if printf '%s\n' "$CHANGED_FILES" | grep -qx "packages/gcs/default.nix"; then
             run_gcs=true
@@ -62,8 +64,13 @@ jobs:
             run_clamav=true
           fi
 
+          if printf '%s\n' "$CHANGED_FILES" | grep -qx "packages/television/default.nix"; then
+            run_television=true
+          fi
+
           echo "run_gcs=$run_gcs" >> "$GITHUB_OUTPUT"
           echo "run_clamav=$run_clamav" >> "$GITHUB_OUTPUT"
+          echo "run_television=$run_television" >> "$GITHUB_OUTPUT"
 
       - name: Update gcs hashes
         if: steps.detect-packages.outputs.run_gcs == 'true'
@@ -73,10 +80,18 @@ jobs:
         if: steps.detect-packages.outputs.run_clamav == 'true'
         run: nix run nixpkgs#nix-update -- --flake --version=skip clamav
 
+      - name: Update television hashes
+        if: steps.detect-packages.outputs.run_television == 'true'
+        run: nix run nixpkgs#nix-update -- --flake --version=skip television
+
+      - name: Build television package
+        if: steps.detect-packages.outputs.run_television == 'true'
+        run: nix build .#television
+
       - name: Commit and push changes
         id: commit-push
         run: |
-          if [[ "${{ steps.detect-packages.outputs.run_gcs }}" != "true" && "${{ steps.detect-packages.outputs.run_clamav }}" != "true" ]]; then
+          if [[ "${{ steps.detect-packages.outputs.run_gcs }}" != "true" && "${{ steps.detect-packages.outputs.run_clamav }}" != "true" && "${{ steps.detect-packages.outputs.run_television }}" != "true" ]]; then
             echo "No updateable package paths changed in PR"
             echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
@@ -90,7 +105,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add packages/gcs/default.nix packages/clamav/default.nix
+          git add packages/gcs/default.nix packages/clamav/default.nix packages/television/default.nix
           git commit -m "chore: update package hashes"
           git push
           echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
