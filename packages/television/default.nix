@@ -18,7 +18,7 @@ assert
 let
   television = rustPlatform.buildRustPackage (finalAttrs: {
     pname = "television";
-    version = "0.15.8";
+    version = "0.15.9";
 
     __structuredAttrs = true;
 
