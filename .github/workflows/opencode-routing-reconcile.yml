@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@75b0c90b355186240b58c409b99c688ae4acf83e # main
+        uses: DeterminateSystems/nix-installer-action@a7ad9c4f0c65208097f4d34f3cfa1913b80cce5c # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@14645543c3b214bedad3b9b49775cb042f4c1fc7 # main
@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@75b0c90b355186240b58c409b99c688ae4acf83e # main
+        uses: DeterminateSystems/nix-installer-action@a7ad9c4f0c65208097f4d34f3cfa1913b80cce5c # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@14645543c3b214bedad3b9b49775cb042f4c1fc7 # main
