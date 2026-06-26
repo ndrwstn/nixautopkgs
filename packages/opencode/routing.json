@@ -5,7 +5,7 @@
   },
   "aarch64-linux": {
     "_comment": "aarch64-linux desktop temporarily unavailable starting v1.14.34 due to upstream Electron migration (electron-builder lacks ARM64 Linux packaging). Upstream workflow still references it, so likely temporary.",
-    "cli": "build",
+    "cli": "bin",
     "desktop": null
   },
   "x86_64-darwin": {
@@ -13,7 +13,7 @@
     "desktop": "bin"
   },
   "x86_64-linux": {
-    "cli": "build",
+    "cli": "bin",
     "desktop": "bin"
   }
 }
