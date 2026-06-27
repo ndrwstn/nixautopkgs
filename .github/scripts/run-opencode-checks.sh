@@ -36,6 +36,12 @@ import subprocess
 import os
 
 cmd = ['nix', 'build', '--no-link', '.#packages.${system}.${attr_name}']
+if '${attr_name}'.endswith('-build'):
+    # --rebuild forces a fresh build from scratch, even if the derivation
+    # is cached locally (e.g. restored by magic-nix-cache-action). Without
+    # this, a stale fixed-output node_modules derivation can mask build
+    # failures and produce false routing-reconcile successes.
+    cmd.insert(2, '--rebuild')
 log_path = '${log_file}'
 timeout = ${TIMEOUT_SECONDS}
 
