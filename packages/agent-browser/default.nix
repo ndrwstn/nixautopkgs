@@ -6,7 +6,7 @@
 , makeBinaryWrapper
 , nodejs_22
 , pnpmConfigHook
-, pnpm_10
+, pnpm
 , rustPlatform
 , stdenv
 }:
@@ -18,7 +18,7 @@ let
   cargoHash = "sha256-2u7yokHCxIVq16370Mg+n5kf03yUDYJmctFxN1fnaAA=";
   pnpmDepsHash = "sha256-xNxNFvaw5sdX0ZaBIUf449wIHQNifMPK3I+qi+yp+UU=";
 
-  pnpm = pnpm_10.override {
+  pnpm = pnpm.override {
     nodejs = nodejs_22;
   };
 
@@ -36,7 +36,7 @@ rustPlatform.buildRustPackage {
 
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
-    pnpm = pnpm_10;
+    inherit pnpm;
     fetcherVersion = 3;
     hash = pnpmDepsHash;
   };
