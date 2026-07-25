@@ -3,10 +3,9 @@
 
   inputs = {
     # NOTE: nixpkgs-unstable required for packages to build
-    # NOTE: nixpkgs-unstable required for packages to build
-    # Pinned to May 1, 2026 (5018d858b9b0de64a5bb29e58efee2a57f0fa70b) - keeps go_1_25 for GCS while picking up transformers 5.x
+    # Pinned to July 25, 2026 (701b3fd657f582f3464354b24baf93e1ee579b03) - provides pnpm_11 for agent-browser
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/5018d858b9b0de64a5bb29e58efee2a57f0fa70b";
+    nixpkgs.url = "github:NixOS/nixpkgs/701b3fd657f582f3464354b24baf93e1ee579b03";
     flake-parts.url = "github:hercules-ci/flake-parts";
     opencode.url = "github:anomalyco/opencode/v1.18.4";
   };
@@ -21,8 +20,8 @@
           gcs = import ./packages/gcs/default.nix { inherit pkgs; };
           agent-browser = pkgs.callPackage ./packages/agent-browser/default.nix { };
           clamav = pkgs.callPackage ./packages/clamav/default.nix { };
-          mlx = pkgs.python3Packages.callPackage ./packages/mlx/default.nix { };
-          mlx-lm = pkgs.python3Packages.callPackage ./packages/mlx-lm/default.nix {
+          mlx = pkgs.python313Packages.callPackage ./packages/mlx/default.nix { };
+          mlx-lm = pkgs.python313Packages.callPackage ./packages/mlx-lm/default.nix {
             inherit mlx;
           };
           ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
