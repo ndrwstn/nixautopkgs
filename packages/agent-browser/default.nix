@@ -6,19 +6,19 @@
 , makeBinaryWrapper
 , nodejs_22
 , pnpmConfigHook
-, pnpm_10
+, pnpm_11
 , rustPlatform
 , stdenv
 }:
 
 let
   pname = "agent-browser";
-  version = "0.27.0";
-  hash = "sha256-c+AJAXMX88t+zzFsEAtFJDjDY5EbhmEyMRGFL4t63nE=";
-  cargoHash = "sha256-2u7yokHCxIVq16370Mg+n5kf03yUDYJmctFxN1fnaAA=";
-  pnpmDepsHash = "sha256-xNxNFvaw5sdX0ZaBIUf449wIHQNifMPK3I+qi+yp+UU=";
+  version = "0.33.0";
+  hash = "sha256-praWvAgWoDmWqXzh/kxdfQAPGkVS4qkb0pPYtMWO/N8=";
+  cargoHash = "sha256-j2tkoO334dtl22ykqBz5A0RTLrefyREAiXFKqTXEsgM=";
+  pnpmDepsHash = "sha256-uY+Zm/LtNn3+qf4B/p3/nzn5Emj6C7+S8X4q8wr+Ow0=";
 
-  pnpm = pnpm_10.override {
+  pnpm = pnpm_11.override {
     nodejs = nodejs_22;
   };
 
@@ -36,8 +36,8 @@ rustPlatform.buildRustPackage {
 
   pnpmDeps = fetchPnpmDeps {
     inherit pname version src;
-    pnpm = pnpm_10;
-    fetcherVersion = 3;
+    pnpm = pnpm_11;
+    fetcherVersion = 4;
     hash = pnpmDepsHash;
   };
 
