@@ -7,7 +7,6 @@ routing_file="${2:-packages/opencode/routing.json}"
 
 systems=(
 	"aarch64-darwin"
-	"x86_64-darwin"
 	"aarch64-linux"
 	"x86_64-linux"
 )
