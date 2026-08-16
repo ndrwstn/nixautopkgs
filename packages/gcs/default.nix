@@ -36,11 +36,6 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
     hash = "sha256-sq6t1EjYfc2Do/wWeOXLDTS257NaNjJUEA+kYox77FQ=";
   };
 
-  modPostBuild = ''
-    chmod +w vendor/github.com/richardwilkes/pdf
-    sed -i 's|-lmupdf[^ ]* |-lmupdf |g' vendor/github.com/richardwilkes/pdf/pdf.go
-  '';
-
   vendorHash = "sha256-pbt4zNbFYTXKVe9D70Lg3XVsjadnUIuPwbbV1CJNLc8=";
 
   nativeBuildInputs = [ pkgs.pkg-config ]
@@ -48,10 +43,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
     pkgs.copyDesktopItems
   ];
 
-  buildInputs = [
-    pkgs.mupdf
-  ]
-  ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+  buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     pkgs.libGL
     pkgs.xorg.libX11
     pkgs.xorg.libXcursor
