@@ -38,6 +38,16 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
 
   vendorHash = "sha256-ozBUFx6zfbt2zHl0Pzn8D4Zp6/f5LPiMDFwQoPJfceo=";
 
+  # Upstream requires the jsonv2 experiment (see upstream build.sh) for tests that import encoding/json/v2
+  GOEXPERIMENT = "jsonv2";
+
+  # Tests below walk the whole source tree (including Nix's vendored dependencies) and are
+  # therefore incompatible with vendored builds:
+  #   - cmd/enumgen's orphaned-files test counts *_gen.go files across all dependencies
+  #   - the copyright header test expects every .go file (incl. vendor/) to carry the MPL header
+  excludedPackages = [ "cmd/enumgen" ];
+  checkFlags = [ "-skip=TestGoSourcesHaveCopyrightHeader" ];
+
   nativeBuildInputs = [ pkgs.pkg-config ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     pkgs.copyDesktopItems
