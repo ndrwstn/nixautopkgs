@@ -25,33 +25,25 @@ let
   appBundleId = "com.trollworks.gcs";
 in
 
-pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
+pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
   pname = "gcs";
-  version = "5.44.0";
+  version = "5.45.2";
 
   src = pkgs.fetchFromGitHub {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-eCWMaO1iv917aHcdln2B10oCSbmzpXvQIF/luztHwRc=";
+    hash = "sha256-sq6t1EjYfc2Do/wWeOXLDTS257NaNjJUEA+kYox77FQ=";
   };
 
-  modPostBuild = ''
-    chmod +w vendor/github.com/richardwilkes/pdf
-    sed -i 's|-lmupdf[^ ]* |-lmupdf |g' vendor/github.com/richardwilkes/pdf/pdf.go
-  '';
-
-  vendorHash = "sha256-pbt4zNbFYTXKVe9D70Lg3XVsjadnUIuPwbbV1CJNLc8=";
+  vendorHash = "sha256-ozBUFx6zfbt2zHl0Pzn8D4Zp6/f5LPiMDFwQoPJfceo=";
 
   nativeBuildInputs = [ pkgs.pkg-config ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     pkgs.copyDesktopItems
   ];
 
-  buildInputs = [
-    pkgs.mupdf
-  ]
-  ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+  buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
     pkgs.libGL
     pkgs.xorg.libX11
     pkgs.xorg.libXcursor
