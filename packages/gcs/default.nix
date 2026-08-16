@@ -33,10 +33,10 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-sq6t1EjYfc2Do/wWeOXLDTS257NaNjJUEA+kYox77FQ=";
+    hash = "sha256-PYKSbDoWFZrmUMiE+oL/+fK3enbkWDZ51vnoRqawPo0=";
   };
 
-  vendorHash = "sha256-ozBUFx6zfbt2zHl0Pzn8D4Zp6/f5LPiMDFwQoPJfceo=";
+  vendorHash = "sha256-VWA6S/pIbVXpNkg2jVSSvkoV/qgFvnAoyrTwhLe3MRk=";
 
   nativeBuildInputs = [ pkgs.pkg-config ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
