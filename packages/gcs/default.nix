@@ -36,7 +36,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
     hash = "sha256-sq6t1EjYfc2Do/wWeOXLDTS257NaNjJUEA+kYox77FQ=";
   };
 
-  vendorHash = "sha256-pbt4zNbFYTXKVe9D70Lg3XVsjadnUIuPwbbV1CJNLc8=";
+  vendorHash = "sha256-ozBUFx6zfbt2zHl0Pzn8D4Zp6/f5LPiMDFwQoPJfceo=";
 
   nativeBuildInputs = [ pkgs.pkg-config ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
