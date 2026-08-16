@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -46,11 +45,9 @@ jobs:
         run: nix build .#agent-browser
 
       - name: Commit and push changes
-        id: commit-push
         run: |
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No hash changes detected"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -59,13 +56,3 @@ jobs:
           git add packages/agent-browser/default.nix
           git commit -m "chore: update agent-browser hashes"
           git push
-          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Report check status on latest commit
-        if: steps.commit-push.outputs.new_sha != ''
-        uses: LouisBrunner/checks-action@937cbbcde3259005b50746dc91cde29098aac2ff # v3.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: update-hashes
-          sha: ${{ steps.commit-push.outputs.new_sha }}
-          conclusion: success

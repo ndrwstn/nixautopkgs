@@ -68,7 +68,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -127,7 +126,6 @@ jobs:
           exit 1
 
       - name: Commit and push updates
-        id: commit-push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -136,22 +134,11 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No OpenCode changes to commit"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git commit -m "chore: update opencode assets and routing"
           git push
-          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Report check status on latest commit
-        if: steps.commit-push.outputs.new_sha != ''
-        uses: LouisBrunner/checks-action@937cbbcde3259005b50746dc91cde29098aac2ff # v3.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: opencode-routing-update
-          sha: ${{ steps.commit-push.outputs.new_sha }}
-          conclusion: success
 
   merge-pr:
     if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository

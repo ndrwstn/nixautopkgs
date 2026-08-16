@@ -18,7 +18,6 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: write
-      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -82,17 +81,14 @@ jobs:
         run: nix build .#mlx-lm
 
       - name: Commit and push changes
-        id: commit-push
         run: |
           if [[ "${{ steps.detect-packages.outputs.run_mlx }}" != "true" && "${{ steps.detect-packages.outputs.run_mlx_lm }}" != "true" ]]; then
             echo "No updateable package paths changed in PR"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No hash changes detected"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -101,13 +97,3 @@ jobs:
           git add packages/mlx/default.nix packages/mlx-lm/default.nix
           git commit -m "chore: update mlx package hashes"
           git push
-          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Report check status on latest commit
-        if: steps.commit-push.outputs.new_sha != ''
-        uses: LouisBrunner/checks-action@937cbbcde3259005b50746dc91cde29098aac2ff # v3.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: update-mlx-hashes-darwin
-          sha: ${{ steps.commit-push.outputs.new_sha }}
-          conclusion: success

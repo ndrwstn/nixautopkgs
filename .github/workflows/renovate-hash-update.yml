@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      checks: write
 
     steps:
       - name: Checkout PR branch
@@ -84,22 +83,27 @@ jobs:
         if: steps.detect-packages.outputs.run_television == 'true'
         run: nix run nixpkgs#nix-update -- --flake --version=skip television
 
+      - name: Build gcs package
+        if: steps.detect-packages.outputs.run_gcs == 'true'
+        run: nix build .#gcs
+
+      - name: Build clamav package
+        if: steps.detect-packages.outputs.run_clamav == 'true'
+        run: nix build .#clamav
+
       - name: Build television package
         if: steps.detect-packages.outputs.run_television == 'true'
         run: nix build .#television
 
       - name: Commit and push changes
-        id: commit-push
         run: |
           if [[ "${{ steps.detect-packages.outputs.run_gcs }}" != "true" && "${{ steps.detect-packages.outputs.run_clamav }}" != "true" && "${{ steps.detect-packages.outputs.run_television }}" != "true" ]]; then
             echo "No updateable package paths changed in PR"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No hash changes detected"
-            echo "new_sha=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -108,13 +112,3 @@ jobs:
           git add packages/gcs/default.nix packages/clamav/default.nix packages/television/default.nix
           git commit -m "chore: update package hashes"
           git push
-          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Report check status on latest commit
-        if: steps.commit-push.outputs.new_sha != ''
-        uses: LouisBrunner/checks-action@937cbbcde3259005b50746dc91cde29098aac2ff # v3.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: renovate-hash-update
-          sha: ${{ steps.commit-push.outputs.new_sha }}
-          conclusion: success
