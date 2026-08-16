@@ -25,7 +25,7 @@ let
   appBundleId = "com.trollworks.gcs";
 in
 
-pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
+pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
   pname = "gcs";
   version = "5.45.2";
 
@@ -33,7 +33,7 @@ pkgs.buildGoModule.override { go = pkgs.go_1_25; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-eCWMaO1iv917aHcdln2B10oCSbmzpXvQIF/luztHwRc=";
+    hash = "sha256-sq6t1EjYfc2Do/wWeOXLDTS257NaNjJUEA+kYox77FQ=";
   };
 
   modPostBuild = ''
