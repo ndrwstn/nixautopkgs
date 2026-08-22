@@ -26,6 +26,7 @@
           };
           ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
           television = pkgs.callPackage ./packages/television/default.nix { };
+          mekhq = pkgs.callPackage ./packages/mekhq/default.nix { };
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
             opencodeInput = inputs.opencode;
@@ -40,10 +41,8 @@
         in
         {
           packages = {
-            inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit television;
-          } // opencodePackages // {
-            default = gcs; # Default to gcs for now
-          };
+            inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit television mekhq;
+          } // opencodePackages;
 
           devShells = {
             default = pkgs.mkShell {

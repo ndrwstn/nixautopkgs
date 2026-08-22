@@ -1,0 +1,49 @@
+#!@shell@
+# Launcher for @appName@ (part of the MegaMek suite packaged by nixautopkgs).
+#
+# The suite resolves bundled resources relative to its working directory
+# (e.g. mmconf/milestoneReleases.yml is opened through java.io.File) and
+# writes logs/ there as well. The nix store is read-only, so this wrapper
+# runs the game from a writable state directory that mirrors the installed
+# distribution through symlinks.
+
+# NOTE: __NIX_STORE_PATH__ is filled in by the package's install phase; it
+# deliberately avoids at-sign placeholder syntax because this template is
+# itself a nix derivation and would otherwise capture the wrong store path
+# at build time (and because replace-vars rejects any leftover placeholders).
+dest="__NIX_STORE_PATH__/share/mekhq"
+
+if [ -n "$MEKHQ_STATE_DIR" ]; then
+    state="$MEKHQ_STATE_DIR"
+else
+    state="${XDG_DATA_HOME:-$HOME/.local/share}/megamek-suite"
+fi
+mkdir -p "$state"
+
+# Expose the read-only distribution contents through the state directory.
+for item in "$dest"/*; do
+    name="$(basename "$item")"
+    [ "$name" = "campaigns" ] && continue
+    ln -sfn "$item" "$state/$name"
+done
+
+# Campaign saves are user-writable (MekHQ autosaves here); seed once and
+# strip the read-only permissions inherited from the nix store copy.
+if [ ! -e "$state/campaigns" ]; then
+    cp -R "$dest/campaigns" "$state/campaigns"
+    chmod -R u+w "$state/campaigns"
+fi
+
+cd "$state"
+
+# Like upstream's own launchers, use an explicit classpath instead of -jar:
+# in the suite bundle the app jars live inside lib/, so the manifests'
+# relative Class-Path entries would not resolve. The JVM expands the lib/*
+# wildcard itself because it stays quoted for the shell.
+exec "@java@" \
+    -Xmx${MEKHQ_XMX:-4096m} \
+    --add-opens=java.base/java.util=ALL-UNNAMED \
+    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+    -Dsun.awt.disablegrab=true \
+    -cp "$dest/lib/*" \
+    @mainClass@ "$@"
