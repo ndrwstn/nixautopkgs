@@ -87,7 +87,18 @@ let
       bundle="$out/Applications/${app.display}.app"
       mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
 
-      ln -s "$out/bin/${app.id}" "$bundle/Contents/MacOS/${app.display}"
+      # LaunchServices inspects CFBundleExecutable's Mach-O architecture
+      # before launching an app. A script (or symlink to one) carries no
+      # architecture info, so on Apple Silicon macOS offers to install
+      # Rosetta even though the whole launch chain is native. Compile a
+      # tiny per-app launcher stub instead; it execs the real wrapper
+      # script from bin/, which stays the entry point for CLI use.
+      stub="$bundle/Contents/MacOS/${app.display}"
+      printf '#include <unistd.h>\nint main(void) {\n    execl("/bin/sh", "sh", "%s/bin/%s", (char *)0);\n    return 127;\n}\n' \
+        "$out" '${app.id}' > stub.c
+      $CC -O2 -o "$stub" stub.c
+      rm -f stub.c
+
       cp "$dest/data/images/misc/${app.id}.icns" "$bundle/Contents/Resources/${app.id}.icns"
 
       plist="$bundle/Contents/Info.plist"
