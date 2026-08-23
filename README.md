@@ -72,3 +72,39 @@ Maintainer-tested targets are currently:
 - `packages/opencode/routing.json`: per-system alias routing (`build` or `bin`) for `cli` and `desktop`.
 
 `flake.nix` reads both files directly and resolves aliases from routing state.
+
+## OpenCode v2 (Beta Channel)
+
+OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package set:
+
+- `opencode-v2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
+- `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
+
+Binaries come from the `anomalyco/opencode-beta` releases.
+
+### Why bin-only
+
+Unlike `packages/opencode`, there is deliberately no source-build route here.
+Upstream's release artifacts cannot be reproduced byte-for-byte outside their CI:
+macOS artifacts carry RFC3161-timestamped Developer ID signatures, and desktop
+bundles go through electron-builder notarization with Sentry injection. Since a
+local source build can never match the official releases, we ship only the
+prebuilt binaries rather than a nonfunctioning substitute. A failed fetch or
+hash mismatch therefore fails loudly instead of silently downgrading.
+
+### Maintenance
+
+- `packages/opencode-v2/assets.json` pins the beta version + per-system asset hashes.
+- Renovate watches `anomalyco/opencode-beta` releases and automerges version bumps.
+- `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
+  regenerates the file from GitHub release digests (same flow as v1, but the
+  version is read from the assets file itself since no flake input exists).
+- CI runs `run-opencode-v2-checks.sh` per system in
+  `.github/workflows/opencode-routing-update.yml`; failures block the PR (no routing fallback).
+
+Manual bump flow (if needed):
+
+1. Edit `"version"` in `packages/opencode-v2/assets.json`.
+2. Run `./.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`.
+
+Rollback: delete `packages/opencode-v2/`, remove the `opencodeV2Packages` wiring in `flake.nix`, and drop the `anomalyco/opencode-beta` entries from `renovate.json`.

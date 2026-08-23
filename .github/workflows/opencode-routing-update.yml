@@ -10,6 +10,7 @@ on:
       - "packages/opencode/routing.json"
       - "packages/opencode/default.nix"
       - "packages/opencode/bin.nix"
+      - "packages/opencode-v2/**"
       - ".github/scripts/*.sh"
       - ".github/workflows/opencode-routing-update.yml"
 
@@ -54,11 +55,26 @@ jobs:
       - name: Run OpenCode build/bin checks
         run: ./.github/scripts/run-opencode-checks.sh "${{ matrix.system }}" result.json
 
+      - name: Sync OpenCode v2 beta asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json
+
+      - name: Run OpenCode v2 bin checks
+        run: ./.github/scripts/run-opencode-v2-checks.sh "${{ matrix.system }}" result-v2.json
+
       - name: Upload system result
         uses: actions/upload-artifact@v7
         with:
           name: route-result-${{ matrix.system }}
           path: result.json
+          retention-days: 1
+
+      - name: Upload v2 system result
+        uses: actions/upload-artifact@v7
+        with:
+          name: oc2-result-${{ matrix.system }}
+          path: result-v2.json
           retention-days: 1
 
   aggregate-and-commit:
@@ -96,6 +112,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./.github/scripts/update-opencode-assets.sh --update-lock
 
+      - name: Sync OpenCode v2 beta asset hashes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json
+
       - name: Download matrix results
         uses: actions/download-artifact@v8
         with:
@@ -125,12 +146,46 @@ jobs:
           echo "::error::One or more system/target pairs had neither build nor bin available."
           exit 1
 
+      - name: Download v2 matrix results
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts-v2
+          pattern: oc2-result-*
+
+      - name: Normalize v2 matrix artifacts
+        run: |
+          mkdir -p route-results-v2
+          for result_dir in artifacts-v2/oc2-result-*; do
+            if [[ -d "$result_dir" ]]; then
+              system_name="${result_dir##*oc2-result-}"
+              cp "$result_dir/result-v2.json" "route-results-v2/${system_name}.json"
+            fi
+          done
+
+      - name: Verify OpenCode v2 bin availability
+        run: |
+          set -euo pipefail
+          failed=0
+          for result_file in route-results-v2/*.json; do
+            system="$(jq -r '.system' "$result_file")"
+            cli_bin="$(jq -r '.cli.bin' "$result_file")"
+            desktop_bin="$(jq -r '.desktop.bin' "$result_file")"
+            echo "${system}: cli=${cli_bin} desktop=${desktop_bin}"
+            if [[ "$cli_bin" != "success" || "$desktop_bin" != "success" ]]; then
+              failed=1
+            fi
+          done
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::OpenCode v2 beta packages are unavailable on one or more systems."
+            exit 1
+          fi
+
       - name: Commit and push updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add flake.lock packages/opencode/assets.json packages/opencode/routing.json
+          git add flake.lock packages/opencode/assets.json packages/opencode/routing.json packages/opencode-v2/assets.json
 
           if git diff --cached --quiet; then
             echo "No OpenCode changes to commit"

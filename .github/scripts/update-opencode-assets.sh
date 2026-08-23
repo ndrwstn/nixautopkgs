@@ -5,28 +5,67 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
+repo="anomalyco/opencode"
+assets_file="packages/opencode/assets.json"
 update_lock=0
-if [[ "${1:-}" == "--update-lock" ]]; then
-	update_lock=1
-fi
 
-if [[ "$update_lock" -eq 1 ]]; then
-	nix flake update opencode
-fi
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--update-lock)
+		update_lock=1
+		shift
+		;;
+	--repo)
+		repo="${2:?--repo requires a value}"
+		shift 2
+		;;
+	--assets-file)
+		assets_file="${2:?--assets-file requires a value}"
+		shift 2
+		;;
+	*)
+		echo "Unknown argument: $1" >&2
+		echo "Usage: $0 [--update-lock] [--repo owner/name] [--assets-file path]" >&2
+		exit 1
+		;;
+	esac
+done
 
-version="$(sed -nE 's/.*opencode\.url = "github:anomalyco\/opencode\/v([^"]+)";.*/\1/p' flake.nix)"
-if [[ -z "$version" ]]; then
-	echo "Failed to parse opencode version from flake.nix" >&2
-	exit 1
+default_assets_file="packages/opencode/assets.json"
+
+if [[ "$assets_file" == "$default_assets_file" ]]; then
+	# v1 flow: the version comes from the flake input URL in flake.nix
+	if [[ "$update_lock" -eq 1 ]]; then
+		nix flake update opencode
+	fi
+
+	version="$(sed -nE 's/.*opencode\.url = "github:anomalyco\/opencode\/v([^"]+)";.*/\1/p' flake.nix)"
+	if [[ -z "$version" ]]; then
+		echo "Failed to parse opencode version from flake.nix" >&2
+		exit 1
+	fi
+else
+	# Alternate flow (e.g. opencode-v2 beta tracking): the version lives in
+	# the assets file itself; Renovate bumps it and this script syncs hashes.
+	if [[ "$update_lock" -eq 1 ]]; then
+		echo "--update-lock is only supported for $default_assets_file" >&2
+		exit 1
+	fi
+
+	version="$(jq -r '.version // empty' "$assets_file")"
+	if [[ -z "$version" ]]; then
+		echo "Failed to parse version from $assets_file" >&2
+		exit 1
+	fi
 fi
 
 release_json="$(mktemp)"
 trap 'rm -f "$release_json"' EXIT
 
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${version}" >"$release_json"
+	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${repo}/releases/tags/v${version}" >"$release_json"
 else
-	curl -fsSL "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${version}" >"$release_json"
+	curl -fsSL "https://api.github.com/repos/${repo}/releases/tags/v${version}" >"$release_json"
 fi
 
 digest_for_asset() {
@@ -153,6 +192,8 @@ if [[ -n "$desktop_linux_arm64_hash" ]]; then
 }'
 fi
 
+mkdir -p "$(dirname "$assets_file")"
+
 jq "${jq_args[@]}" \
 	"{
     version: \$version,
@@ -179,6 +220,6 @@ jq "${jq_args[@]}" \
       }
     },
     desktop: ${desktop_filter}
-  }" >packages/opencode/assets.json
+  }" >"$assets_file"
 
-echo "Updated packages/opencode/assets.json for OpenCode v${version}"
+echo "Updated $assets_file for OpenCode v${version}"

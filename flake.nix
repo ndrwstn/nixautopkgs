@@ -31,6 +31,10 @@
             inherit pkgs system;
             opencodeInput = inputs.opencode;
           };
+          # OpenCode v2 (beta channel) - bin-only, no flake input needed
+          opencodeV2Packages = import ./packages/opencode-v2/default.nix {
+            inherit pkgs system;
+          };
 
           gcs-linux = gcs.overrideAttrs (oldAttrs: {
             # Ensure Linux desktop integration is enabled
@@ -42,7 +46,7 @@
         {
           packages = {
             inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit television mekhq;
-          } // opencodePackages;
+          } // opencodePackages // opencodeV2Packages;
 
           devShells = {
             default = pkgs.mkShell {

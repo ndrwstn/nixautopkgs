@@ -41,6 +41,15 @@
     },
     {
       "customType": "regex",
+      "description": "Update OpenCode v2 beta version in packages/opencode-v2/assets.json",
+      "managerFilePatterns": ["/^packages\\/opencode-v2\\/assets\\.json$/"],
+      "matchStrings": ["\"version\": \"(?<currentValue>.*?)\""],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "anomalyco/opencode-beta",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Update agent-browser version in packages/agent-browser/default.nix",
       "managerFilePatterns": ["/^packages/agent-browser/default\\.nix$/"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
@@ -82,6 +91,13 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["anomalyco/opencode"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["anomalyco/opencode-beta"],
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
