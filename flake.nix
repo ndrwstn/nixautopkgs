@@ -3,9 +3,9 @@
 
   inputs = {
     # NOTE: nixpkgs-unstable required for packages to build
-    # Pinned to July 25, 2026 (701b3fd657f582f3464354b24baf93e1ee579b03) - provides pnpm_11 for agent-browser
+    # Pinned to August 19, 2026 (30a8631bb18996a3cf754344f31f1a49050e56b9) - provides Go 1.27.0 and pnpm_11
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/701b3fd657f582f3464354b24baf93e1ee579b03";
+    nixpkgs.url = "github:NixOS/nixpkgs/30a8631bb18996a3cf754344f31f1a49050e56b9";
     flake-parts.url = "github:hercules-ci/flake-parts";
     opencode.url = "github:anomalyco/opencode/v1.18.25";
   };
