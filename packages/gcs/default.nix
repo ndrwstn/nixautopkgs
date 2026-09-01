@@ -25,7 +25,7 @@ let
   appBundleId = "com.trollworks.gcs";
 in
 
-pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
+pkgs.buildGoModule.override { go = pkgs.go_1_27; } rec {
   pname = "gcs";
   version = "5.49.0";
 
@@ -33,10 +33,10 @@ pkgs.buildGoModule.override { go = pkgs.go_1_26; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-PYKSbDoWFZrmUMiE+oL/+fK3enbkWDZ51vnoRqawPo0=";
+    hash = "sha256-+7g7q/sIWqU8TNqkRgnXa0OmGgXL49Srz9IFAEJLZPE=";
   };
 
-  vendorHash = "sha256-VWA6S/pIbVXpNkg2jVSSvkoV/qgFvnAoyrTwhLe3MRk=";
+  vendorHash = "sha256-zW/4+38Anum0qtd35cRbYOyTice3txi2dxO4bGM6TAM=";
 
   # Upstream requires the jsonv2 experiment (see upstream build.sh) for tests that import encoding/json/v2
   GOEXPERIMENT = "jsonv2";
