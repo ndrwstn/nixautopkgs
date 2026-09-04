@@ -103,7 +103,7 @@ except Exception as e:
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode v2 bin checks for ${system}" >&2
 
-cli_bin="$(run_build_with_timeout "opencode-v2")"
+cli_bin="$(run_build_with_timeout "opencode2")"
 desktop_bin="$(run_build_with_timeout "opencode-desktop-v2")"
 
 if [[ "$desktop_bin" == "success" && "$system" == *"-darwin" ]]; then

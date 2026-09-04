@@ -77,7 +77,7 @@ Maintainer-tested targets are currently:
 
 OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package set:
 
-- `opencode-v2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
+- `opencode2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
 - `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
 
 Binaries come from the `anomalyco/opencode-beta` releases.
