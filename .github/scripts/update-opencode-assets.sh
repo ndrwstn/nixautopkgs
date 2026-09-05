@@ -32,6 +32,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 default_assets_file="packages/opencode/assets.json"
+v2_assets_file="packages/opencode-v2/assets.json"
+v2_mode=0
 
 if [[ "$assets_file" == "$default_assets_file" ]]; then
 	# v1 flow: the version comes from the flake input URL in flake.nix
@@ -45,8 +47,9 @@ if [[ "$assets_file" == "$default_assets_file" ]]; then
 		exit 1
 	fi
 else
-	# Alternate flow (e.g. opencode-v2 beta tracking): the version lives in
-	# the assets file itself; Renovate bumps it and this script syncs hashes.
+	# Alternate flow (opencode-v2 beta tracking): the version lives in the
+	# assets file itself; Renovate bumps it and this script syncs npm CLI
+	# integrity metadata plus GitHub desktop hashes.
 	if [[ "$update_lock" -eq 1 ]]; then
 		echo "--update-lock is only supported for $default_assets_file" >&2
 		exit 1
@@ -57,10 +60,14 @@ else
 		echo "Failed to parse version from $assets_file" >&2
 		exit 1
 	fi
+	if [[ "$assets_file" == "$v2_assets_file" ]]; then
+		v2_mode=1
+	fi
 fi
 
 release_json="$(mktemp)"
-trap 'rm -f "$release_json"' EXIT
+npm_metadata_dir="$(mktemp -d)"
+trap 'rm -f "$release_json"; rm -rf "$npm_metadata_dir"' EXIT
 
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
 	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${repo}/releases/tags/v${version}" >"$release_json"
@@ -112,10 +119,60 @@ desktop_darwin_x64_name="opencode-desktop-mac-x64.dmg"
 desktop_linux_arm64_name="opencode-desktop-linux-arm64.deb"
 desktop_linux_x64_name="opencode-desktop-linux-amd64.deb"
 
-cli_darwin_arm64_hash="$(digest_for_asset "$cli_darwin_arm64_name")"
-cli_darwin_x64_hash="$(digest_for_asset "$cli_darwin_x64_name")"
-cli_linux_arm64_hash="$(digest_for_asset "$cli_linux_arm64_name")"
-cli_linux_x64_hash="$(digest_for_asset "$cli_linux_x64_name")"
+cli_darwin_arm64_package=""
+cli_darwin_x64_package=""
+cli_linux_arm64_package=""
+cli_linux_x64_package=""
+cli_darwin_arm64_url=""
+cli_darwin_x64_url=""
+cli_linux_arm64_url=""
+cli_linux_x64_url=""
+cli_darwin_arm64_archive_type="zip"
+cli_darwin_x64_archive_type="zip"
+cli_linux_arm64_archive_type="tar.gz"
+cli_linux_x64_archive_type="tar.gz"
+
+if [[ "$v2_mode" -eq 1 ]]; then
+	npm_asset_metadata() {
+		local package="$1"
+		local metadata_file="$npm_metadata_dir/${package##*/}.json"
+		local url integrity
+
+		if ! curl -fsSL "https://registry.npmjs.org/${package}/${version}" >"$metadata_file"; then
+			echo "Failed to fetch npm metadata for ${package}@${version}" >&2
+			exit 1
+		fi
+
+		url="$(jq -r '.dist.tarball // empty' "$metadata_file")"
+		integrity="$(jq -r '.dist.integrity // empty' "$metadata_file")"
+		if [[ -z "$url" || -z "$integrity" || "$integrity" != sha512-* ]]; then
+			echo "Missing npm tarball URL or sha512 integrity for ${package}@${version}" >&2
+			exit 1
+		fi
+
+		printf '%s\t%s\n' "$url" "$integrity"
+	}
+
+	cli_darwin_arm64_package="@opencode-ai/cli-darwin-arm64"
+	cli_darwin_x64_package="@opencode-ai/cli-darwin-x64"
+	cli_linux_arm64_package="@opencode-ai/cli-linux-arm64"
+	cli_linux_x64_package="@opencode-ai/cli-linux-x64"
+
+	IFS=$'\t' read -r cli_darwin_arm64_url cli_darwin_arm64_hash < <(npm_asset_metadata "$cli_darwin_arm64_package")
+	IFS=$'\t' read -r cli_darwin_x64_url cli_darwin_x64_hash < <(npm_asset_metadata "$cli_darwin_x64_package")
+	IFS=$'\t' read -r cli_linux_arm64_url cli_linux_arm64_hash < <(npm_asset_metadata "$cli_linux_arm64_package")
+	IFS=$'\t' read -r cli_linux_x64_url cli_linux_x64_hash < <(npm_asset_metadata "$cli_linux_x64_package")
+
+	cli_darwin_arm64_name="${cli_darwin_arm64_url##*/}"
+	cli_darwin_x64_name="${cli_darwin_x64_url##*/}"
+	cli_linux_arm64_name="${cli_linux_arm64_url##*/}"
+	cli_linux_x64_name="${cli_linux_x64_url##*/}"
+else
+	cli_darwin_arm64_hash="$(digest_for_asset "$cli_darwin_arm64_name")"
+	cli_darwin_x64_hash="$(digest_for_asset "$cli_darwin_x64_name")"
+	cli_linux_arm64_hash="$(digest_for_asset "$cli_linux_arm64_name")"
+	cli_linux_x64_hash="$(digest_for_asset "$cli_linux_x64_name")"
+fi
 
 desktop_darwin_arm64_hash="$(digest_for_asset "$desktop_darwin_arm64_name")"
 desktop_darwin_x64_hash="$(digest_for_asset "$desktop_darwin_x64_name")"
@@ -137,6 +194,15 @@ jq_args=(
 	--arg cliLinuxArm64Hash "$cli_linux_arm64_hash"
 	--arg cliLinuxX64Name "$cli_linux_x64_name"
 	--arg cliLinuxX64Hash "$cli_linux_x64_hash"
+	--arg cliDarwinArm64Package "$cli_darwin_arm64_package"
+	--arg cliDarwinX64Package "$cli_darwin_x64_package"
+	--arg cliLinuxArm64Package "$cli_linux_arm64_package"
+	--arg cliLinuxX64Package "$cli_linux_x64_package"
+	--arg cliDarwinArm64Url "$cli_darwin_arm64_url"
+	--arg cliDarwinX64Url "$cli_darwin_x64_url"
+	--arg cliLinuxArm64Url "$cli_linux_arm64_url"
+	--arg cliLinuxX64Url "$cli_linux_x64_url"
+	--argjson v2Mode "$v2_mode"
 	--arg desktopDarwinArm64Name "$desktop_darwin_arm64_name"
 	--arg desktopDarwinArm64Hash "$desktop_darwin_arm64_hash"
 	--arg desktopDarwinX64Name "$desktop_darwin_x64_name"
@@ -198,26 +264,26 @@ jq "${jq_args[@]}" \
 	"{
     version: \$version,
     cli: {
-      \"aarch64-darwin\": {
+      \"aarch64-darwin\": ({
         name: \$cliDarwinArm64Name,
         hash: \$cliDarwinArm64Hash,
-        archiveType: \"zip\"
-      },
-      \"x86_64-darwin\": {
+        archiveType: (if \$v2Mode == 1 then \"tar.gz\" else \"zip\" end)
+      } + (if \$v2Mode == 1 then { package: \$cliDarwinArm64Package, url: \$cliDarwinArm64Url } else {} end)),
+      \"x86_64-darwin\": ({
         name: \$cliDarwinX64Name,
         hash: \$cliDarwinX64Hash,
-        archiveType: \"zip\"
-      },
-      \"aarch64-linux\": {
+        archiveType: (if \$v2Mode == 1 then \"tar.gz\" else \"zip\" end)
+      } + (if \$v2Mode == 1 then { package: \$cliDarwinX64Package, url: \$cliDarwinX64Url } else {} end)),
+      \"aarch64-linux\": ({
         name: \$cliLinuxArm64Name,
         hash: \$cliLinuxArm64Hash,
         archiveType: \"tar.gz\"
-      },
-      \"x86_64-linux\": {
+      } + (if \$v2Mode == 1 then { package: \$cliLinuxArm64Package, url: \$cliLinuxArm64Url } else {} end)),
+      \"x86_64-linux\": ({
         name: \$cliLinuxX64Name,
         hash: \$cliLinuxX64Hash,
         archiveType: \"tar.gz\"
-      }
+      } + (if \$v2Mode == 1 then { package: \$cliLinuxX64Package, url: \$cliLinuxX64Url } else {} end))
     },
     desktop: ${desktop_filter}
   }" >"$assets_file"

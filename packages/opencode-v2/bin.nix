@@ -10,9 +10,9 @@
 # match the official releases, this package always consumes the prebuilt
 # artifacts published to github.com/anomalyco/opencode-beta.
 #
-# Asset hashes in ./assets.json are refreshed by
-# .github/scripts/update-opencode-assets.sh (--repo anomalyco/opencode-beta)
-# and version bumps arrive via Renovate.
+# CLI asset hashes in ./assets.json are refreshed from the npm registry, while
+# desktop hashes are refreshed from anomalyco/opencode-beta by
+# .github/scripts/update-opencode-assets.sh. Version bumps arrive via Renovate.
 { pkgs
 , system
 , opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)
@@ -39,7 +39,7 @@ let
     or (throw "opencode-v2-desktop-bin: unsupported system ${system}");
 
   cliSrc = pkgs.fetchurl {
-    url = "${releaseBaseUrl}/${cliAsset.name}";
+    url = cliAsset.url;
     hash = cliAsset.hash;
   };
 
@@ -57,7 +57,7 @@ in
     version = opencodeVersion;
     src = cliSrc;
 
-    nativeBuildInputs = [ pkgs.unzip ];
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
 
     dontUnpack = true;
 
@@ -66,13 +66,9 @@ in
 
       mkdir -p "$out/bin" "$out/libexec" "$TMPDIR/opencode-cli"
 
-      if [ "${cliAsset.archiveType}" = "zip" ]; then
-        unzip -q "$src" -d "$TMPDIR/opencode-cli"
-      else
-        tar -xzf "$src" -C "$TMPDIR/opencode-cli"
-      fi
+      tar -xzf "$src" -C "$TMPDIR/opencode-cli"
 
-      install -Dm755 "$TMPDIR/opencode-cli/opencode" "$out/libexec/opencode2"
+      install -Dm755 "$TMPDIR/opencode-cli/package/bin/opencode2" "$out/libexec/opencode2"
 
       cat > "$out/bin/opencode2" <<EOF
       #!${pkgs.runtimeShell}
