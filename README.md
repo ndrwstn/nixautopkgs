@@ -80,7 +80,10 @@ OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package se
 - `opencode2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
 - `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
 
-Binaries come from the `anomalyco/opencode-beta` releases.
+The CLI comes from the official npm platform packages (`@opencode-ai/cli-*`),
+while the desktop app comes from the matching `anomalyco/opencode-beta`
+GitHub release. New beta GitHub releases may contain desktop assets only; the
+CLI packages continue to be published through npm.
 
 ### Why bin-only
 
@@ -94,11 +97,13 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 ### Maintenance
 
-- `packages/opencode-v2/assets.json` pins the beta version + per-system asset hashes.
+- `packages/opencode-v2/assets.json` pins the beta version, npm CLI tarball
+  integrity hashes, and GitHub desktop asset hashes.
 - Renovate watches `anomalyco/opencode-beta` releases and automerges version bumps.
 - `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
-  regenerates the file from GitHub release digests (same flow as v1, but the
-  version is read from the assets file itself since no flake input exists).
+  regenerates the file from npm package metadata and GitHub release digests
+  (same flow as v1, but the version is read from the assets file itself since
+  no flake input exists).
 - CI runs `run-opencode-v2-checks.sh` per system in
   `.github/workflows/opencode-routing-update.yml`; failures block the PR (no routing fallback).
 
