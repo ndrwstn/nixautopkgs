@@ -69,7 +69,12 @@ in
 
       tar -xzf "$src" -C "$TMPDIR/opencode-cli"
 
-      install -Dm755 "$TMPDIR/opencode-cli/package/bin/opencode2" "$out/libexec/opencode2"
+      cli_binary="$(find "$TMPDIR/opencode-cli/package/bin" -type f -perm -u+x ! -name '*.map' -print -quit)"
+      if [ -z "$cli_binary" ]; then
+        echo "ERROR: could not find executable in the CLI archive" >&2
+        exit 1
+      fi
+      install -Dm755 "$cli_binary" "$out/libexec/opencode2"
 
       cat > "$out/bin/opencode2" <<EOF
       #!${pkgs.runtimeShell}
