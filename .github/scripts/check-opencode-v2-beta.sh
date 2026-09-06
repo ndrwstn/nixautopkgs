@@ -44,7 +44,7 @@ root = Path(sys.argv[1])
 packages = sys.argv[2:]
 version_sets = []
 for package in packages:
-    metadata = json.loads((root / package.split("/")[-1]).read_text())
+    metadata = json.loads((root / (package.split("/")[-1] + ".json")).read_text())
     versions = set(metadata.get("versions", {}))
     versions = {v for v in versions if re.fullmatch(r"0\.0\.0-beta-\d+", v)}
     version_sets.append(versions)
