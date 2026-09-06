@@ -2,54 +2,54 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "tar.gz",
-      "hash": "sha512-Pdhlr9KFpdTYw9YKsD2ztM6dMG5oi/cR1YiiDxikaUaqdXJnOKSRpHjRulilIYsnqaoOe0SKdORvwKRYik/SvA==",
-      "name": "cli-darwin-arm64-0.0.0-beta-19086.tgz",
+      "hash": "sha512-xxjF/objoPWiyOJqHPc5bkihT6TDtGHFvyaSeQOsA+0tpDZmEAjv8PXAyvDrRlFo5GMQK6Cn6i4XRhggppwxxQ==",
+      "name": "cli-darwin-arm64-0.0.0-beta-202608110357.tgz",
       "package": "@opencode-ai/cli-darwin-arm64",
-      "url": "https://registry.npmjs.org/@opencode-ai/cli-darwin-arm64/-/cli-darwin-arm64-0.0.0-beta-19086.tgz"
+      "url": "https://registry.npmjs.org/@opencode-ai/cli-darwin-arm64/-/cli-darwin-arm64-0.0.0-beta-202608110357.tgz"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha512-bGVr6JkW5EfQf/KvsUEupV5HQoqBMXb0B5YahHclNk+lI0cjeIWdPMFD5L8qAtwwGaIsHS/0XduwR1CK+76OQw==",
-      "name": "cli-linux-arm64-0.0.0-beta-19086.tgz",
+      "hash": "sha512-+I0NLJkSSLNav4kQMtrbeikJfkY3Ev1eTcdRBrdpq63xGRO5CyyMbs+0Zg+D3/3VPARoUKqOQqpEGR8XsdwidA==",
+      "name": "cli-linux-arm64-0.0.0-beta-202608110357.tgz",
       "package": "@opencode-ai/cli-linux-arm64",
-      "url": "https://registry.npmjs.org/@opencode-ai/cli-linux-arm64/-/cli-linux-arm64-0.0.0-beta-19086.tgz"
+      "url": "https://registry.npmjs.org/@opencode-ai/cli-linux-arm64/-/cli-linux-arm64-0.0.0-beta-202608110357.tgz"
     },
     "x86_64-darwin": {
       "archiveType": "tar.gz",
-      "hash": "sha512-CoOxrZ/pbzuxfqmXOCcPuhi2vHF3w8TEst6ygxutlC7H/V++Etz/5q9eHW2xsFIdX/sZD1wg0yqQtg9o7ms96g==",
-      "name": "cli-darwin-x64-0.0.0-beta-19086.tgz",
+      "hash": "sha512-Bpn2bUGM1BCzHApDHUd0BQ8pOPyb4cc8zp9GErAQfk+sTFdwi4ostb2hQ3IRj8dBPYBHh5hS18cXN8YtziPBSw==",
+      "name": "cli-darwin-x64-0.0.0-beta-202608110357.tgz",
       "package": "@opencode-ai/cli-darwin-x64",
-      "url": "https://registry.npmjs.org/@opencode-ai/cli-darwin-x64/-/cli-darwin-x64-0.0.0-beta-19086.tgz"
+      "url": "https://registry.npmjs.org/@opencode-ai/cli-darwin-x64/-/cli-darwin-x64-0.0.0-beta-202608110357.tgz"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha512-fN0YUC5Ztb76tW1yNMAIo3urC63CFUwS2gsp5NqnZMgPoZym9xdEBehpKmLsbefWnbnBfMSG4JKXHQCBOnbfLQ==",
-      "name": "cli-linux-x64-0.0.0-beta-19086.tgz",
+      "hash": "sha512-gOI4oQUaLAcWzvMHvHV5+R9FwUBCTK6TzWSoqAdTHKijjK2/bZ8l6TAJNFWOQaMg7EzUSyR4KaVNW8dka1hAXA==",
+      "name": "cli-linux-x64-0.0.0-beta-202608110357.tgz",
       "package": "@opencode-ai/cli-linux-x64",
-      "url": "https://registry.npmjs.org/@opencode-ai/cli-linux-x64/-/cli-linux-x64-0.0.0-beta-19086.tgz"
+      "url": "https://registry.npmjs.org/@opencode-ai/cli-linux-x64/-/cli-linux-x64-0.0.0-beta-202608110357.tgz"
     }
   },
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-3uIJBk7qbainXJTD4qLGtNZMzYUO5xi5klHoban+Ceg=",
+      "hash": "sha256-KLeG49afGC18bnZPU5FaxZ3jEN2XI+z6NuMqzHprjpg=",
       "name": "opencode-desktop-mac-arm64.dmg"
     },
     "aarch64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-0GyeIcBdM4opeX9Jy6eO1dODeV4Lb+CvdLBBvVmWsIU=",
+      "hash": "sha256-dcRrzezN8bJdfNuWth7MWhdB0D8/GUlp+SggWuq9m6I=",
       "name": "opencode-desktop-linux-arm64.deb"
     },
     "x86_64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-2F168nOZedzqHGVXwedMPEB94Tsz2t0eSkByanDzTUo=",
+      "hash": "sha256-QHUCjwYZ8IYGi3Sp2fzZIywPPYlSC4myP0CVwrhkmCc=",
       "name": "opencode-desktop-mac-x64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-oMKEPs8AHOfRc+WiJjbeTmiLLILZJQVivt/ZxosQazg=",
+      "hash": "sha256-qOi7+fgUy0qYWMudCHC9dgPqfjcQVRhaz5ZMvfy9F0w=",
       "name": "opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "0.0.0-beta-19086"
+  "version": "0.0.0-beta-202608110357"
 }
