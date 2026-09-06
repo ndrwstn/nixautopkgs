@@ -120,4 +120,4 @@ jobs:
       - name: Enable pull request automerge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge --auto --squash "${{ steps.pull-request.outputs.url }}"
+        run: gh pr merge --squash --delete-branch "${{ steps.pull-request.outputs.url }}"
