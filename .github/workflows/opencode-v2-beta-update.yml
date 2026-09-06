@@ -81,6 +81,9 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
       - name: Create or find beta pull request
         id: pull-request
         env:
