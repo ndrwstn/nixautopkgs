@@ -84,6 +84,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Restore candidate branch if necessary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          candidate_sha="$(git ls-remote --heads origin update/opencode-v2-beta | awk '{print $1}')"
+          master_sha="$(git rev-parse HEAD)"
+          if [[ -n "$candidate_sha" && "$candidate_sha" != "$master_sha" ]]; then
+            exit 0
+          fi
+
+          ./.github/scripts/check-opencode-v2-beta.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c update/opencode-v2-beta
+          git add packages/opencode-v2/assets.json
+          git commit -m "chore: update opencode v2 beta"
+          git push --force origin HEAD:update/opencode-v2-beta
+
       - name: Create or find beta pull request
         id: pull-request
         env:
