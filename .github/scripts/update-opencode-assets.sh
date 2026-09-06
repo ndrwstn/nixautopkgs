@@ -8,6 +8,7 @@ cd "$repo_root"
 repo="anomalyco/opencode"
 assets_file="packages/opencode/assets.json"
 update_lock=0
+version_override=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -23,9 +24,13 @@ while [[ $# -gt 0 ]]; do
 		assets_file="${2:?--assets-file requires a value}"
 		shift 2
 		;;
+	--version)
+		version_override="${2:?--version requires a value}"
+		shift 2
+		;;
 	*)
 		echo "Unknown argument: $1" >&2
-		echo "Usage: $0 [--update-lock] [--repo owner/name] [--assets-file path]" >&2
+		echo "Usage: $0 [--update-lock] [--repo owner/name] [--assets-file path] [--version version]" >&2
 		exit 1
 		;;
 	esac
@@ -48,20 +53,28 @@ if [[ "$assets_file" == "$default_assets_file" ]]; then
 	fi
 else
 	# Alternate flow (opencode-v2 beta tracking): the version lives in the
-	# assets file itself; Renovate bumps it and this script syncs npm CLI
-	# integrity metadata plus GitHub desktop hashes.
+	# assets file itself; the beta discovery workflow bumps it and this script
+	# syncs npm CLI integrity metadata plus GitHub desktop hashes.
 	if [[ "$update_lock" -eq 1 ]]; then
 		echo "--update-lock is only supported for $default_assets_file" >&2
 		exit 1
 	fi
 
-	version="$(jq -r '.version // empty' "$assets_file")"
+	if [[ -n "$version_override" ]]; then
+		version="$version_override"
+	else
+		version="$(jq -r '.version // empty' "$assets_file")"
+	fi
 	if [[ -z "$version" ]]; then
 		echo "Failed to parse version from $assets_file" >&2
 		exit 1
 	fi
 	if [[ "$assets_file" == "$v2_assets_file" ]]; then
 		v2_mode=1
+	fi
+	if [[ -n "$version_override" ]]; then
+		jq --arg version "$version" '.version = $version' "$assets_file" >"$assets_file.tmp"
+		mv "$assets_file.tmp" "$assets_file"
 	fi
 fi
 

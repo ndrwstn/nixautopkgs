@@ -12,7 +12,8 @@
 #
 # CLI asset hashes in ./assets.json are refreshed from the npm registry, while
 # desktop hashes are refreshed from anomalyco/opencode-beta by
-# .github/scripts/update-opencode-assets.sh. Version bumps arrive via Renovate.
+# .github/scripts/update-opencode-assets.sh. Version bumps arrive via the
+# scheduled beta discovery workflow.
 { pkgs
 , system
 , opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)

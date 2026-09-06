@@ -1,0 +1,102 @@
+name: Update OpenCode v2 Beta
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: opencode-v2-beta-update
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.candidate.outputs.changed }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Discover and prepare beta update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/check-opencode-v2-beta.sh
+
+      - name: Push candidate update branch
+        id: candidate
+        run: |
+          if git diff --quiet -- packages/opencode-v2/assets.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c update/opencode-v2-beta
+          git add packages/opencode-v2/assets.json
+          git commit -m "chore: update opencode v2 beta"
+          git push --force origin HEAD:update/opencode-v2-beta
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  validate:
+    needs: discover
+    if: needs.discover.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: aarch64-darwin
+            runner: macos-15
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v7
+        with:
+          ref: update/opencode-v2-beta
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@b67ad2f0e8376a0bc947db191e4484285b6f5b56 # main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@2cdbb78a6eed25b3bc8b97f863549be5f6567e55 # main
+
+      - name: Build and validate beta packages
+        run: |
+          ./.github/scripts/run-opencode-v2-checks.sh "${{ matrix.system }}" result.json
+          jq -e '.cli.bin == "success" and .desktop.bin == "success"' result.json
+
+  pull-request:
+    needs: [discover, validate]
+    if: needs.discover.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Create or find beta pull request
+        id: pull-request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_url="$(gh pr list --head update/opencode-v2-beta --state open --json url --jq '.[0].url')"
+          if [[ -z "$pr_url" ]]; then
+            pr_url="$(gh pr create \
+              --base master \
+              --head update/opencode-v2-beta \
+              --title 'chore: update opencode v2 beta' \
+              --body $'Automated update to the newest common OpenCode v2 beta published on npm.\n\nThe matching `anomalyco/opencode-beta` GitHub release and all required desktop asset digests were verified before creating this PR.')"
+          fi
+          echo "url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Enable pull request automerge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "${{ steps.pull-request.outputs.url }}"

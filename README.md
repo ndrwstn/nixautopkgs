@@ -99,7 +99,9 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 - `packages/opencode-v2/assets.json` pins the beta version, npm CLI tarball
   integrity hashes, and GitHub desktop asset hashes.
-- Renovate watches `anomalyco/opencode-beta` releases and automerges version bumps.
+- `.github/workflows/opencode-v2-beta-update.yml` polls npm every 30 minutes for
+  the newest common beta CLI version, waits for the matching GitHub desktop
+  release and asset digests, then opens an update PR.
 - `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
   regenerates the file from npm package metadata and GitHub release digests
   (same flow as v1, but the version is read from the assets file itself since
@@ -109,7 +111,7 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 Manual bump flow (if needed):
 
-1. Edit `"version"` in `packages/opencode-v2/assets.json`.
-2. Run `./.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`.
+1. Run `./.github/scripts/check-opencode-v2-beta.sh`.
+2. Run the v2 checks before committing the resulting `assets.json`.
 
-Rollback: delete `packages/opencode-v2/`, remove the `opencodeV2Packages` wiring in `flake.nix`, and drop the `anomalyco/opencode-beta` entries from `renovate.json`.
+Rollback: delete `packages/opencode-v2/` and remove the `opencodeV2Packages` wiring in `flake.nix`.
