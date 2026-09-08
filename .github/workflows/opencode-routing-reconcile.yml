@@ -33,7 +33,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@b67ad2f0e8376a0bc947db191e4484285b6f5b56 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@2cdbb78a6eed25b3bc8b97f863549be5f6567e55 # main
+        uses: DeterminateSystems/magic-nix-cache-action@4119f6e7cfd06aaeee21273b2792c1fcb5d66ba1 # main
 
       - name: Sync OpenCode asset hashes
         env:
@@ -65,7 +65,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@b67ad2f0e8376a0bc947db191e4484285b6f5b56 # main
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@2cdbb78a6eed25b3bc8b97f863549be5f6567e55 # main
+        uses: DeterminateSystems/magic-nix-cache-action@4119f6e7cfd06aaeee21273b2792c1fcb5d66ba1 # main
 
       - name: Sync OpenCode asset hashes
         env:
