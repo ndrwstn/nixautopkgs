@@ -33,10 +33,10 @@ pkgs.buildGoModule.override { go = pkgs.go_1_27; } rec {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-+7g7q/sIWqU8TNqkRgnXa0OmGgXL49Srz9IFAEJLZPE=";
+    hash = "sha256-4DtLxpjcNIyPnJyYWsE0BQ0w96xzK4eVYR8etWmR3rY=";
   };
 
-  vendorHash = "sha256-zW/4+38Anum0qtd35cRbYOyTice3txi2dxO4bGM6TAM=";
+  vendorHash = "sha256-bXRazQAwt2ur902cJJHsPIA32bTvpIFx93+Qdy4o7GM=";
 
   # Upstream requires the jsonv2 experiment (see upstream build.sh) for tests that import encoding/json/v2
   GOEXPERIMENT = "jsonv2";
