@@ -1,7 +1,9 @@
 name: Update Package Hashes on Renovate PRs
 
 on:
-  pull_request:
+  # Hash refreshes push a follow-up commit with GITHUB_TOKEN. Use the trusted
+  # base workflow so that commit's validation is not held for bot approval.
+  pull_request_target:
     branches: [master]
     paths:
       - "packages/gcs/default.nix"

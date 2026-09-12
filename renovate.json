@@ -95,6 +95,13 @@
     },
     {
       "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["richardwilkes/gcs"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["alexpasmantier/television"],
       "automerge": true,
       "automergeType": "pr",
