@@ -34,27 +34,8 @@ for package in "${packages[@]}"; do
 done
 
 version="$(
-	python3 - "$tmp_dir" "${packages[@]}" <<'PY'
-import json
-import re
-import sys
-from pathlib import Path
-
-root = Path(sys.argv[1])
-packages = sys.argv[2:]
-version_sets = []
-for package in packages:
-    metadata = json.loads((root / (package.split("/")[-1] + ".json")).read_text())
-    versions = set(metadata.get("versions", {}))
-    versions = {v for v in versions if re.fullmatch(r"0\.0\.0-beta-\d+", v)}
-    version_sets.append(versions)
-
-common = set.intersection(*version_sets)
-if not common:
-    raise SystemExit("No common beta version is published for all CLI platforms")
-
-print(max(common, key=lambda v: int(v.rsplit("-", 1)[1])))
-PY
+	python3 .github/scripts/opencode_v2_version.py \
+		"$tmp_dir" "${packages[@]}" --current "$(jq -r '.version // empty' "$assets_file")"
 )"
 
 current_version="$(jq -r '.version // empty' "$assets_file")"
