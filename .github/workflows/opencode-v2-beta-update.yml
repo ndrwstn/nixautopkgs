@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   discover:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       changed: ${{ steps.candidate.outputs.changed }}
     permissions:
@@ -76,7 +76,7 @@ jobs:
   pull-request:
     needs: [discover, validate]
     if: needs.discover.outputs.changed == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       pull-requests: write
