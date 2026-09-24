@@ -25,6 +25,16 @@ def metadata(versions):
 
 
 class VersionSelectionTests(unittest.TestCase):
+    def test_newest_common_dev_version(self):
+        versions = {
+            "0.0.0-dev-19272": "2026-09-07T21:24:00Z",
+            "0.0.0-dev-202609221946": "2026-09-22T19:46:00Z",
+        }
+        self.assertEqual(
+            module.newest_common_version(metadata(versions), "dev"),
+            "0.0.0-dev-202609221946",
+        )
+
     def test_timestamp_identifier_does_not_beat_newer_sequential_identifier(self):
         versions = {
             "0.0.0-beta-202608110357": "2026-08-11T03:57:00Z",

@@ -17,9 +17,6 @@ from pathlib import Path
 from typing import Any
 
 
-BETA_VERSION = re.compile(r"0\.0\.0-beta-\d+$")
-
-
 def _published_at(version: str, metadata: list[dict[str, Any]]) -> datetime:
     times = []
     for package in metadata:
@@ -42,7 +39,7 @@ def version_key(version: str, metadata: list[dict[str, Any]]) -> tuple[datetime,
     return (_published_at(version, metadata), suffix)
 
 
-def newest_common_version(metadata: list[dict[str, Any]]) -> str:
+def newest_common_version(metadata: list[dict[str, Any]], channel: str = "beta") -> str:
     if not metadata:
         raise ValueError("No npm package metadata supplied")
 
@@ -51,7 +48,7 @@ def newest_common_version(metadata: list[dict[str, Any]]) -> str:
         versions = {
             version
             for version in package.get("versions", {})
-            if BETA_VERSION.fullmatch(version)
+            if re.fullmatch(rf"0\.0\.0-{re.escape(channel)}-\d+", version)
         }
         version_sets.append(versions)
 
@@ -74,6 +71,7 @@ def main() -> int:
     parser.add_argument("metadata_dir", type=Path)
     parser.add_argument("packages", nargs="+")
     parser.add_argument("--current")
+    parser.add_argument("--channel", choices=("beta", "dev"), default="beta")
     args = parser.parse_args()
 
     metadata = []
@@ -81,14 +79,16 @@ def main() -> int:
         path = args.metadata_dir / f"{package.split('/')[-1]}.json"
         metadata.append(json.loads(path.read_text()))
 
-    selected = newest_common_version(metadata)
+    selected = newest_common_version(metadata, args.channel)
     if args.current:
         common = set.intersection(
             *[
                 {
                     version
                     for version in package.get("versions", {})
-                    if BETA_VERSION.fullmatch(version)
+                    if re.fullmatch(
+                        rf"0\.0\.0-{re.escape(args.channel)}-\d+", version
+                    )
                 }
                 for package in metadata
             ]
