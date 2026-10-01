@@ -71,7 +71,7 @@
       "description": "Update pinned nixpkgs rev",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
-        "nixpkgs\\.url = \"github:NixOS/nixpkgs/(?<currentValue>[a-f0-9]{40})\""
+        "nixpkgs\\.url = \"github:NixOS/nixpkgs/(?<currentDigest>[a-f0-9]{40})\""
       ],
       "datasourceTemplate": "git-refs",
       "depNameTemplate": "NixOS/nixpkgs",
