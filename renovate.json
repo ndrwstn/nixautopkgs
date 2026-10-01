@@ -75,6 +75,7 @@
       ],
       "datasourceTemplate": "git-refs",
       "depNameTemplate": "NixOS/nixpkgs",
+      "packageNameTemplate": "https://github.com/NixOS/nixpkgs",
       "currentValueTemplate": "nixpkgs-unstable"
     }
   ],
