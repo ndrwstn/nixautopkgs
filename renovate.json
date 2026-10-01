@@ -110,8 +110,7 @@
     {
       "matchDepNames": ["NixOS/nixpkgs"],
       "branchTopic": "nixpkgs",
-      "schedule": ["after 4am and before 5am on saturday"],
-      "timezone": "UTC"
+      "schedule": ["at any time"]
     }
   ]
 }
