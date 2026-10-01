@@ -80,10 +80,9 @@ OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package se
 - `opencode2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
 - `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
 
-The CLI comes from the official npm platform packages (`@opencode-ai/cli-*`),
-while the desktop app comes from the matching `anomalyco/opencode-beta`
-GitHub release. New beta GitHub releases may contain desktop assets only; the
-CLI packages continue to be published through npm.
+The CLI comes from the active npm platform packages (`opencode-*`), while the
+desktop app comes from `anomalyco/opencode-beta`. CLI and desktop versions are
+tracked independently because upstream publishes them on separate channels.
 
 ### Why bin-only
 
@@ -97,11 +96,11 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 ### Maintenance
 
-- `packages/opencode-v2/assets.json` pins the beta version, npm CLI tarball
-  integrity hashes, and GitHub desktop asset hashes.
+- `packages/opencode-v2/assets.json` pins the CLI and desktop versions, npm CLI
+  tarball integrity hashes, and GitHub desktop asset hashes.
 - `.github/workflows/opencode-v2-beta-update.yml` polls npm every 30 minutes for
-  the newest common beta CLI version, waits for the matching GitHub desktop
-  release and asset digests, then opens an update PR.
+  the newest common development CLI version and the newest complete GitHub
+  desktop release, then opens an update PR.
 - `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
   regenerates the file from npm package metadata and GitHub release digests
   (same flow as v1, but the version is read from the assets file itself since

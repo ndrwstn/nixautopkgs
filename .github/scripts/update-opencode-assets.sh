@@ -9,6 +9,8 @@ repo="anomalyco/opencode"
 assets_file="packages/opencode/assets.json"
 update_lock=0
 version_override=""
+desktop_version_override=""
+desktop_version=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -28,9 +30,13 @@ while [[ $# -gt 0 ]]; do
 		version_override="${2:?--version requires a value}"
 		shift 2
 		;;
+	--desktop-version)
+		desktop_version_override="${2:?--desktop-version requires a value}"
+		shift 2
+		;;
 	*)
 		echo "Unknown argument: $1" >&2
-		echo "Usage: $0 [--update-lock] [--repo owner/name] [--assets-file path] [--version version]" >&2
+		echo "Usage: $0 [--update-lock] [--repo owner/name] [--assets-file path] [--version version] [--desktop-version version]" >&2
 		exit 1
 		;;
 	esac
@@ -51,10 +57,11 @@ if [[ "$assets_file" == "$default_assets_file" ]]; then
 		echo "Failed to parse opencode version from flake.nix" >&2
 		exit 1
 	fi
+	desktop_version="$version"
 else
-	# Alternate flow (opencode-v2 beta tracking): the version lives in the
-	# assets file itself; the beta discovery workflow bumps it and this script
-	# syncs npm CLI integrity metadata plus GitHub desktop hashes.
+	# Alternate flow (opencode-v2 tracking): CLI and desktop versions live in
+	# the assets file; the discovery workflow bumps them independently and this
+	# script syncs npm CLI integrity metadata plus GitHub desktop hashes.
 	if [[ "$update_lock" -eq 1 ]]; then
 		echo "--update-lock is only supported for $default_assets_file" >&2
 		exit 1
@@ -63,17 +70,24 @@ else
 	if [[ -n "$version_override" ]]; then
 		version="$version_override"
 	else
-		version="$(jq -r '.version // empty' "$assets_file")"
+		version="$(jq -r '.cliVersion // .version // empty' "$assets_file")"
+	fi
+	if [[ -n "$desktop_version_override" ]]; then
+		desktop_version="$desktop_version_override"
+	else
+		desktop_version="$(jq -r '.desktopVersion // .version // empty' "$assets_file")"
 	fi
 	if [[ -z "$version" ]]; then
-		echo "Failed to parse version from $assets_file" >&2
+		echo "Failed to parse CLI version from $assets_file" >&2
 		exit 1
 	fi
 	if [[ "$assets_file" == "$v2_assets_file" ]]; then
 		v2_mode=1
 	fi
-	if [[ -n "$version_override" ]]; then
-		jq --arg version "$version" '.version = $version' "$assets_file" >"$assets_file.tmp"
+	if [[ -n "$version_override" || -n "$desktop_version_override" ]]; then
+		jq --arg cliVersion "$version" --arg desktopVersion "$desktop_version" \
+			'.cliVersion = $cliVersion | .desktopVersion = $desktopVersion | del(.version)' \
+			"$assets_file" >"$assets_file.tmp"
 		mv "$assets_file.tmp" "$assets_file"
 	fi
 fi
@@ -83,9 +97,9 @@ npm_metadata_dir="$(mktemp -d)"
 trap 'rm -f "$release_json"; rm -rf "$npm_metadata_dir"' EXIT
 
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${repo}/releases/tags/v${version}" >"$release_json"
+	curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${repo}/releases/tags/v${desktop_version}" >"$release_json"
 else
-	curl -fsSL "https://api.github.com/repos/${repo}/releases/tags/v${version}" >"$release_json"
+	curl -fsSL "https://api.github.com/repos/${repo}/releases/tags/v${desktop_version}" >"$release_json"
 fi
 
 digest_for_asset() {
@@ -166,10 +180,10 @@ if [[ "$v2_mode" -eq 1 ]]; then
 		printf '%s\t%s\n' "$url" "$integrity"
 	}
 
-	cli_darwin_arm64_package="@opencode-ai/cli-darwin-arm64"
-	cli_darwin_x64_package="@opencode-ai/cli-darwin-x64"
-	cli_linux_arm64_package="@opencode-ai/cli-linux-arm64"
-	cli_linux_x64_package="@opencode-ai/cli-linux-x64"
+	cli_darwin_arm64_package="opencode-darwin-arm64"
+	cli_darwin_x64_package="opencode-darwin-x64"
+	cli_linux_arm64_package="opencode-linux-arm64"
+	cli_linux_x64_package="opencode-linux-x64"
 
 	IFS=$'\t' read -r cli_darwin_arm64_url cli_darwin_arm64_hash < <(npm_asset_metadata "$cli_darwin_arm64_package")
 	IFS=$'\t' read -r cli_darwin_x64_url cli_darwin_x64_hash < <(npm_asset_metadata "$cli_darwin_x64_package")
@@ -199,6 +213,7 @@ fi
 jq_args=(
 	-S -n
 	--arg version "$version"
+	--arg desktopVersion "$desktop_version"
 	--arg cliDarwinArm64Name "$cli_darwin_arm64_name"
 	--arg cliDarwinArm64Hash "$cli_darwin_arm64_hash"
 	--arg cliDarwinX64Name "$cli_darwin_x64_name"
@@ -274,8 +289,10 @@ fi
 mkdir -p "$(dirname "$assets_file")"
 
 jq "${jq_args[@]}" \
-	"{
-    version: \$version,
+	"({
+    version: (if \$v2Mode == 1 then null else \$version end),
+    cliVersion: (if \$v2Mode == 1 then \$version else null end),
+    desktopVersion: (if \$v2Mode == 1 then \$desktopVersion else null end),
     cli: {
       \"aarch64-darwin\": ({
         name: \$cliDarwinArm64Name,
@@ -299,6 +316,6 @@ jq "${jq_args[@]}" \
       } + (if \$v2Mode == 1 then { package: \$cliLinuxX64Package, url: \$cliLinuxX64Url } else {} end))
     },
     desktop: ${desktop_filter}
-  }" >"$assets_file"
+   } | with_entries(select(.value != null)) | if \$v2Mode == 1 then . else del(.cliVersion, .desktopVersion) end)" >"$assets_file"
 
 echo "Updated $assets_file for OpenCode v${version}"

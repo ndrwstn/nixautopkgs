@@ -109,11 +109,11 @@ jobs:
         run: |
           pr_url="$(gh pr list --head update/opencode-v2-beta --state open --json url --jq '.[0].url')"
           if [[ -z "$pr_url" ]]; then
-            pr_url="$(gh pr create \
+          pr_url="$(gh pr create \
               --base master \
               --head update/opencode-v2-beta \
               --title 'chore: update opencode v2 beta' \
-              --body $'Automated update to the newest common OpenCode v2 beta published on npm.\n\nThe matching `anomalyco/opencode-beta` GitHub release and all required desktop asset digests were verified before creating this PR.')"
+              --body $'Automated update to the newest common OpenCode v2 development CLI and newest complete desktop beta release.\n\nAll required npm and `anomalyco/opencode-beta` asset digests were verified before creating this PR.')"
           fi
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 
