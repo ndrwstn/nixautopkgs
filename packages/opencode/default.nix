@@ -65,5 +65,6 @@ in
   opencode-desktop-bin = opencodeDesktopBin;
 
   opencode = resolveRoute "cli" opencodeCliBuild opencodeCliBin;
+} // pkgs.lib.optionalAttrs (routeForSystem.desktop != null) {
   opencode-desktop = resolveRoute "desktop" opencodeDesktopBuild opencodeDesktopBin;
 }

@@ -54,14 +54,12 @@ Manual bump flow (if needed):
 Published binary assets are wired for:
 
 - `aarch64-darwin`
-- `x86_64-darwin`
 - `aarch64-linux`
 - `x86_64-linux`
 
 Maintainer-tested targets are currently:
 
 - `aarch64-darwin`
-- `x86_64-darwin`
 - `x86_64-linux`
 
 `aarch64-linux` is best-effort unless explicitly validated by maintainers.

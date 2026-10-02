@@ -12,7 +12,7 @@
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ];
+      systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
 
       perSystem = { pkgs, system, ... }:
         let
@@ -45,8 +45,16 @@
         in
         {
           packages = {
-            inherit gcs gcs-linux agent-browser clamav mlx mlx-lm ocrit television mekhq;
-          } // opencodePackages // opencodeV2Packages;
+            inherit agent-browser clamav television mekhq;
+          }
+          // pkgs.lib.optionalAttrs (system != "aarch64-linux") {
+            inherit gcs gcs-linux;
+          }
+          // pkgs.lib.optionalAttrs (system == "aarch64-darwin") {
+            inherit mlx mlx-lm ocrit;
+          }
+          // opencodePackages
+          // opencodeV2Packages;
 
           devShells = {
             default = pkgs.mkShell {

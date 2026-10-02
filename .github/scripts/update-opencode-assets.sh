@@ -123,25 +123,20 @@ PY
 }
 
 cli_darwin_arm64_name="opencode-darwin-arm64.zip"
-cli_darwin_x64_name="opencode-darwin-x64.zip"
 cli_linux_arm64_name="opencode-linux-arm64.tar.gz"
 cli_linux_x64_name="opencode-linux-x64.tar.gz"
 
 desktop_darwin_arm64_name="opencode-desktop-mac-arm64.dmg"
-desktop_darwin_x64_name="opencode-desktop-mac-x64.dmg"
 desktop_linux_arm64_name="opencode-desktop-linux-arm64.deb"
 desktop_linux_x64_name="opencode-desktop-linux-amd64.deb"
 
 cli_darwin_arm64_package=""
-cli_darwin_x64_package=""
 cli_linux_arm64_package=""
 cli_linux_x64_package=""
 cli_darwin_arm64_url=""
-cli_darwin_x64_url=""
 cli_linux_arm64_url=""
 cli_linux_x64_url=""
 cli_darwin_arm64_archive_type="zip"
-cli_darwin_x64_archive_type="zip"
 cli_linux_arm64_archive_type="tar.gz"
 cli_linux_x64_archive_type="tar.gz"
 
@@ -167,28 +162,23 @@ if [[ "$v2_mode" -eq 1 ]]; then
 	}
 
 	cli_darwin_arm64_package="@opencode-ai/cli-darwin-arm64"
-	cli_darwin_x64_package="@opencode-ai/cli-darwin-x64"
 	cli_linux_arm64_package="@opencode-ai/cli-linux-arm64"
 	cli_linux_x64_package="@opencode-ai/cli-linux-x64"
 
 	IFS=$'\t' read -r cli_darwin_arm64_url cli_darwin_arm64_hash < <(npm_asset_metadata "$cli_darwin_arm64_package")
-	IFS=$'\t' read -r cli_darwin_x64_url cli_darwin_x64_hash < <(npm_asset_metadata "$cli_darwin_x64_package")
 	IFS=$'\t' read -r cli_linux_arm64_url cli_linux_arm64_hash < <(npm_asset_metadata "$cli_linux_arm64_package")
 	IFS=$'\t' read -r cli_linux_x64_url cli_linux_x64_hash < <(npm_asset_metadata "$cli_linux_x64_package")
 
 	cli_darwin_arm64_name="${cli_darwin_arm64_url##*/}"
-	cli_darwin_x64_name="${cli_darwin_x64_url##*/}"
 	cli_linux_arm64_name="${cli_linux_arm64_url##*/}"
 	cli_linux_x64_name="${cli_linux_x64_url##*/}"
 else
 	cli_darwin_arm64_hash="$(digest_for_asset "$cli_darwin_arm64_name")"
-	cli_darwin_x64_hash="$(digest_for_asset "$cli_darwin_x64_name")"
 	cli_linux_arm64_hash="$(digest_for_asset "$cli_linux_arm64_name")"
 	cli_linux_x64_hash="$(digest_for_asset "$cli_linux_x64_name")"
 fi
 
 desktop_darwin_arm64_hash="$(digest_for_asset "$desktop_darwin_arm64_name")"
-desktop_darwin_x64_hash="$(digest_for_asset "$desktop_darwin_x64_name")"
 desktop_linux_arm64_hash="$(digest_for_asset "$desktop_linux_arm64_name" 1)"
 desktop_linux_x64_hash="$(digest_for_asset "$desktop_linux_x64_name")"
 
@@ -201,25 +191,19 @@ jq_args=(
 	--arg version "$version"
 	--arg cliDarwinArm64Name "$cli_darwin_arm64_name"
 	--arg cliDarwinArm64Hash "$cli_darwin_arm64_hash"
-	--arg cliDarwinX64Name "$cli_darwin_x64_name"
-	--arg cliDarwinX64Hash "$cli_darwin_x64_hash"
 	--arg cliLinuxArm64Name "$cli_linux_arm64_name"
 	--arg cliLinuxArm64Hash "$cli_linux_arm64_hash"
 	--arg cliLinuxX64Name "$cli_linux_x64_name"
 	--arg cliLinuxX64Hash "$cli_linux_x64_hash"
 	--arg cliDarwinArm64Package "$cli_darwin_arm64_package"
-	--arg cliDarwinX64Package "$cli_darwin_x64_package"
 	--arg cliLinuxArm64Package "$cli_linux_arm64_package"
 	--arg cliLinuxX64Package "$cli_linux_x64_package"
 	--arg cliDarwinArm64Url "$cli_darwin_arm64_url"
-	--arg cliDarwinX64Url "$cli_darwin_x64_url"
 	--arg cliLinuxArm64Url "$cli_linux_arm64_url"
 	--arg cliLinuxX64Url "$cli_linux_x64_url"
 	--argjson v2Mode "$v2_mode"
 	--arg desktopDarwinArm64Name "$desktop_darwin_arm64_name"
 	--arg desktopDarwinArm64Hash "$desktop_darwin_arm64_hash"
-	--arg desktopDarwinX64Name "$desktop_darwin_x64_name"
-	--arg desktopDarwinX64Hash "$desktop_darwin_x64_hash"
 	--arg desktopLinuxX64Name "$desktop_linux_x64_name"
 	--arg desktopLinuxX64Hash "$desktop_linux_x64_hash"
 )
@@ -228,11 +212,6 @@ desktop_filter='{
   "aarch64-darwin": {
     name: $desktopDarwinArm64Name,
     hash: $desktopDarwinArm64Hash,
-    archiveType: "darwin-dmg"
-  },
-  "x86_64-darwin": {
-    name: $desktopDarwinX64Name,
-    hash: $desktopDarwinX64Hash,
     archiveType: "darwin-dmg"
   },
   "x86_64-linux": {
@@ -258,11 +237,6 @@ if [[ -n "$desktop_linux_arm64_hash" ]]; then
     hash: $desktopLinuxArm64Hash,
     archiveType: "deb"
   },
-  "x86_64-darwin": {
-    name: $desktopDarwinX64Name,
-    hash: $desktopDarwinX64Hash,
-    archiveType: "darwin-dmg"
-  },
   "x86_64-linux": {
     name: $desktopLinuxX64Name,
     hash: $desktopLinuxX64Hash,
@@ -282,11 +256,6 @@ jq "${jq_args[@]}" \
         hash: \$cliDarwinArm64Hash,
         archiveType: (if \$v2Mode == 1 then \"tar.gz\" else \"zip\" end)
       } + (if \$v2Mode == 1 then { package: \$cliDarwinArm64Package, url: \$cliDarwinArm64Url } else {} end)),
-      \"x86_64-darwin\": ({
-        name: \$cliDarwinX64Name,
-        hash: \$cliDarwinX64Hash,
-        archiveType: (if \$v2Mode == 1 then \"tar.gz\" else \"zip\" end)
-      } + (if \$v2Mode == 1 then { package: \$cliDarwinX64Package, url: \$cliDarwinX64Url } else {} end)),
       \"aarch64-linux\": ({
         name: \$cliLinuxArm64Name,
         hash: \$cliLinuxArm64Hash,

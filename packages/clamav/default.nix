@@ -73,8 +73,7 @@ stdenv.mkDerivation (finalAttrs: {
     "-DCVD_CERTS_DIRECTORY=${placeholder "out"}/etc/clamav/certs"
   ];
 
-  # Seems to only fail on x86_64-darwin with sandboxing
-  doCheck = !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64);
+  doCheck = true;
   __darwinAllowLocalNetworking = true;
 
   checkInputs = [

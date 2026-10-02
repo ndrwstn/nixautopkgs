@@ -119,10 +119,6 @@ else
       swiftpm
     ];
 
-    buildInputs = [
-      swiftPackages.Foundation
-    ];
-
     configurePhase = generated.configure;
 
     installPhase = ''
