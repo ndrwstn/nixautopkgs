@@ -1,4 +1,4 @@
-# OpenCode v2 (beta channel) — prebuilt binaries only.
+# OpenCode v2 — prebuilt binaries only.
 #
 # Unlike packages/opencode (which alternates between upstream's source build
 # and prebuilt release assets via routing.json), this package intentionally
@@ -13,7 +13,7 @@
 # CLI asset hashes in ./assets.json are refreshed from the npm registry, while
 # desktop hashes are refreshed from anomalyco/opencode-beta by
 # .github/scripts/update-opencode-assets.sh. Version bumps arrive via the
-# scheduled beta discovery workflow.
+# scheduled v2 discovery workflow.
 { pkgs
 , system
 , opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)
@@ -23,9 +23,11 @@
 let
   lib = pkgs.lib;
   opencodeRuntimePath = lib.makeBinPath ([ pkgs.ripgrep ] ++ lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl);
-  opencodeVersion = opencodeAssets.version
-    or (throw "opencode-v2-bin: missing `version` in packages/opencode-v2/assets.json");
-  releaseBaseUrl = "https://github.com/anomalyco/opencode-beta/releases/download/v${opencodeVersion}";
+  opencodeCliVersion = opencodeAssets.cliVersion
+    or (throw "opencode-v2-bin: missing `cliVersion` in packages/opencode-v2/assets.json");
+  opencodeDesktopVersion = opencodeAssets.desktopVersion
+    or (throw "opencode-v2-bin: missing `desktopVersion` in packages/opencode-v2/assets.json");
+  releaseBaseUrl = "https://github.com/anomalyco/opencode-beta/releases/download/v${opencodeDesktopVersion}";
 
   cliAssetBySystem = opencodeAssets.cli
     or (throw "opencode-v2-bin: missing `cli` map in packages/opencode-v2/assets.json");
@@ -55,7 +57,7 @@ in
   # command from packages/opencode.
   opencode-cli-bin = pkgs.stdenvNoCC.mkDerivation {
     pname = "opencode2-cli-bin";
-    version = opencodeVersion;
+    version = opencodeCliVersion;
     src = cliSrc;
 
     nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
@@ -87,7 +89,7 @@ in
     '';
 
     meta = with lib; {
-      description = "OpenCode v2 (beta) CLI binary package";
+      description = "OpenCode v2 CLI binary package";
       homepage = "https://opencode.ai/";
       license = licenses.mit;
       sourceProvenance = [ sourceTypes.binaryNativeCode ];
@@ -102,7 +104,7 @@ in
   # OpenCode.app / opencode-desktop from packages/opencode.
   opencode-desktop-bin = pkgs.stdenvNoCC.mkDerivation {
     pname = "opencode2-desktop-bin";
-    version = opencodeVersion;
+    version = opencodeDesktopVersion;
     src = desktopSrc;
 
     nativeBuildInputs = [ pkgs.binutils pkgs.makeWrapper ]

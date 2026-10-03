@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Discover the newest beta published to npm and synchronize the pinned v2
-# assets file. npm is used for discovery because the beta channel does not
-# consistently follow a normal GitHub release cadence.
+# Discover the newest scoped v2 development CLI from npm and the newest
+# complete desktop release independently. These channels do not share a
+# release cadence.
 
 set -euo pipefail
 
@@ -33,47 +33,48 @@ for package in "${packages[@]}"; do
 		"https://registry.npmjs.org/${package_url}" >"$file"
 done
 
-version="$(
-	python3 .github/scripts/opencode_v2_version.py \
-		"$tmp_dir" "${packages[@]}" --current "$(jq -r '.version // empty' "$assets_file")"
-)"
-
-current_version="$(jq -r '.version // empty' "$assets_file")"
-if [[ "$version" == "$current_version" ]]; then
-	echo "OpenCode v2 is already at $version"
-	exit 0
+current_cli_version="$(jq -r '.cliVersion // empty' "$assets_file")"
+cli_args=("$tmp_dir" "${packages[@]}" --channel dev)
+if [[ -n "$current_cli_version" ]]; then
+	cli_args+=(--current "$current_cli_version")
 fi
+cli_version="$(python3 .github/scripts/opencode_v2_version.py "${cli_args[@]}")"
 
-release_json="$tmp_dir/release.json"
-release_url="https://api.github.com/repos/anomalyco/opencode-beta/releases/tags/v${version}"
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
 	curl_args=(-H "Authorization: Bearer $GITHUB_TOKEN")
 else
 	curl_args=()
 fi
 
-if ! curl --fail --silent --show-error --location "${curl_args[@]}" "$release_url" >"$release_json"; then
-	echo "npm has $version, but the matching GitHub release is not available yet" >&2
+releases_json="$tmp_dir/releases.json"
+curl --fail --silent --show-error --location "${curl_args[@]}" \
+	"https://api.github.com/repos/anomalyco/opencode-beta/releases?per_page=100" >"$releases_json"
+
+required_json="$(printf '%s\n' "${desktop_assets[@]}" | jq -R . | jq -s .)"
+desktop_version="$(jq -r --argjson required "$required_json" '
+  [ .[]
+    | select(.draft == false and .prerelease == false)
+    | select(.tag_name | test("^v0\\.0\\.0-(?:beta|dev)-[0-9]+$"))
+    | . as $release
+    | select(all($required[]; . as $name | any($release.assets[]; .name == $name and (.digest | startswith("sha256:")))))
+  ] | sort_by(.published_at) | last.tag_name // empty | sub("^v"; "")
+' "$releases_json")"
+
+if [[ -z "$desktop_version" ]]; then
+	echo "No complete OpenCode desktop release is available" >&2
 	exit 2
 fi
 
-missing=()
-for asset in "${desktop_assets[@]}"; do
-	if ! jq -e --arg name "$asset" '.assets[] | select(.name == $name and (.digest | startswith("sha256:")))' "$release_json" >/dev/null; then
-		missing+=("$asset")
-	fi
-done
-if ((${#missing[@]})); then
-	echo "GitHub release v${version} is missing assets or digests: ${missing[*]}" >&2
-	exit 2
+current_desktop_version="$(jq -r '.desktopVersion // empty' "$assets_file")"
+if [[ "$cli_version" == "$current_cli_version" && "$desktop_version" == "$current_desktop_version" ]]; then
+	echo "OpenCode v2 is already at CLI $cli_version and desktop $desktop_version"
+	exit 0
 fi
-
-jq --arg version "$version" '.version = $version' "$assets_file" >"$assets_file.tmp"
-mv "$assets_file.tmp" "$assets_file"
 
 ./.github/scripts/update-opencode-assets.sh \
 	--repo anomalyco/opencode-beta \
 	--assets-file "$assets_file" \
-	--version "$version"
+	--version "$cli_version" \
+	--desktop-version "$desktop_version"
 
-echo "Updated OpenCode v2 from $current_version to $version"
+echo "Updated OpenCode v2 CLI from $current_cli_version to $cli_version; desktop from $current_desktop_version to $desktop_version"

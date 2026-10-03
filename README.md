@@ -95,15 +95,15 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 ### Maintenance
 
-- `packages/opencode-v2/assets.json` pins the beta version, npm CLI tarball
-  integrity hashes, and GitHub desktop asset hashes.
+- `packages/opencode-v2/assets.json` pins independent CLI and desktop
+  versions, npm CLI tarball integrity hashes, and GitHub desktop asset hashes.
 - `.github/workflows/opencode-v2-beta-update.yml` polls npm every 30 minutes for
-  the newest common beta CLI version, waits for the matching GitHub desktop
-  release and asset digests, then opens an update PR.
+  the newest common scoped development CLI version and independently finds the
+  newest complete GitHub desktop release, then opens an update PR.
 - `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
   regenerates the file from npm package metadata and GitHub release digests
-  (same flow as v1, but the version is read from the assets file itself since
-  no flake input exists).
+  (same flow as v1, but the CLI and desktop versions are read from the assets
+  file since no flake input exists).
 - CI runs `run-opencode-v2-checks.sh` per system in
   `.github/workflows/opencode-routing-update.yml`; failures block the PR (no routing fallback).
 
