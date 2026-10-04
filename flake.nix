@@ -5,7 +5,7 @@
     # NOTE: nixpkgs-unstable required for packages to build
     # Pinned to August 19, 2026 (30a8631bb18996a3cf754344f31f1a49050e56b9) - provides Go 1.27.0 and pnpm_11
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/55ba7f49ef2962b42cbd126522b7df5f95037679";
+    nixpkgs.url = "github:NixOS/nixpkgs/73e728ddb6b7a12d18808f510813a13ee1fe4cce";
     flake-parts.url = "github:hercules-ci/flake-parts";
     opencode.url = "github:anomalyco/opencode/v1.18.34";
   };
