@@ -54,7 +54,12 @@
             inherit mlx mlx-lm ocrit;
           }
           // opencodePackages
-          // opencodeV2Packages;
+          // opencodeV2Packages
+          # Keep the stable v1 packages available under their explicit
+          # names, but make the public desktop alias use the v2 GUI.
+          // {
+            opencode-desktop = opencodeV2Packages.opencode-desktop-v2;
+          };
 
           devShells = {
             default = pkgs.mkShell {

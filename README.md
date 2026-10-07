@@ -11,10 +11,17 @@ OpenCode is exposed as both source-build and binary-package variants:
 - `opencode-desktop-build`: from the upstream OpenCode flake (`anomalyco/opencode`)
 - `opencode-desktop-bin`: first-party binary packaging in this repo
 
-The public aliases are still:
+The stable v1 package variants remain available explicitly:
 
-- `opencode`
-- `opencode-desktop`
+- `opencode-cli-build`
+- `opencode-cli-bin`
+- `opencode-desktop-build`
+- `opencode-desktop-bin`
+
+The public aliases are:
+
+- `opencode`: stable v1 CLI
+- `opencode-desktop`: v2 beta GUI
 
 Alias routing is machine-managed in `packages/opencode/routing.json` on a per-system basis.
 
@@ -77,6 +84,10 @@ OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package se
 
 - `opencode2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
 - `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
+
+The public `opencode-desktop` alias points to `opencode-desktop-v2`. The stable
+v1 desktop packages remain available as `opencode-desktop-build` and
+`opencode-desktop-bin` while v1 is still active.
 
 The CLI comes from the official npm platform packages (`@opencode-ai/cli-*`),
 while the desktop app comes from the matching `anomalyco/opencode-beta`
