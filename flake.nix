@@ -7,7 +7,7 @@
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/9013764fcc0ea99fa16cf7aa7decf8a5c3889dd2";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    opencode.url = "github:anomalyco/opencode/v1.18.34";
+    opencode.url = "github:anomalyco/opencode/v1.18.35";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
