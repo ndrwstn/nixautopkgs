@@ -78,21 +78,20 @@ Maintainer-tested targets are currently:
 
 `flake.nix` reads both files directly and resolves aliases from routing state.
 
-## OpenCode v2 (Beta Channel)
+## OpenCode v2
 
-OpenCode v2 is packaged side-by-side with stable v1 as a **bin-only** package set:
+OpenCode v2 is packaged side-by-side with v1 as a **bin-only** package set:
 
-- `opencode2`: prebuilt beta CLI, installs `opencode2` (coexists with v1 `opencode`)
-- `opencode-desktop-v2`: prebuilt beta desktop app (`OpenCode Beta.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
+- `opencode2`: prebuilt v2 CLI, installs `opencode2` (coexists with v1 `opencode`)
+- `opencode-desktop-v2`: prebuilt v2 desktop app (`OpenCode.app` on macOS; `opencode-desktop-v2` wrapper on Linux)
 
 The public `opencode-desktop` alias points to `opencode-desktop-v2`. The stable
 v1 desktop packages remain available as `opencode-desktop-build` and
 `opencode-desktop-bin` while v1 is still active.
 
-The CLI comes from the official npm platform packages (`@opencode-ai/cli-*`),
-while the desktop app comes from the matching `anomalyco/opencode-beta`
-GitHub release. New beta GitHub releases may contain desktop assets only; the
-CLI packages continue to be published through npm.
+The CLI comes from the official npm platform packages (`@opencode/cli-*`),
+while the desktop app comes from the matching official OpenCode distribution
+release.
 
 ### Why bin-only
 
@@ -108,19 +107,17 @@ hash mismatch therefore fails loudly instead of silently downgrading.
 
 - `packages/opencode-v2/assets.json` pins independent CLI and desktop
   versions, npm CLI tarball integrity hashes, and GitHub desktop asset hashes.
-- `.github/workflows/opencode-v2-beta-update.yml` polls npm every 30 minutes for
-  the newest common scoped development CLI version and independently finds the
-  newest complete GitHub desktop release, then opens an update PR.
-- `.github/scripts/update-opencode-assets.sh --repo anomalyco/opencode-beta --assets-file packages/opencode-v2/assets.json`
-  regenerates the file from npm package metadata and GitHub release digests
-  (same flow as v1, but the CLI and desktop versions are read from the assets
-  file since no flake input exists).
+- `.github/workflows/opencode-v2-update.yml` polls the official update API every
+  30 minutes for the current v2 CLI and desktop release, then opens an update PR.
+- `.github/scripts/update-opencode-assets.sh --assets-file packages/opencode-v2/assets.json`
+  regenerates the file from npm package metadata and official desktop asset
+  metadata.
 - CI runs `run-opencode-v2-checks.sh` per system in
   `.github/workflows/opencode-routing-update.yml`; failures block the PR (no routing fallback).
 
 Manual bump flow (if needed):
 
-1. Run `./.github/scripts/check-opencode-v2-beta.sh`.
+1. Run `./.github/scripts/check-opencode-v2.sh`.
 2. Run the v2 checks before committing the resulting `assets.json`.
 
 Rollback: delete `packages/opencode-v2/` and remove the `opencodeV2Packages` wiring in `flake.nix`.

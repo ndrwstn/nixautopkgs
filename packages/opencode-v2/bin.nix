@@ -8,12 +8,11 @@
 # so byte-identical rebuilds of the team's releases are impossible outside
 # their pipeline. Rather than ship a nonfunctioning source build that cannot
 # match the official releases, this package always consumes the prebuilt
-# artifacts published to github.com/anomalyco/opencode-beta.
+# artifacts published by the official OpenCode distribution service.
 #
-# CLI asset hashes in ./assets.json are refreshed from the npm registry, while
-# desktop hashes are refreshed from anomalyco/opencode-beta by
-# .github/scripts/update-opencode-assets.sh. Version bumps arrive via the
-# scheduled v2 discovery workflow.
+# CLI and desktop asset hashes in ./assets.json are refreshed from the official
+# npm and OpenCode update APIs by .github/scripts/update-opencode-assets.sh.
+# Version bumps arrive via the scheduled v2 discovery workflow.
 { pkgs
 , system
 , opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)
@@ -27,7 +26,6 @@ let
     or (throw "opencode-v2-bin: missing `cliVersion` in packages/opencode-v2/assets.json");
   opencodeDesktopVersion = opencodeAssets.desktopVersion
     or (throw "opencode-v2-bin: missing `desktopVersion` in packages/opencode-v2/assets.json");
-  releaseBaseUrl = "https://github.com/anomalyco/opencode-beta/releases/download/v${opencodeDesktopVersion}";
 
   cliAssetBySystem = opencodeAssets.cli
     or (throw "opencode-v2-bin: missing `cli` map in packages/opencode-v2/assets.json");
@@ -47,7 +45,7 @@ let
   };
 
   desktopSrc = pkgs.fetchurl {
-    url = "${releaseBaseUrl}/${desktopAsset.name}";
+    url = desktopAsset.url;
     hash = desktopAsset.hash;
   };
 in
@@ -98,10 +96,7 @@ in
     };
   };
 
-  # Desktop app. The beta dmg ships "OpenCode Beta.app" and the Linux deb is
-  # electron-builder packaging under "opt/OpenCode Beta" with the binary
-  # "ai.opencode.desktop.beta", so both coexist cleanly beside the stable
-  # OpenCode.app / opencode-desktop from packages/opencode.
+  # Desktop app. Keep the v2 executable and application separate from v1.
   opencode-desktop-bin = pkgs.stdenvNoCC.mkDerivation {
     pname = "opencode2-desktop-bin";
     version = opencodeDesktopVersion;
@@ -156,8 +151,14 @@ in
           undmg opencode-desktop.dmg
         )
 
-        cp -R "$TMPDIR/opencode-desktop/OpenCode Beta.app" "$out/Applications/OpenCode Beta.app"
-        ln -s "$out/Applications/OpenCode Beta.app/Contents/MacOS/OpenCode Beta" "$out/bin/opencode-desktop-v2"
+         app_path="$(find "$TMPDIR/opencode-desktop" -maxdepth 2 -type d -name 'OpenCode*.app' -print -quit)"
+         if [ -z "$app_path" ]; then
+           echo "ERROR: could not find OpenCode.app inside the DMG" >&2
+           exit 1
+         fi
+         app_name="$(basename "$app_path")"
+         cp -R "$app_path" "$out/Applications/$app_name"
+         ln -s "$out/Applications/$app_name/Contents/MacOS/OpenCode" "$out/bin/opencode-desktop-v2"
       else
         mkdir -p "$TMPDIR/opencode-desktop"
         data_tar="$(ar t "$src" | grep -m1 '^data\.tar\.')"
@@ -183,29 +184,29 @@ in
     '';
 
     postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-      electron_bin="$out/opt/OpenCode Beta/ai.opencode.desktop.beta"
-      if [ ! -f "$electron_bin" ]; then
-        echo "ERROR: expected Electron binary at $electron_bin" >&2
-        exit 1
-      fi
+       electron_bin="$(find "$out/opt" -type f -perm -u+x \( -name 'opencode' -o -name 'OpenCode' -o -name 'ai.opencode.desktop*' \) -print -quit)"
+       if [ ! -f "$electron_bin" ]; then
+         echo "ERROR: expected Electron binary at $electron_bin" >&2
+         exit 1
+       fi
+       electron_rel="''${electron_bin#$out}"
 
       makeWrapper "$electron_bin" "$out/bin/opencode-desktop-v2" \
         "''${makeWrapperArgs[@]}" \
         --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
         --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
 
-      # Patch the beta .desktop file to point to our wrapper
+      # Patch the desktop file to point to our wrapper
       for desktop_file in "$out/share/applications/"*.desktop; do
         if [ -f "$desktop_file" ]; then
           substituteInPlace "$desktop_file" \
-            --replace '/opt/OpenCode Beta/ai.opencode.desktop.beta' 'opencode-desktop-v2' \
-            --replace '/opt/OpenCode Beta/' "$out/opt/OpenCode Beta/"
+             --replace "$electron_rel" 'opencode-desktop-v2'
         fi
       done
     '';
 
     meta = with lib; {
-      description = "OpenCode v2 (beta) Desktop binary package";
+      description = "OpenCode v2 Desktop binary package";
       homepage = "https://opencode.ai/";
       license = licenses.mit;
       sourceProvenance = [ sourceTypes.binaryNativeCode ];

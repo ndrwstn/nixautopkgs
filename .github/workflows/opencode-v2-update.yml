@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: opencode-v2-beta-update
+  group: opencode-v2-update
   cancel-in-progress: true
 
 jobs:
@@ -21,10 +21,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Discover and prepare beta update
+      - name: Discover and prepare v2 update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/check-opencode-v2-beta.sh
+        run: ./.github/scripts/check-opencode-v2.sh
 
       - name: Push candidate update branch
         id: candidate
@@ -36,10 +36,10 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git switch -c update/opencode-v2-beta
+          git switch -c update/opencode-v2
           git add packages/opencode-v2/assets.json
-          git commit -m "chore: update opencode v2 beta"
-          git push --force origin HEAD:update/opencode-v2-beta
+          git commit -m "chore: update opencode v2"
+          git push --force origin HEAD:update/opencode-v2
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
   validate:
@@ -60,7 +60,7 @@ jobs:
       - name: Checkout candidate branch
         uses: actions/checkout@v7
         with:
-          ref: update/opencode-v2-beta
+          ref: update/opencode-v2
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # main
@@ -68,7 +68,7 @@ jobs:
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@f69a2d3e148e90223fe63ab6e3f6331f2e7e33dc # main
 
-      - name: Build and validate beta packages
+      - name: Build and validate v2 packages
         run: |
           ./.github/scripts/run-opencode-v2-checks.sh "${{ matrix.system }}" result.json
           jq -e '.cli.bin == "success" and .desktop.bin == "success"' result.json
@@ -88,32 +88,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          candidate_sha="$(git ls-remote --heads origin update/opencode-v2-beta | awk '{print $1}')"
+          candidate_sha="$(git ls-remote --heads origin update/opencode-v2 | awk '{print $1}')"
           master_sha="$(git rev-parse HEAD)"
           if [[ -n "$candidate_sha" && "$candidate_sha" != "$master_sha" ]]; then
             exit 0
           fi
 
-          ./.github/scripts/check-opencode-v2-beta.sh
+          ./.github/scripts/check-opencode-v2.sh
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git switch -c update/opencode-v2-beta
+          git switch -c update/opencode-v2
           git add packages/opencode-v2/assets.json
-          git commit -m "chore: update opencode v2 beta"
-          git push --force origin HEAD:update/opencode-v2-beta
+          git commit -m "chore: update opencode v2"
+          git push --force origin HEAD:update/opencode-v2
 
-      - name: Create or find beta pull request
+      - name: Create or find v2 pull request
         id: pull-request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_url="$(gh pr list --head update/opencode-v2-beta --state open --json url --jq '.[0].url')"
+          pr_url="$(gh pr list --head update/opencode-v2 --state open --json url --jq '.[0].url')"
           if [[ -z "$pr_url" ]]; then
             pr_url="$(gh pr create \
               --base master \
-              --head update/opencode-v2-beta \
+              --head update/opencode-v2 \
               --title 'chore: update opencode v2 assets' \
-              --body $'Automated update to the newest common scoped OpenCode v2 development CLI and newest complete desktop release.\n\nThe npm CLI tarballs and `anomalyco/opencode-beta` desktop asset digests were verified independently before creating this PR.')"
+              --body $'Automated update to the current OpenCode v2 CLI and desktop release.\n\nThe npm CLI tarballs and official desktop asset digests were resolved from OpenCode's update API before creating this PR.')"
           fi
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 

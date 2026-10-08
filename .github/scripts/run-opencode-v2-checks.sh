@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# OpenCode v2 (beta channel) bin checks.
+# OpenCode v2 binary checks.
 #
 # Unlike run-opencode-checks.sh, there is no routing layer here and no source
 # build attrs: packages/opencode-v2 is bin-only (see its default.nix for the
@@ -108,7 +108,7 @@ desktop_bin="$(run_build_with_timeout "opencode-desktop-v2")"
 
 if [[ "$desktop_bin" == "success" && "$system" == *"-darwin" ]]; then
 	desktop_out="$(nix path-info ".#packages.${system}.opencode-desktop-v2" 2>/dev/null)"
-	desktop_app="${desktop_out}/Applications/OpenCode Beta.app"
+	desktop_app="$(find "$desktop_out/Applications" -maxdepth 1 -type d -name 'OpenCode*.app' -print -quit)"
 
 	if ! spctl --assess --type execute --verbose=4 "$desktop_app" >/dev/null 2>&1; then
 		echo "[$(date '+%Y-%m-%d %H:%M:%S')] Darwin desktop-bin Gatekeeper assessment failed for ${system}" >&2
