@@ -31,6 +31,7 @@
             inherit pkgs system;
           };
           artcraftPackages = import ./packages/artcraft/default.nix { inherit pkgs; };
+          craft-fonts = pkgs.callPackage ./packages/artcraft/fonts.nix { };
 
           gcs-linux = gcs.overrideAttrs (oldAttrs: {
             # Ensure Linux desktop integration is enabled
@@ -50,6 +51,7 @@
             inherit mlx mlx-lm ocrit;
           }
           // artcraftPackages
+          // { inherit craft-fonts; }
           // opencodePackages;
 
           devShells = {

@@ -30,6 +30,12 @@ The ArtCraft cluster packages the open-source Rust applications from the ArtCraf
 - `effectcraft`: motion graphics and compositing tool
 - `designcraft`: page layout and publishing editor
 - `pdfcraft`: PDF reader and editor
+- `deckcraft`: presentation and slide editor
+- `gridcraft`: spreadsheet editor
+- `cadcraft`: CAD and drafting application
+- `soundcraft`: digital audio workstation
+- `wordcraft`: word processor
+- `figcraft`: interface design and prototyping tool
 
 These packages are built from source for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`.
 `x86_64-darwin` is intentionally unsupported. Renovate tracks the seven upstream GitHub
@@ -38,6 +44,10 @@ and builds the affected packages before an update can merge.
 
 The applications' code is MIT/Apache-2.0 licensed. Upstream ArtCraft branding is separately
 trademarked and is retained only as part of the corresponding unmodified application.
+
+`craft-fonts` is also available as a standalone font package. `craft-libs` is not exposed as a
+user-facing package because it is an upstream Rust build dependency rather than an application or
+runtime library.
 
 The package is deterministic: `packages/opencode/assets.json` pins the CLI and desktop versions,
 URLs, and hashes. A failed fetch or hash mismatch fails loudly.

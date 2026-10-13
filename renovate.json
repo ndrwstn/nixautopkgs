@@ -110,7 +110,13 @@
         "storytold/lightcraft",
         "storytold/effectcraft",
         "storytold/designcraft",
-        "storytold/pdfcraft"
+        "storytold/pdfcraft",
+        "storytold/deckcraft",
+        "storytold/gridcraft",
+        "storytold/cadcraft",
+        "storytold/soundcraft",
+        "storytold/wordcraft",
+        "storytold/figcraft"
       ],
       "groupName": "ArtCraft suite",
       "groupSlug": "artcraft-suite",

@@ -45,6 +45,7 @@ jobs:
           if git diff --name-only "${{ github.base_ref }}...HEAD" \
             | grep -q '^packages/artcraft/default\.nix$'; then
             printf '%s\n' photocraft vectorcraft filmcraft lightcraft effectcraft designcraft pdfcraft \
+              deckcraft gridcraft cadcraft soundcraft wordcraft figcraft \
               > artcraft-packages.txt
           else
             : > artcraft-packages.txt
