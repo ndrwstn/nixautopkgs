@@ -126,7 +126,10 @@ rustPlatform.buildRustPackage rec {
   '' + lib.optionalString stdenv.hostPlatform.isDarwin ''
     app="$out/Applications/${displayName}.app"
     install -Dm755 "$out/bin/${pname}" "$app/Contents/MacOS/${displayName}"
-    install -Dm644 "assets/app-icon/${pname}.icns" "$app/Contents/Resources/${displayName}.icns"
+    if [ -f "assets/app-icon/${pname}.icns" ]; then
+      install -Dm644 "assets/app-icon/${pname}.icns" \
+        "$app/Contents/Resources/${displayName}.icns"
+    fi
     substitute packaging/macos/Info.plist.in "$app/Contents/Info.plist" \
       --subst-var-by VERSION ${version} \
       --subst-var-by SHORT_VERSION ${version} \
