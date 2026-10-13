@@ -30,17 +30,6 @@
     },
     {
       "customType": "regex",
-      "description": "Update opencode version in flake.nix",
-      "managerFilePatterns": ["/^flake\\.nix$/"],
-      "matchStrings": [
-        "opencode\\.url = \"github:anomalyco/opencode/v(?<currentValue>.*?)\";"
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "anomalyco/opencode",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
       "description": "Update agent-browser version in packages/agent-browser/default.nix",
       "managerFilePatterns": ["/^packages/agent-browser/default\\.nix$/"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
@@ -68,6 +57,17 @@
     },
     {
       "customType": "regex",
+      "description": "Update ArtCraft application versions",
+      "managerFilePatterns": ["/^packages\\/artcraft\\/default\\.nix$/"],
+      "matchStrings": [
+        "pname = \"(?<packageName>[^\"]+)\";\\n\\s+displayName = \"[^\"]+\";\\n\\s+version = \"(?<currentValue>[^\"]+)\";"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "storytold/{{packageName}}",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Update pinned nixpkgs rev",
       "managerFilePatterns": ["/^flake\\.nix$/"],
       "matchStrings": [
@@ -80,13 +80,6 @@
     }
   ],
   "packageRules": [
-    {
-      "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["anomalyco/opencode"],
-      "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash"
-    },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
@@ -104,6 +97,23 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["alexpasmantier/television"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": [
+        "storytold/photocraft",
+        "storytold/vectorcraft",
+        "storytold/filmcraft",
+        "storytold/lightcraft",
+        "storytold/effectcraft",
+        "storytold/designcraft",
+        "storytold/pdfcraft"
+      ],
+      "groupName": "ArtCraft suite",
+      "groupSlug": "artcraft-suite",
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"

@@ -1,37 +1,47 @@
 {
   "cli": {
     "aarch64-darwin": {
-      "archiveType": "zip",
-      "hash": "sha256-DV9RGUjW+/7fm7FnU8CsQmE9zI3nXZ3rfo0M9YTI+6Y=",
-      "name": "opencode-darwin-arm64.zip"
+      "archiveType": "tar.gz",
+      "hash": "sha512-0BAaNYZE5QKve/7EFw9gyTQpkyOdff7Lj8Eul6FwK1vDnkj+yiVt/gdmJZl0PVoexl+6ZhjB7vuUPgSXrRATtA==",
+      "name": "cli-darwin-arm64-2.0.27.tgz",
+      "package": "@opencode/cli-darwin-arm64",
+      "url": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.27.tgz"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-6YQdQ9PhqPNu0mkVktO4tPsJfmBsi1WaJ3obhFhA4ms=",
-      "name": "opencode-linux-arm64.tar.gz"
+      "hash": "sha512-qK2E8iy7ZyOC1RcbJZuVuzUHHDwg4BxgE405+bPLZjep0cU2yqvifsVB0UptyiVs2GxXfZDbmn2w7y5PW49ssg==",
+      "name": "cli-linux-arm64-2.0.27.tgz",
+      "package": "@opencode/cli-linux-arm64",
+      "url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.27.tgz"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha256-e7nmGtb+rPLonBCmosGEDj3kIgu1C6H8cRDzGAYHauw=",
-      "name": "opencode-linux-x64.tar.gz"
+      "hash": "sha512-QPGrzBSSs5ATG3nM4XjS4tmWXUB22Di36H0vfMuhKwk6i3PR3Nb4sm+l00gvTdcyCRohYsKwqjvD67T0DPcQLQ==",
+      "name": "cli-linux-x64-2.0.27.tgz",
+      "package": "@opencode/cli-linux-x64",
+      "url": "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.0.27.tgz"
     }
   },
+  "cliVersion": "2.0.27",
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-b1o3n6oRGLy0ZfmoAKj2g1+RZgAB9rHjvgnvr6uKfqQ=",
-      "name": "opencode-desktop-mac-arm64.dmg"
+      "hash": "sha256-uzVRYvLV6mbY32LtHNHROfURf85igpH3Qwt8e47EkXk=",
+      "name": "opencode-desktop-mac-arm64.dmg",
+      "url": "https://opencode.ai/files/bin/2.0.27/opencode-desktop-mac-arm64.dmg"
     },
     "aarch64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-N1ArIaFG2LCX9OF3FeYbn+O68A9HXn8yiWeGDnUKZUU=",
-      "name": "opencode-desktop-linux-arm64.deb"
+      "hash": "sha256-BgwS4/unN26nWm5kCvOKddQdt73t1EgrKh/e2gLdss0=",
+      "name": "opencode-desktop-linux-arm64.deb",
+      "url": "https://opencode.ai/files/bin/2.0.27/opencode-desktop-linux-arm64.deb"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-nT0GQguZXvvG5IYUEXtjzKK7UdsOxhIaLkEm0kocvEU=",
-      "name": "opencode-desktop-linux-amd64.deb"
+      "hash": "sha256-JWvYf/lsmFlkLPVf698MkYmLKHXDNU6T045FMVObV9s=",
+      "name": "opencode-desktop-linux-amd64.deb",
+      "url": "https://opencode.ai/files/bin/2.0.27/opencode-desktop-linux-amd64.deb"
     }
   },
-  "version": "1.19.0"
+  "desktopVersion": "2.0.27"
 }

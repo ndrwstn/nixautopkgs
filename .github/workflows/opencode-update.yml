@@ -1,4 +1,4 @@
-name: Update OpenCode v2 Beta
+name: Update OpenCode
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: opencode-v2-update
+  group: opencode-update
   cancel-in-progress: true
 
 jobs:
@@ -21,25 +21,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Discover and prepare v2 update
+      - name: Discover and prepare update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/check-opencode-v2.sh
+        run: ./.github/scripts/check-opencode.sh
 
       - name: Push candidate update branch
         id: candidate
         run: |
-          if git diff --quiet -- packages/opencode-v2/assets.json; then
+          if git diff --quiet -- packages/opencode/assets.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git switch -c update/opencode-v2
-          git add packages/opencode-v2/assets.json
-          git commit -m "chore: update opencode v2"
-          git push --force origin HEAD:update/opencode-v2
+          git switch -c update/opencode
+          git add packages/opencode/assets.json
+          git commit -m "chore: update opencode"
+          git push --force origin HEAD:update/opencode
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
   validate:
@@ -60,17 +60,17 @@ jobs:
       - name: Checkout candidate branch
         uses: actions/checkout@v7
         with:
-          ref: update/opencode-v2
+          ref: update/opencode
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df # main
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # main
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@f69a2d3e148e90223fe63ab6e3f6331f2e7e33dc # main
 
-      - name: Build and validate v2 packages
+      - name: Build and validate packages
         run: |
-          ./.github/scripts/run-opencode-v2-checks.sh "${{ matrix.system }}" result.json
+          ./.github/scripts/run-opencode-checks.sh "${{ matrix.system }}" result.json
           jq -e '.cli.bin == "success" and .desktop.bin == "success"' result.json
 
   pull-request:
@@ -88,32 +88,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          candidate_sha="$(git ls-remote --heads origin update/opencode-v2 | awk '{print $1}')"
+          candidate_sha="$(git ls-remote --heads origin update/opencode | awk '{print $1}')"
           master_sha="$(git rev-parse HEAD)"
           if [[ -n "$candidate_sha" && "$candidate_sha" != "$master_sha" ]]; then
             exit 0
           fi
 
-          ./.github/scripts/check-opencode-v2.sh
+          ./.github/scripts/check-opencode.sh
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git switch -c update/opencode-v2
-          git add packages/opencode-v2/assets.json
-          git commit -m "chore: update opencode v2"
-          git push --force origin HEAD:update/opencode-v2
+          git switch -c update/opencode
+          git add packages/opencode/assets.json
+          git commit -m "chore: update opencode"
+          git push --force origin HEAD:update/opencode
 
-      - name: Create or find v2 pull request
+      - name: Create or find pull request
         id: pull-request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_url="$(gh pr list --head update/opencode-v2 --state open --json url --jq '.[0].url')"
+          pr_url="$(gh pr list --head update/opencode --state open --json url --jq '.[0].url')"
           if [[ -z "$pr_url" ]]; then
             pr_url="$(gh pr create \
               --base master \
-              --head update/opencode-v2 \
-              --title 'chore: update opencode v2 assets' \
-              --body $'Automated update to the current OpenCode v2 CLI and desktop release.\n\nThe npm CLI tarballs and official desktop asset digests were resolved from OpenCode's update API before creating this PR.')"
+              --head update/opencode \
+              --title 'chore: update opencode assets' \
+              --body $'Automated update to the current OpenCode CLI and desktop release.\n\nThe npm CLI tarballs and official desktop asset digests were resolved from OpenCode\'s update API before creating this PR.')"
           fi
           echo "url=$pr_url" >> "$GITHUB_OUTPUT"
 

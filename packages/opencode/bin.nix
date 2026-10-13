@@ -1,3 +1,16 @@
+# OpenCode stable — prebuilt binaries only.
+#
+# The upstream CI signs macOS artifacts with an
+# RFC3161-timestamped Apple Developer ID certificate and produces desktop
+# bundles through electron-builder with notarization and Sentry injection,
+# so byte-identical rebuilds of the team's releases are impossible outside
+# their pipeline. Rather than ship a nonfunctioning source build that cannot
+# match the official releases, this package always consumes the prebuilt
+# artifacts published by the official OpenCode distribution service.
+#
+# CLI and desktop asset hashes in ./assets.json are refreshed from the official
+# npm and OpenCode update APIs by .github/scripts/update-opencode-assets.sh.
+# Version bumps arrive via the scheduled discovery workflow.
 { pkgs
 , system
 , opencodeAssets ? builtins.fromJSON (builtins.readFile ./assets.json)
@@ -7,9 +20,10 @@
 let
   lib = pkgs.lib;
   opencodeRuntimePath = lib.makeBinPath ([ pkgs.ripgrep ] ++ lib.optional pkgs.stdenvNoCC.hostPlatform.isDarwin pkgs.sysctl);
-  opencodeVersion = opencodeAssets.version
-    or (throw "opencode-bin: missing `version` in packages/opencode/assets.json");
-  releaseBaseUrl = "https://github.com/anomalyco/opencode/releases/download/v${opencodeVersion}";
+  opencodeCliVersion = opencodeAssets.cliVersion
+    or (throw "opencode-bin: missing `cliVersion` in packages/opencode/assets.json");
+  opencodeDesktopVersion = opencodeAssets.desktopVersion
+    or (throw "opencode-bin: missing `desktopVersion` in packages/opencode/assets.json");
 
   cliAssetBySystem = opencodeAssets.cli
     or (throw "opencode-bin: missing `cli` map in packages/opencode/assets.json");
@@ -18,28 +32,29 @@ let
     or (throw "opencode-bin: missing `desktop` map in packages/opencode/assets.json");
 
   cliAsset = cliAssetBySystem.${system}
-    or (throw "opencode-cli-bin: unsupported system ${system}");
+    or (throw "opencode-cli: unsupported system ${system}");
 
   desktopAsset = desktopAssetBySystem.${system}
-    or (throw "opencode-desktop-bin: unsupported system ${system}");
+    or (throw "opencode-desktop: unsupported system ${system}");
 
   cliSrc = pkgs.fetchurl {
-    url = "${releaseBaseUrl}/${cliAsset.name}";
+    url = cliAsset.url;
     hash = cliAsset.hash;
   };
 
   desktopSrc = pkgs.fetchurl {
-    url = "${releaseBaseUrl}/${desktopAsset.name}";
+    url = desktopAsset.url;
     hash = desktopAsset.hash;
   };
 in
 {
-  opencode-cli-bin = pkgs.stdenvNoCC.mkDerivation {
-    pname = "opencode-cli-bin";
-    version = opencodeVersion;
+  # CLI binary. The archive ships the executable as plain `opencode`.
+  opencode = pkgs.stdenvNoCC.mkDerivation {
+    pname = "opencode-cli";
+    version = opencodeCliVersion;
     src = cliSrc;
 
-    nativeBuildInputs = [ pkgs.unzip ];
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
 
     dontUnpack = true;
 
@@ -48,13 +63,14 @@ in
 
       mkdir -p "$out/bin" "$out/libexec" "$TMPDIR/opencode-cli"
 
-      if [ "${cliAsset.archiveType}" = "zip" ]; then
-        unzip -q "$src" -d "$TMPDIR/opencode-cli"
-      else
-        tar -xzf "$src" -C "$TMPDIR/opencode-cli"
-      fi
+      tar -xzf "$src" -C "$TMPDIR/opencode-cli"
 
-      install -Dm755 "$TMPDIR/opencode-cli/opencode" "$out/libexec/opencode"
+      cli_binary="$(find "$TMPDIR/opencode-cli/package/bin" -type f -perm -u+x ! -name '*.map' -print -quit)"
+      if [ -z "$cli_binary" ]; then
+        echo "ERROR: could not find executable in the CLI archive" >&2
+        exit 1
+      fi
+      install -Dm755 "$cli_binary" "$out/libexec/opencode"
 
       cat > "$out/bin/opencode" <<EOF
       #!${pkgs.runtimeShell}
@@ -76,9 +92,10 @@ in
     };
   };
 
-  opencode-desktop-bin = pkgs.stdenvNoCC.mkDerivation {
-    pname = "opencode-desktop-bin";
-    version = opencodeVersion;
+  # Desktop app.
+  opencode-desktop = pkgs.stdenvNoCC.mkDerivation {
+    pname = "opencode-desktop";
+    version = opencodeDesktopVersion;
     src = desktopSrc;
 
     nativeBuildInputs = [ pkgs.binutils pkgs.makeWrapper ]
@@ -130,8 +147,14 @@ in
           undmg opencode-desktop.dmg
         )
 
-        cp -R "$TMPDIR/opencode-desktop/OpenCode.app" "$out/Applications/OpenCode.app"
-        ln -s "$out/Applications/OpenCode.app/Contents/MacOS/OpenCode" "$out/bin/opencode-desktop"
+         app_path="$(find "$TMPDIR/opencode-desktop" -maxdepth 2 -type d -name 'OpenCode*.app' -print -quit)"
+         if [ -z "$app_path" ]; then
+           echo "ERROR: could not find OpenCode.app inside the DMG" >&2
+           exit 1
+         fi
+         app_name="$(basename "$app_path")"
+         cp -R "$app_path" "$out/Applications/$app_name"
+          ln -s "$out/Applications/$app_name/Contents/MacOS/OpenCode" "$out/bin/opencode-desktop"
       else
         mkdir -p "$TMPDIR/opencode-desktop"
         data_tar="$(ar t "$src" | grep -m1 '^data\.tar\.')"
@@ -157,31 +180,23 @@ in
     '';
 
     postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-      if [ -f "$out/bin/OpenCode" ]; then
-        # Tauri packaging: wrap the binary directly
-        mv "$out/bin/OpenCode" "$out/bin/.OpenCode-unwrapped"
+       electron_bin="$(find "$out/opt" -type f -perm -u+x \( -name 'opencode' -o -name 'OpenCode' -o -name 'ai.opencode.desktop*' \) -print -quit)"
+       if [ ! -f "$electron_bin" ]; then
+         echo "ERROR: expected Electron binary at $electron_bin" >&2
+         exit 1
+       fi
+       electron_rel="''${electron_bin#$out}"
 
-        makeWrapper "$out/bin/.OpenCode-unwrapped" "$out/bin/OpenCode" \
-          "''${makeWrapperArgs[@]}" \
-          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
-          --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
+       makeWrapper "$electron_bin" "$out/bin/opencode-desktop" \
+        "''${makeWrapperArgs[@]}" \
+        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
+        --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
 
-        ln -s "$out/bin/OpenCode" "$out/bin/opencode-desktop"
-      elif [ -f "$out/opt/OpenCode/@opencode-aidesktop" ]; then
-        # Electron packaging: wrap the binary in opt/
-        makeWrapper "$out/opt/OpenCode/@opencode-aidesktop" "$out/bin/opencode-desktop" \
-          "''${makeWrapperArgs[@]}" \
-          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
-          --prefix XDG_DATA_DIRS : "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$out/share"
-      fi
-
-      # Patch any .desktop files to point to our wrapper
+      # Patch the desktop file to point to our wrapper
       for desktop_file in "$out/share/applications/"*.desktop; do
         if [ -f "$desktop_file" ]; then
           substituteInPlace "$desktop_file" \
-            --replace '/opt/OpenCode/@opencode-aidesktop' 'opencode-desktop' \
-            --replace 'Exec=OpenCode' 'Exec=opencode-desktop' \
-            --replace '/opt/OpenCode/' "$out/opt/OpenCode/"
+             --replace "$electron_rel" 'opencode-desktop'
         fi
       done
     '';

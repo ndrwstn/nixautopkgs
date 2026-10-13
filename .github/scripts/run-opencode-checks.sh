@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# OpenCode binary checks.
+#
+# Unlike run-opencode-checks.sh, there is no routing layer here and no source
+# build attrs: packages/opencode is bin-only (see its default.nix for the
+# rationale). Both outputs must build or this script reports failure — there
+# is no downgrade path to fall back to.
+
 set -uo pipefail
 
 if [[ $# -lt 2 ]]; then
@@ -38,9 +45,8 @@ import os
 cmd = ['nix', 'build', '--no-link', '.#packages.${system}.${attr_name}']
 if '${attr_name}'.endswith('-build'):
     # --rebuild forces a fresh build from scratch, even if the derivation
-    # is cached locally (e.g. restored by magic-nix-cache-action). Without
-    # this, a stale fixed-output node_modules derivation can mask build
-    # failures and produce false routing-reconcile successes.
+    # is cached locally. Kept for parity with run-opencode-checks.sh;
+    # packages/opencode has no '-build' attrs today.
     cmd.insert(2, '--rebuild')
 log_path = '${log_file}'
 timeout = ${TIMEOUT_SECONDS}
@@ -63,11 +69,6 @@ try:
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.wait()
-            # Also try to kill any leftover nix/bun processes
-            try:
-                subprocess.run(['pkill', '-f', 'bun install'], capture_output=True)
-            except:
-                pass
             sys.exit(124)  # Standard timeout exit code
 except Exception as e:
     with open(log_path, 'a') as log_f:
@@ -100,26 +101,14 @@ except Exception as e:
 	fi
 }
 
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode build/bin checks for ${system}" >&2
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode bin checks for ${system}" >&2
 
-routing_file="${repo_root}/packages/opencode/routing.json"
-desktop_route="$(jq -r --arg system "$system" '.[$system].desktop' "$routing_file")"
-
-cli_build="$(run_build_with_timeout "opencode-cli-build")"
-cli_bin="$(run_build_with_timeout "opencode-cli-bin")"
-
-if [[ "$desktop_route" == "null" ]]; then
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping desktop checks for ${system} (route is null)" >&2
-	desktop_build="skipped"
-	desktop_bin="skipped"
-else
-	desktop_build="$(run_build_with_timeout "opencode-desktop-build")"
-	desktop_bin="$(run_build_with_timeout "opencode-desktop-bin")"
-fi
+cli_bin="$(run_build_with_timeout "opencode")"
+desktop_bin="$(run_build_with_timeout "opencode-desktop")"
 
 if [[ "$desktop_bin" == "success" && "$system" == *"-darwin" ]]; then
-	desktop_out="$(nix path-info ".#packages.${system}.opencode-desktop-bin" 2>/dev/null)"
-	desktop_app="${desktop_out}/Applications/OpenCode.app"
+	desktop_out="$(nix path-info ".#packages.${system}.opencode-desktop" 2>/dev/null)"
+	desktop_app="$(find "$desktop_out/Applications" -maxdepth 1 -type d -name 'OpenCode*.app' -print -quit)"
 
 	if ! spctl --assess --type execute --verbose=4 "$desktop_app" >/dev/null 2>&1; then
 		echo "[$(date '+%Y-%m-%d %H:%M:%S')] Darwin desktop-bin Gatekeeper assessment failed for ${system}" >&2
@@ -131,18 +120,14 @@ fi
 
 jq -n \
 	--arg system "$system" \
-	--arg cliBuild "$cli_build" \
 	--arg cliBin "$cli_bin" \
-	--arg desktopBuild "$desktop_build" \
 	--arg desktopBin "$desktop_bin" \
 	'{
     system: $system,
     cli: {
-      build: $cliBuild,
       bin: $cliBin
     },
     desktop: {
-      build: $desktopBuild,
       bin: $desktopBin
     }
   }' >"$output_json"

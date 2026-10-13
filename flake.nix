@@ -5,9 +5,8 @@
     # NOTE: nixpkgs-unstable required for packages to build
     # Pinned to August 19, 2026 (30a8631bb18996a3cf754344f31f1a49050e56b9) - provides Go 1.27.0 and pnpm_11
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/8edc0c72e3a38faf5434e40d1f19431125fe4b30";
+    nixpkgs.url = "github:NixOS/nixpkgs/39ad350a0602fa0a58a544344e3e9187526ea45c";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    opencode.url = "github:anomalyco/opencode/v1.19.0";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
@@ -27,14 +26,11 @@
           ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
           television = pkgs.callPackage ./packages/television/default.nix { };
           mekhq = pkgs.callPackage ./packages/mekhq/default.nix { };
+          # OpenCode stable - official binaries only
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
-            opencodeInput = inputs.opencode;
           };
-          # OpenCode v2 (beta channel) - bin-only, no flake input needed
-          opencodeV2Packages = import ./packages/opencode-v2/default.nix {
-            inherit pkgs system;
-          };
+          artcraftPackages = import ./packages/artcraft/default.nix { inherit pkgs; };
 
           gcs-linux = gcs.overrideAttrs (oldAttrs: {
             # Ensure Linux desktop integration is enabled
@@ -53,13 +49,8 @@
           // pkgs.lib.optionalAttrs (system == "aarch64-darwin") {
             inherit mlx mlx-lm ocrit;
           }
-          // opencodePackages
-          // opencodeV2Packages
-          # Keep the stable v1 packages available under their explicit
-          # names, but make the public desktop alias use the v2 GUI.
-          // {
-            opencode-desktop = opencodeV2Packages.opencode-desktop-v2;
-          };
+          // artcraftPackages
+          // opencodePackages;
 
           devShells = {
             default = pkgs.mkShell {
