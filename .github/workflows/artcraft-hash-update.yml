@@ -41,6 +41,7 @@ jobs:
       - name: Detect changed ArtCraft packages
         id: packages
         run: |
+          trap 'rm -f artcraft-packages.txt' EXIT
           git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
           if git diff --name-only "${{ github.base_ref }}...HEAD" \
             | grep -q '^packages/artcraft/default\.nix$'; then
@@ -71,7 +72,7 @@ jobs:
 
       - name: Commit and push hash updates
         run: |
-          if [[ -z "$(git status --porcelain)" ]]; then
+          if [[ -z "$(git status --porcelain -- packages/artcraft)" ]]; then
             echo "No hash changes detected"
             exit 0
           fi

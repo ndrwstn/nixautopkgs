@@ -12,6 +12,7 @@
 , libXcursor
 , libXi
 , libXrandr
+, alsa-lib
 , vulkan-loader
 , desktop-file-utils
 , appstream
@@ -100,6 +101,7 @@ rustPlatform.buildRustPackage rec {
     libXcursor
     libXi
     libXrandr
+    alsa-lib
   ];
 
   postInstall = lib.optionalString isLinux ''
