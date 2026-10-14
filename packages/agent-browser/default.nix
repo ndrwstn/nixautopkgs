@@ -13,10 +13,10 @@
 
 let
   pname = "agent-browser";
-  version = "0.37.1";
-  hash = "sha256-AgpKazIBT3CKd4Q7yQsEGhoTW+7R0Pflma6aH+6UI/U=";
-  cargoHash = "sha256-ziN4UMeEcgsD5BDXWjffreGjyew7oTUtq59b/Um8Dfk=";
-  pnpmDepsHash = "sha256-9Pp/iaTDMDIGnaU6W00EZr4ONA5S5JHwQ84gtoDHAGc=";
+  version = "0.39.1";
+  hash = "sha256-WIg6WAnk3728NrZVh8JYtu2iRoHi8lYT2e5CDgOg2Sc=";
+  cargoHash = "sha256-f+7fTDs/irnf/6jCmSlSKaIaVAuqmTvjhW/vBT5gBKM=";
+  pnpmDepsHash = "sha256-GYaO/NtzgCtpZNm6qTB0oHiwjg6UYA/3e5qmJvLFR6I=";
 
   pnpm = pnpm_11.override {
     nodejs = nodejs_22;
