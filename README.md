@@ -38,7 +38,7 @@ The ArtCraft cluster packages the open-source Rust applications from the ArtCraf
 - `figcraft`: interface design and prototyping tool
 
 These packages are built from source for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`.
-`x86_64-darwin` is intentionally unsupported. Renovate tracks the seven upstream GitHub
+`x86_64-darwin` is intentionally unsupported. Renovate tracks all 13 upstream GitHub
 repositories as one update cluster; the ArtCraft hash-update workflow refreshes Cargo/source hashes
 and builds the affected packages before an update can merge.
 

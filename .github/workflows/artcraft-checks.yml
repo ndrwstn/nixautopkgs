@@ -44,6 +44,6 @@ jobs:
 
       - name: Build ArtCraft packages
         run: |
-          for package in photocraft vectorcraft filmcraft lightcraft effectcraft designcraft pdfcraft; do
+          for package in photocraft vectorcraft filmcraft lightcraft effectcraft designcraft pdfcraft deckcraft gridcraft cadcraft soundcraft wordcraft figcraft; do
             nix build --system "${{ matrix.system }}" ".#$package"
           done
