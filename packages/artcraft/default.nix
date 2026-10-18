@@ -124,6 +124,9 @@ in
       "craft-ui-0.1.0" = "sha256-VhLeT7VLdZAIz6gR9PdFI34IJxHsGF8NE0uzFCN2vIU=";
       "winprint-0.2.1" = "sha256-wnz/VbqQ3j/x1PEq6Elxu/oSjVqdONfqQmZ31NsTIIc=";
     };
+    postPatch = ''
+      patch -d "$cargoDepsCopy" -p1 < ${./rten-gemm-0.26-vpdpbusd-inline-asm.patch}
+    '';
   };
 
   deckcraft = common {

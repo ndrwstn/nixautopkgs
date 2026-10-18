@@ -1,0 +1,31 @@
+--- a/rten-gemm-0.26.0/src/i8dot.rs
++++ b/rten-gemm-0.26.0/src/i8dot.rs
+@@ -251,16 +251,23 @@
+             b: <Self::Isa as Isa>::I8,
+             acc: <Self::Isa as Isa>::I32,
+         ) -> <Self::Isa as Isa>::I32 {
+-            use std::arch::x86_64::_mm512_dpbusd_epi32;
+-
+-            #[target_feature(enable = "avx512vnni")]
++            // Use inline asm rather than the intrinsic because LLVM 21 corrected the
++            // intrinsic's argument types from i32 vectors to i8 vectors.
+             #[inline]
+             unsafe fn dot(
+                 a: <Avx512Isa as Isa>::I8,
+                 b: <Avx512Isa as Isa>::I8,
+-                acc: <Avx512Isa as Isa>::I32,
++                mut acc: <Avx512Isa as Isa>::I32,
+             ) -> <Avx512Isa as Isa>::I32 {
+-                _mm512_dpbusd_epi32(acc.0, a.0, b.0).into()
++                use std::arch::asm;
++                asm! {
++                    "vpdpbusd {result}, {a}, {b}",
++                    result = inout(zmm_reg) acc.0,
++                    a = in(zmm_reg) a.0,
++                    b = in(zmm_reg) b.0,
++                    options(nostack)
++                }
++                acc
+             }
+             // Safety: Constructor checks "avx512vnni" feature is supported.
+             unsafe { dot(a, b, acc) }
