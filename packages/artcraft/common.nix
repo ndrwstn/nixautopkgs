@@ -28,6 +28,7 @@
 , binaries ? [ pname "${pname}-cli" ]
 , sourceHash
 , outputHashes ? { }
+, postPatch ? ""
 }:
 
 let
@@ -79,6 +80,7 @@ rustPlatform.buildRustPackage rec {
 
   doCheck = false;
   strictDeps = true;
+  inherit postPatch;
 
   # The release profiles enable thin LTO and are memory-heavy. Keep remote
   # builders from killing rustc while compiling the large graphics workspaces.
