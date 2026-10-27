@@ -14,9 +14,9 @@
 let
   pname = "agent-browser";
   version = "0.39.4";
-  hash = "sha256-WIg6WAnk3728NrZVh8JYtu2iRoHi8lYT2e5CDgOg2Sc=";
-  cargoHash = "sha256-f+7fTDs/irnf/6jCmSlSKaIaVAuqmTvjhW/vBT5gBKM=";
-  pnpmDepsHash = "sha256-GYaO/NtzgCtpZNm6qTB0oHiwjg6UYA/3e5qmJvLFR6I=";
+  hash = "sha256-Apa01SDrDupntTWx+yNM/fd8oanrNuE0/Ea7ho0dgM0=";
+  cargoHash = "sha256-H4e2t7rttrr/8B9/IeREVtmbDDbBX8q8J5HJjy8eHn8=";
+  pnpmDepsHash = "sha256-7g6yn286aSKGUS3uuWi9wm8kxdWsC6tNRaxtLrONvbM=";
 
   pnpm = pnpm_11.override {
     nodejs = nodejs_22;
