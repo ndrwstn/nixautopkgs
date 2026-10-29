@@ -180,7 +180,9 @@ in
     '';
 
     postFixup = lib.optionalString pkgs.stdenv.isLinux ''
-       electron_bin="$(find "$out/opt" -type f -perm -u+x \( -name 'opencode' -o -name 'OpenCode' -o -name 'ai.opencode.desktop*' \) -print -quit)"
+       # The upstream Electron executable has used several names across
+       # desktop releases.  In particular, 2.2.x renamed it to ai.opencode.
+       electron_bin="$(find "$out/opt" -type f -perm -u+x \( -name 'opencode' -o -name 'OpenCode' -o -name 'ai.opencode' -o -name 'ai.opencode.desktop*' \) -print -quit)"
        if [ ! -f "$electron_bin" ]; then
          echo "ERROR: expected Electron binary at $electron_bin" >&2
          exit 1
