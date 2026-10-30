@@ -26,22 +26,22 @@
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-R502KMBrZel0kQEJROqum1nD1h1/gZgAqgd7pTJEXcQ=",
+      "hash": "sha256-rsxzZf4EF5jW/e7m6CxarQIOLgKC+WWAkb0yVdtHidU=",
       "name": "opencode-desktop-mac-arm64.dmg",
-      "url": "https://opencode.ai/files/bin/2.2.4/opencode-desktop-mac-arm64.dmg"
+      "url": "https://opencode.ai/files/bin/2.2.5/opencode-desktop-mac-arm64.dmg"
     },
     "aarch64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-HiN5r9D9NnLBJX6OW0LQv44WbQ05cwGCJ5k3YPfrsmo=",
+      "hash": "sha256-dRf375wKnojPAGCRHeIfHD37/XlvU1ymL+xslo0Ox+M=",
       "name": "opencode-desktop-linux-arm64.deb",
-      "url": "https://opencode.ai/files/bin/2.2.4/opencode-desktop-linux-arm64.deb"
+      "url": "https://opencode.ai/files/bin/2.2.5/opencode-desktop-linux-arm64.deb"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-h7UReTA8dd8JqqWi1dLayGuXjsAuVuaGw4AfDLx9joI=",
+      "hash": "sha256-yCfnFCIN50TIKf3qVVQO2BSxNyBh56kF/eCXj5+Bneg=",
       "name": "opencode-desktop-linux-amd64.deb",
-      "url": "https://opencode.ai/files/bin/2.2.4/opencode-desktop-linux-amd64.deb"
+      "url": "https://opencode.ai/files/bin/2.2.5/opencode-desktop-linux-amd64.deb"
     }
   },
-  "desktopVersion": "2.2.4"
+  "desktopVersion": "2.2.5"
 }
