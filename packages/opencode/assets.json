@@ -2,27 +2,27 @@
   "cli": {
     "aarch64-darwin": {
       "archiveType": "tar.gz",
-      "hash": "sha512-5osdn6iEB389vLnooBA8Y/vn7aWoKEnB8Bzf9rE5Wyo39enqN19xozXzNL564tQCqmoYzjx8OmGShgkJgtszhQ==",
-      "name": "cli-darwin-arm64-2.2.4.tgz",
+      "hash": "sha512-UwGb2MIJqLSh4wfrkvqNiAohG1Wf5t96Nx7113QvmtCn5LGimmXYN0Tb1chD0mMRRdPvnUguevKRdwM0txZY1Q==",
+      "name": "cli-darwin-arm64-2.2.5.tgz",
       "package": "@opencode/cli-darwin-arm64",
-      "url": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.4.tgz"
+      "url": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.2.5.tgz"
     },
     "aarch64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha512-MGwrdyOLJ2YMhAl9k/JTpjLHp8yCqw6gqDKT0GMOgPu56oMOZSaMUUg8hJK3Fq27uGOFQLiUtA3sbhdQg3lFAA==",
-      "name": "cli-linux-arm64-2.2.4.tgz",
+      "hash": "sha512-O4qOy/WRYQmhClMB/5qBaoYfzaDK1+PJRQOfU80ixyj5ruQbCxraH+VW2UyHb6RWOlUv41fec+isd62LvCuwuA==",
+      "name": "cli-linux-arm64-2.2.5.tgz",
       "package": "@opencode/cli-linux-arm64",
-      "url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.2.4.tgz"
+      "url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.2.5.tgz"
     },
     "x86_64-linux": {
       "archiveType": "tar.gz",
-      "hash": "sha512-rWbnCOP/nIN8ILAt0hcuw51sNbuX+zcImSCX7tPUCsaYgVNLcZ73whfW4lYc04ZMPhxeySooN0IvfLvnsaJfgQ==",
-      "name": "cli-linux-x64-2.2.4.tgz",
+      "hash": "sha512-BkHAfTqNsg/qphyHNrnH+DGkOxZsGjamNpM5DvwoEvz7ZAPNw8mEbMXGTCDOAH+/+40Eqeie6KNZBZZQwPCjaA==",
+      "name": "cli-linux-x64-2.2.5.tgz",
       "package": "@opencode/cli-linux-x64",
-      "url": "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.4.tgz"
+      "url": "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.5.tgz"
     }
   },
-  "cliVersion": "2.2.4",
+  "cliVersion": "2.2.5",
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
