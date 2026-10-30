@@ -5,7 +5,7 @@
     # NOTE: nixpkgs-unstable required for packages to build
     # Pinned to October 13, 2026 (e6da1f9db6d0c209655096bf772569219022cbf8) - provides Go 1.27.2 and pnpm_11
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/e6da1f9db6d0c209655096bf772569219022cbf8";
+    nixpkgs.url = "github:NixOS/nixpkgs/885ba4d038f10c3d17d7a92e8c3cc185b99c9158";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
