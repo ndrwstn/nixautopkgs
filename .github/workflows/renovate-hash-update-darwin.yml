@@ -31,6 +31,9 @@ jobs:
 
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@f69a2d3e148e90223fe63ab6e3f6331f2e7e33dc # main
+        with:
+          use-gha-cache: true
+          use-flakehub: false
 
       - name: Assert Renovate branch context
         run: |
