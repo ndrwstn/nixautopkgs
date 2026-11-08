@@ -28,6 +28,7 @@
 , binaries ? [ pname "${pname}-cli" ]
 , sourceHash
 , outputHashes ? { }
+, postPatch ? ""
 }:
 
 let
@@ -60,6 +61,7 @@ rustPlatform.buildRustPackage rec {
     lockFile = ./locks/${pname}.Cargo.lock;
     inherit outputHashes;
   };
+  inherit postPatch;
   cargoBuildFlags = [
     "--locked"
   ] ++ lib.concatMap (binary: [ "-p" binary ]) binaries;
