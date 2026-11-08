@@ -85,10 +85,6 @@ rustPlatform.buildRustPackage rec {
   # The release profiles enable thin LTO and are memory-heavy. Keep remote
   # builders from killing rustc while compiling the large graphics workspaces.
   env.CARGO_BUILD_JOBS = "1";
-  # Newer LLVM/rustc in recent nixpkgs break rten-gemm 0.26.0's inline asm
-  # using vpdpbusd on x86_64. Disable AVX512-VNNI to avoid the intrinsic
-  # signature mismatch.
-  env.RUSTFLAGS = lib.optionalString stdenv.hostPlatform.isx86_64 "-C target-feature=-avx512vnni";
 
   nativeBuildInputs = [ pkg-config ]
     ++ lib.optionals isLinux [
