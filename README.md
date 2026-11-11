@@ -84,6 +84,26 @@ also installs the Linux desktop entry, MIME type, and icons, and a macOS `.app` 
 Renovate tracks `francisreboucas/constructcraft`. A dedicated workflow refreshes the pinned
 `Cargo.lock` and source hash before an update can merge.
 
+## SolidCraft
+
+`solidcraft` packages SolidCraft (formerly SolveCraft), an open-source parametric 3D CAD
+application and clean-room Fusion 360 counterpart written in Rust:
+
+- `solidcraft`: desktop application
+- `solidcraft-cli`: headless CLI and MCP server
+- `solvecraft-cli`: deprecated compatibility alias for `solidcraft-cli`
+
+The package is built from source for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`.
+The code is MIT OR Apache-2.0; upstream branding and interface assets have their own terms.
+Linux gets the desktop entry, MIME type, icons and AppStream metadata; macOS gets a
+`SolidCraft.app` bundle with the CLI inside.
+
+This package tracks the newest stable **or release-candidate** release. Upstream is
+stabilizing a new geometry kernel and writes a newer design format in the 0.40 series, so
+designs saved by it do not open in 0.30.1. Nightly builds are ignored. The source tree is
+large (about 640 MB), so the checks workflow builds it on all three systems before an update
+can merge.
+
 ## OpenCode V2 compatibility
 
 OpenCode V2 uses the same `opencode` command as V1. Existing supported project configuration,
