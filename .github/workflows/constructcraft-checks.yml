@@ -1,0 +1,46 @@
+name: Check ConstructCraft package
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "packages/constructcraft/**"
+      - "flake.nix"
+      - "flake.lock"
+      - ".github/workflows/constructcraft-checks.yml"
+
+concurrency:
+  group: constructcraft-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+          - system: aarch64-darwin
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df # main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@f69a2d3e148e90223fe63ab6e3f6331f2e7e33dc # main
+
+      - name: Evaluate ConstructCraft package
+        run: |
+          nix flake check --system "${{ matrix.system }}"
+          nix flake show --system "${{ matrix.system }}"
+
+      - name: Build ConstructCraft package
+        run: nix build --system "${{ matrix.system }}" .#constructcraft

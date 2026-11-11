@@ -69,6 +69,21 @@ Checks can be run for an individual system with:
 ./.github/scripts/run-opencode-checks.sh aarch64-darwin result.json
 ```
 
+## ConstructCraft
+
+`constructcraft` packages ConstructCraft, an open-source BIM authoring application written in
+Rust by Francis Rebouças. It is unrelated to the ArtCraft project:
+
+- `constructcraft`: desktop BIM authoring application
+- `ccad`: command-line and MCP server, with Lua scripting and visual graphs
+
+The package is built from source for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`.
+It is GPL-3.0-or-later. Icons, fonts, and translations are compiled into the binary; the package
+also installs the Linux desktop entry, MIME type, and icons, and a macOS `.app` bundle.
+
+Renovate tracks `francisreboucas/constructcraft`. A dedicated workflow refreshes the pinned
+`Cargo.lock` and source hash before an update can merge.
+
 ## OpenCode V2 compatibility
 
 OpenCode V2 uses the same `opencode` command as V1. Existing supported project configuration,

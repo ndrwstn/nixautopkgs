@@ -26,6 +26,7 @@
           ocrit = pkgs.callPackage ./packages/ocrit/default.nix { };
           television = pkgs.callPackage ./packages/television/default.nix { };
           mekhq = pkgs.callPackage ./packages/mekhq/default.nix { };
+          constructcraft = pkgs.callPackage ./packages/constructcraft/default.nix { };
           # OpenCode stable - official binaries only
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
@@ -42,7 +43,7 @@
         in
         {
           packages = {
-            inherit agent-browser clamav television mekhq;
+            inherit agent-browser clamav television mekhq constructcraft;
           }
           // pkgs.lib.optionalAttrs (system != "aarch64-linux") {
             inherit gcs gcs-linux;
