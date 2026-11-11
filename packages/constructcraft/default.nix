@@ -41,7 +41,7 @@ rustPlatform.buildRustPackage rec {
     owner = "francisreboucas";
     repo = "constructcraft";
     rev = "v${version}";
-    hash = "sha256-JIPioQmV3vQquBBrPzfnHtTIZe/X3nXixDF8cryVIIw=";
+    hash = "sha256-yQ+Edn7Z58dvMusACf7qEuUC6CQWJ6GY2rUVLQZkIYU=";
   };
 
   # Keep the lock file as a repository input rather than interpolating it from
