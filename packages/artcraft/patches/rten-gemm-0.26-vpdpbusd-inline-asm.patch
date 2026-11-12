@@ -1,6 +1,6 @@
 --- a/rten-gemm-0.26.0/src/i8dot.rs
 +++ b/rten-gemm-0.26.0/src/i8dot.rs
-@@ -251,16 +251,23 @@
+@@ -251,16 +251,24 @@
              b: <Self::Isa as Isa>::I8,
              acc: <Self::Isa as Isa>::I32,
          ) -> <Self::Isa as Isa>::I32 {
@@ -9,6 +9,7 @@
 -            #[target_feature(enable = "avx512vnni")]
 +            // Use inline asm rather than the intrinsic because LLVM 21 corrected the
 +            // intrinsic's argument types from i32 vectors to i8 vectors.
++            #[target_feature(enable = "avx512f,avx512vnni")]
              #[inline]
              unsafe fn dot(
                  a: <Avx512Isa as Isa>::I8,
