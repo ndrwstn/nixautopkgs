@@ -19,6 +19,7 @@
           gcs = import ./packages/gcs/default.nix { inherit pkgs; };
           agent-browser = pkgs.callPackage ./packages/agent-browser/default.nix { };
           clamav = pkgs.callPackage ./packages/clamav/default.nix { };
+          cleverswitch = pkgs.callPackage ./packages/cleverswitch/default.nix { };
           mlx = pkgs.python313Packages.callPackage ./packages/mlx/default.nix { };
           mlx-lm = pkgs.python313Packages.callPackage ./packages/mlx-lm/default.nix {
             inherit mlx;
@@ -44,7 +45,7 @@
         in
         {
           packages = {
-            inherit agent-browser clamav television mekhq constructcraft solidcraft;
+            inherit agent-browser clamav cleverswitch television mekhq constructcraft solidcraft;
           }
           // pkgs.lib.optionalAttrs (system != "aarch64-linux") {
             inherit gcs gcs-linux;

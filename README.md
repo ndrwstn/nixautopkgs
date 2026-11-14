@@ -2,6 +2,13 @@
 
 This flake provides packages that are not yet in nixpkgs and tracks newer upstream releases.
 
+## CleverSwitch
+
+`cleverswitch` synchronizes host switching between Logitech keyboards and mice. It is packaged
+from source for Apple Silicon Darwin (`aarch64-darwin`) and Linux (`aarch64-linux` and
+`x86_64-linux`). Linux users can install the packaged udev rule from
+`$out/share/cleverswitch/udev/42-cleverswitch.rules` to grant non-root HID access.
+
 ## OpenCode
 
 OpenCode is packaged from the official prebuilt release artifacts:

@@ -39,6 +39,15 @@
     },
     {
       "customType": "regex",
+      "description": "Update cleverswitch version in packages/cleverswitch/default.nix",
+      "managerFilePatterns": ["/^packages/cleverswitch/default\\.nix$/"],
+      "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "MikalaiBarysevich/CleverSwitch",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Update ocrit version in packages/ocrit/default.nix",
       "managerFilePatterns": ["/^packages/ocrit/default\\.nix$/"],
       "matchStrings": ["version = \"(?<currentValue>.*?)\";"],
@@ -98,6 +107,13 @@
     }
   ],
   "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["MikalaiBarysevich/CleverSwitch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
