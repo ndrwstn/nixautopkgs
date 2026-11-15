@@ -71,17 +71,17 @@ jobs:
           git commit -m "chore: update SolidCraft package hashes"
           git push
 
-      - name: Report success on the pushed commit
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/report-status.sh success "hash-update/solidcraft" "built solidcraft and solidcraft-cli on x86_64-linux"
-
       - name: Dispatch SolidCraft checks for the updated branch
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run solidcraft-checks.yml --ref "$GITHUB_HEAD_REF" || echo "check dispatch skipped"
+
+      - name: Report success on the pushed commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh success "hash-update/solidcraft" "built solidcraft and solidcraft-cli on x86_64-linux"
 
       - name: Report failure on the evaluated commit
         if: failure()
