@@ -105,8 +105,26 @@ except Exception as e:
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running OpenCode bin checks for ${system}" >&2
 
+# Upstream publishes the desktop app for these systems only; the flake does not
+# expose opencode-desktop anywhere else.
+desktop_supported() {
+	case "$1" in
+	x86_64-linux | aarch64-darwin) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
 cli_bin="$(run_build_with_timeout "opencode")"
-desktop_bin="$(run_build_with_timeout "opencode-desktop")"
+
+if ! desktop_supported "$system"; then
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping opencode-desktop: unsupported on ${system}" >&2
+	desktop_bin="skipped"
+elif [[ "${DESKTOP_CHANGED:-true}" != "true" ]]; then
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] Skipping opencode-desktop: desktop version unchanged" >&2
+	desktop_bin="skipped"
+else
+	desktop_bin="$(run_build_with_timeout "opencode-desktop")"
+fi
 
 if [[ "$desktop_bin" == "success" && "$system" == *"-darwin" ]]; then
 	desktop_out="$(nix path-info ".#packages.${system}.opencode-desktop" 2>/dev/null)"

@@ -30,12 +30,6 @@
       "name": "opencode-desktop-mac-arm64.dmg",
       "url": "https://opencode.ai/files/bin/2.2.6/opencode-desktop-mac-arm64.dmg"
     },
-    "aarch64-linux": {
-      "archiveType": "deb",
-      "hash": "sha256-9/YSlP8xHp8O4KKDqwBl80AI+1ciMASANFzaNHZadXE=",
-      "name": "opencode-desktop-linux-arm64.deb",
-      "url": "https://opencode.ai/files/bin/2.2.6/opencode-desktop-linux-arm64.deb"
-    },
     "x86_64-linux": {
       "archiveType": "deb",
       "hash": "sha256-h/ZlVfOj/sOQHvfhrIb14t61W5AATPQjludUfGsZVFk=",

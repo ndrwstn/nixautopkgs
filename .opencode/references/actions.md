@@ -307,11 +307,17 @@ individual target can silently stop being produced.
 
 **Why.** A platform in `meta` that is never built is an untested claim; a
 platform in the matrix that is not in `meta` will fail `nix flake check`.
+`meta.platforms` may be narrower than the flake's `systems` list — upstream
+artifacts are not always published for every system, and claiming support for one
+we cannot build is a lie.
 
 **Prevents.** The updaters building one platform while the checks claimed three,
-so "validated" meant different things in different workflows.
+so "validated" meant different things in different workflows; and
+`opencode-desktop` claiming Linux support while its aarch64-linux build pulled
+WebKit from source and never finished.
 
-**Check.** Compare the matrix `include:` list with `meta.platforms`.
+**Check.** Compare the matrix `include:` list with `meta.platforms`; confirm
+`nix eval .#packages.<unsupported>.$pkg` fails with "does not provide attribute".
 
 ---
 
@@ -432,6 +438,7 @@ Append-only. Rules cite these; do not edit history, add entries.
 | P6  | 2026-11-14 | OpenCode `aarch64-linux` desktop builds timed out at 1800s; the timeout was reported as a package failure, failing every scheduled run.                                           | R11           |
 | P7  | 2026-11-15 | #604, #605: after the hash fix was pushed, the follow-up `pull_request` checks run sat in `action_required` and the PR stayed `UNSTABLE` with nothing validating the head.        | R3a, R3c, R10 |
 | P8  | 2026-11-15 | `opencode-update` ran on a 30 minute schedule with `cancel-in-progress: true`, but a validate run needs longer than 30 minutes, so every run was cancelled by the next tick.      | R11, R12      |
+| P9  | 2026-11-15 | `opencode-desktop` listed Linux in `meta.platforms` and pulled `webkitgtk_4_1`, so the aarch64-linux check built WebKit from source and could never finish.                       | R8, R11       |
 
 ---
 

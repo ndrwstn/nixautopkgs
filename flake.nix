@@ -33,6 +33,10 @@
           opencodePackages = import ./packages/opencode/default.nix {
             inherit pkgs system;
           };
+          # Upstream publishes the desktop app for these two systems only. The
+          # CLI is built everywhere; the desktop attribute is simply absent
+          # elsewhere so nothing tries to realise it.
+          opencodeDesktopSupported = system == "x86_64-linux" || system == "aarch64-darwin";
           artcraftPackages = import ./packages/artcraft/default.nix { inherit pkgs; };
           craft-fonts = pkgs.callPackage ./packages/artcraft/fonts.nix { };
 
@@ -55,7 +59,10 @@
           }
           // artcraftPackages
           // { inherit craft-fonts; }
-          // opencodePackages;
+          // { inherit (opencodePackages) opencode; }
+          // pkgs.lib.optionalAttrs opencodeDesktopSupported {
+            inherit (opencodePackages) opencode-desktop;
+          };
 
           devShells = {
             default = pkgs.mkShell {

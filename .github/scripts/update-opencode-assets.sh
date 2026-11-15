@@ -85,11 +85,10 @@ jq -n \
 	--argjson linuxArm "$(npm_asset @opencode/cli-linux-arm64)" \
 	--argjson linuxX64 "$(npm_asset @opencode/cli-linux-x64)" \
 	--argjson desktopDarwin "$(desktop_asset opencode-desktop-mac-arm64.dmg)" \
-	--argjson desktopLinuxArm "$(desktop_asset opencode-desktop-linux-arm64.deb)" \
 	--argjson desktopLinuxX64 "$(desktop_asset opencode-desktop-linux-amd64.deb)" \
 	'{cli:{"aarch64-darwin":$darwinArm,"aarch64-linux":$linuxArm,"x86_64-linux":$linuxX64},
     cliVersion:$cliVersion,
-    desktop:{"aarch64-darwin":$desktopDarwin,"aarch64-linux":$desktopLinuxArm,"x86_64-linux":$desktopLinuxX64},
+    desktop:{"aarch64-darwin":$desktopDarwin,"x86_64-linux":$desktopLinuxX64},
     desktopVersion:$desktopVersion}' >"$tmp_assets_file"
 
 jq -e '

@@ -103,7 +103,6 @@ in
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook pkgs.wrapGAppsHook3 ];
 
     buildInputs = lib.optionals pkgs.stdenv.isLinux [
-      pkgs.webkitgtk_4_1
       pkgs.gtk3
       pkgs.glib
       pkgs.dbus
@@ -111,7 +110,6 @@ in
       pkgs.libappindicator
       pkgs.glib-networking
       pkgs.openssl
-      pkgs.libsoup_3
       pkgs.gst_all_1.gstreamer
       pkgs.gst_all_1.gst-plugins-base
       pkgs.gst_all_1.gst-plugins-good
@@ -209,7 +207,9 @@ in
       license = licenses.mit;
       sourceProvenance = [ sourceTypes.binaryNativeCode ];
       mainProgram = "opencode-desktop";
-      platforms = platforms.linux ++ platforms.darwin;
+      # The desktop app is an Electron bundle; it does not use WebKit. Keep the
+      # platform list to the systems upstream publishes and we validate.
+      platforms = [ "x86_64-linux" "aarch64-darwin" ];
     };
   };
 }
