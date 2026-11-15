@@ -1,13 +1,15 @@
 name: Update agent-browser hashes on Renovate PRs
 
 on:
-  # Hash refreshes push a follow-up commit with GITHUB_TOKEN. Use the trusted
-  # base workflow so that commit's validation is not held for bot approval.
+  # Updaters stay on pull_request_target: a push made with GITHUB_TOKEN cannot
+  # start workflows, but a pull_request trigger would instead park a run in the
+  # approval-required state, which never executes and keeps the PR pending.
   pull_request_target:
     branches: [master]
     paths:
       - "packages/agent-browser/default.nix"
       - ".github/scripts/update-agent-browser-hashes.sh"
+      - ".github/scripts/report-status.sh"
       - ".github/workflows/agent-browser-hash-update.yml"
 
 concurrency:
@@ -20,6 +22,7 @@ jobs:
     runs-on: ubuntu-26.04
     permissions:
       contents: write
+      statuses: write
 
     steps:
       - name: Checkout PR branch
@@ -58,3 +61,15 @@ jobs:
           git add packages/agent-browser/default.nix
           git commit -m "chore: update agent-browser hashes"
           git push
+
+      - name: Report success on the pushed commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh success "hash-update/agent-browser" "built agent-browser on x86_64-linux"
+
+      - name: Report failure on the evaluated commit
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh failure "hash-update/agent-browser" "hash refresh or build failed" || true

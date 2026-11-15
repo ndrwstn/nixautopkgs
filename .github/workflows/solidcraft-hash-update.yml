@@ -1,11 +1,14 @@
 name: Update SolidCraft hashes on Renovate PRs
 
 on:
+  # Updaters stay on pull_request_target: a push made with GITHUB_TOKEN cannot
+  # start workflows, but a pull_request trigger would instead park a run in the
+  # approval-required state, which never executes and keeps the PR pending.
   pull_request_target:
     branches: [master]
     paths:
-      - "packages/solidcraft/default.nix"
-      - "packages/solidcraft/locks/*.lock"
+      - "packages/solidcraft/**"
+      - ".github/scripts/report-status.sh"
       - ".github/workflows/solidcraft-hash-update.yml"
 
 concurrency:
@@ -18,6 +21,8 @@ jobs:
     runs-on: ubuntu-26.04
     permissions:
       contents: write
+      statuses: write
+      actions: write
 
     steps:
       - name: Checkout PR branch
@@ -49,7 +54,9 @@ jobs:
             "https://raw.githubusercontent.com/tangency-labs/solidcraft/v$version/Cargo.lock" \
             > packages/solidcraft/locks/solidcraft.Cargo.lock
           nix run nixpkgs#nix-update -- --flake --version=skip solidcraft
-          nix build .#solidcraft
+          out="$(nix build --no-link --print-out-paths .#solidcraft)"
+          test -x "$out/bin/solidcraft"
+          test -x "$out/bin/solidcraft-cli"
 
       - name: Commit and push hash updates
         run: |
@@ -63,3 +70,21 @@ jobs:
           git add packages/solidcraft
           git commit -m "chore: update SolidCraft package hashes"
           git push
+
+      - name: Report success on the pushed commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh success "hash-update/solidcraft" "built solidcraft and solidcraft-cli on x86_64-linux"
+
+      - name: Dispatch SolidCraft checks for the updated branch
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run solidcraft-checks.yml --ref "$GITHUB_HEAD_REF" || echo "check dispatch skipped"
+
+      - name: Report failure on the evaluated commit
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh failure "hash-update/solidcraft" "hash refresh or build failed" || true

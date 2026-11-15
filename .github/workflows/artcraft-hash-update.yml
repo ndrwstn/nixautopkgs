@@ -1,11 +1,15 @@
 name: Update ArtCraft hashes on Renovate PRs
 
 on:
+  # Updaters stay on pull_request_target: a push made with GITHUB_TOKEN cannot
+  # start workflows, but a pull_request trigger would instead park a run in the
+  # approval-required state, which never executes and keeps the PR pending.
   pull_request_target:
     branches: [master]
     paths:
-      - "packages/artcraft/default.nix"
-      - "packages/artcraft/locks/*.lock"
+      - "packages/artcraft/**"
+      - ".github/artcraft-packages.txt"
+      - ".github/scripts/report-status.sh"
       - ".github/workflows/artcraft-hash-update.yml"
 
 concurrency:
@@ -18,6 +22,8 @@ jobs:
     runs-on: ubuntu-26.04
     permissions:
       contents: write
+      statuses: write
+      actions: write
 
     steps:
       - name: Checkout PR branch
@@ -35,39 +41,23 @@ jobs:
 
       - name: Assert Renovate branch context
         run: |
+          echo "head_ref=${GITHUB_HEAD_REF}"
+          echo "head_repo=${{ github.event.pull_request.head.repo.full_name }}"
+          echo "base_repo=${{ github.repository }}"
           [[ "${GITHUB_HEAD_REF}" == update/* ]]
           [[ "${{ github.event.pull_request.head.repo.full_name }}" == "${{ github.repository }}" ]]
 
-      - name: Detect changed ArtCraft packages
-        id: packages
-        run: |
-          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
-          if git diff --name-only "${{ github.base_ref }}...HEAD" \
-            | grep -q '^packages/artcraft/default\.nix$'; then
-            printf '%s\n' photocraft vectorcraft filmcraft lightcraft effectcraft designcraft pdfcraft \
-              deckcraft gridcraft cadcraft soundcraft wordcraft figcraft \
-              > artcraft-packages.txt
-          else
-            : > artcraft-packages.txt
-          fi
-
-          if [[ ! -s artcraft-packages.txt ]]; then
-            echo "No ArtCraft package changed"
-            exit 0
-          fi
-
-          cat artcraft-packages.txt
-
-      - name: Update hashes and build changed packages
+      - name: Update hashes and build every package
         run: |
           while read -r package; do
+            [[ -n "$package" ]] || continue
             version="$(sed -n '/pname = "'"$package"'";/,/version = /s/.*version = "\([^"]*\)";.*/\1/p' packages/artcraft/default.nix)"
             curl --fail --silent --show-error --location \
               "https://raw.githubusercontent.com/storytold/$package/v$version/Cargo.lock" \
               > "packages/artcraft/locks/$package.Cargo.lock"
             nix run nixpkgs#nix-update -- --flake --version=skip "$package"
             nix build ".#$package"
-          done < artcraft-packages.txt
+          done < .github/artcraft-packages.txt
 
       - name: Commit and push hash updates
         run: |
@@ -81,3 +71,21 @@ jobs:
           git add packages/artcraft
           git commit -m "chore: update ArtCraft package hashes"
           git push
+
+      - name: Report success on the pushed commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh success "hash-update/artcraft" "built all ArtCraft packages on x86_64-linux"
+
+      - name: Dispatch ArtCraft checks for the updated branch
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run artcraft-checks.yml --ref "$GITHUB_HEAD_REF" || echo "check dispatch skipped"
+
+      - name: Report failure on the evaluated commit
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh failure "hash-update/artcraft" "hash refresh or build failed" || true

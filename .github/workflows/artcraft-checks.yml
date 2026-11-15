@@ -1,12 +1,19 @@
 name: Check ArtCraft packages
 
 on:
-  pull_request:
+  # Hash updaters push with GITHUB_TOKEN, which cannot start workflows. A
+  # pull_request trigger would instead park a run in the approval-required
+  # state, where it never executes and keeps the PR pending forever. So the
+  # updater dispatches this workflow once the branch is fixed, and the
+  # pull_request_target trigger covers human changes and flake bumps.
+  workflow_dispatch:
+  pull_request_target:
     branches: [master]
     paths:
       - "packages/artcraft/**"
       - "flake.nix"
       - "flake.lock"
+      - ".github/artcraft-packages.txt"
       - ".github/workflows/artcraft-checks.yml"
 
 concurrency:
@@ -15,6 +22,12 @@ concurrency:
 
 jobs:
   checks:
+    # update/* branches are owned by the hash updater, which dispatches this
+    # workflow after pushing a validated commit.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       !startsWith(github.head_ref, 'update/'))
     strategy:
       fail-fast: false
       matrix:
@@ -26,10 +39,14 @@ jobs:
           - system: aarch64-darwin
             runner: macos-15
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df # main
@@ -44,6 +61,9 @@ jobs:
 
       - name: Build ArtCraft packages
         run: |
-          for package in photocraft vectorcraft filmcraft lightcraft effectcraft designcraft pdfcraft; do
-            nix build --system "${{ matrix.system }}" ".#$package"
-          done
+          # --keep-going so one broken application does not hide the rest.
+          attrs=()
+          while read -r package; do
+            [[ -n "$package" ]] && attrs+=(".#$package")
+          done < .github/artcraft-packages.txt
+          nix build --keep-going --system "${{ matrix.system }}" "${attrs[@]}"

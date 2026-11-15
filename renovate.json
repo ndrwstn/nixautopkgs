@@ -110,28 +110,28 @@
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["MikalaiBarysevich/CleverSwitch"],
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["vercel-labs/agent-browser"],
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["richardwilkes/gcs"],
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["alexpasmantier/television"],
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
@@ -154,14 +154,14 @@
       ],
       "groupName": "ArtCraft suite",
       "groupSlug": "artcraft-suite",
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["francisreboucas/constructcraft"],
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
@@ -171,7 +171,7 @@
       "ignoreUnstable": false,
       "respectLatest": false,
       "allowedVersions": "/^\\d+\\.\\d+\\.\\d+(-rc\\.\\d+)?$/",
-      "automerge": true,
+      "automerge": false,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },

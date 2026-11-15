@@ -1,10 +1,14 @@
 name: Update ocrit hashes on Renovate PRs (Darwin)
 
 on:
-  pull_request:
+  # Updaters stay on pull_request_target: a push made with GITHUB_TOKEN cannot
+  # start workflows, but a pull_request trigger would instead park a run in the
+  # approval-required state, which never executes and keeps the PR pending.
+  pull_request_target:
     branches: [master]
     paths:
       - "packages/ocrit/default.nix"
+      - ".github/scripts/report-status.sh"
       - ".github/workflows/renovate-hash-update-darwin.yml"
 
 concurrency:
@@ -17,6 +21,7 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: write
+      statuses: write
 
     steps:
       - name: Checkout PR branch
@@ -58,3 +63,15 @@ jobs:
           git add packages/ocrit/default.nix
           git commit -m "chore: update ocrit hashes"
           git push
+
+      - name: Report success on the pushed commit
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh success "hash-update/ocrit" "built ocrit on aarch64-darwin"
+
+      - name: Report failure on the evaluated commit
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/report-status.sh failure "hash-update/ocrit" "hash refresh or build failed" || true

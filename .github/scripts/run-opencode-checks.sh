@@ -18,13 +18,15 @@ system="$1"
 output_json="$2"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root"
+cd "$repo_root" || exit 1
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
-# Timeout duration in seconds (30 minutes)
-TIMEOUT_SECONDS=1800
+# Native Linux desktop dependencies can take longer than the CLI and are not
+# always available in the binary cache. Keep enough time for a cold build while
+# still bounding a wedged runner.
+TIMEOUT_SECONDS=3600
 
 # Run a build with timeout using Python for cross-platform compatibility
 # Returns: "success", "failure", or "timeout"

@@ -1,0 +1,13 @@
+photocraft
+vectorcraft
+filmcraft
+lightcraft
+effectcraft
+designcraft
+pdfcraft
+deckcraft
+gridcraft
+cadcraft
+soundcraft
+wordcraft
+figcraft
