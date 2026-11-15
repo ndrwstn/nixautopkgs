@@ -18,6 +18,7 @@
   "branchPrefix": "update/",
   "branchTopic": "{{depNameSanitized}}-{{newVersion}}",
   "fetchChangeLogs": "pr",
+  "rebaseWhen": "behind-base-branch",
   "customManagers": [
     {
       "customType": "regex",
