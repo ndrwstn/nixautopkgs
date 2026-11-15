@@ -113,6 +113,10 @@ in
     postPatch = ''
       patch -d "$cargoDepsCopy" -p1 < ${./patches/rten-gemm-0.26-vpdpbusd-inline-asm.patch}
     '';
+    # pdfcraft pulls aws-lc-sys 0.45 through aws-lc-rs, and nixpkgs' cargo setup
+    # hook forces AWS_LC_SYS_USE_SYSTEM=1. Without the system library the crate
+    # build script aborts with "requires a system-installed AWS-LC".
+    extraBuildInputs = [ pkgs.aws-lc ];
   };
 
   deckcraft = common {

@@ -29,6 +29,11 @@
 , sourceHash
 , outputHashes ? { }
 , postPatch ? ""
+  # Extra host libraries some applications need at build time. nixpkgs exports
+  # AWS_LC_SYS_USE_SYSTEM=1 from the cargo setup hook, so a crate that links
+  # aws-lc-sys >= 0.42 needs the system aws-lc present or its build script
+  # aborts. Keep the addition per-application so the other 13 stay lean.
+, extraBuildInputs ? [ ]
 }:
 
 let
@@ -104,7 +109,7 @@ rustPlatform.buildRustPackage rec {
     libXi
     libXrandr
     alsa-lib
-  ];
+  ] ++ extraBuildInputs;
 
   postInstall = lib.optionalString isLinux ''
     install -Dm644 packaging/linux/${appId}.desktop \
