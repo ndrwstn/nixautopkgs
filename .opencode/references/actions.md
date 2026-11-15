@@ -464,7 +464,6 @@ the migration list, not a permanent record.
 | ------------------------------------------------------------ | ------------------------------------------------------------- | ----- |
 | Fixers build 1 platform, checks build 3                      | decide one platform set per family                            | R8    |
 | No Shape B for gcs/clamav/television/mlx/ocrit/agent-browser | add, or accept the gap and keep the fixer as the only verdict | R1    |
-| `pdfcraft` has never built (aws-lc-sys)                      | fix or drop; it blocks every nixpkgs bump                     | —     |
 | `opencode-update` merges its own PR                          | gate the merge step during its validation period              | R2    |
 | `renovate.json` `automerge`                                  | `false` now; flip per family once its validation period ends  | Model |
 
