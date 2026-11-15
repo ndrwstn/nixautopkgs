@@ -1,0 +1,55 @@
+name: Check gcs package
+
+on:
+  # Updaters push with GITHUB_TOKEN, which cannot start workflows. A
+  # pull_request trigger would park a run in the approval-required state
+  # instead, so the gcs hash updater dispatches this workflow after it pushes.
+  workflow_dispatch:
+  pull_request_target:
+    branches: [master]
+    paths:
+      - "packages/gcs/default.nix"
+      - ".github/workflows/gcs-checks.yml"
+
+concurrency:
+  group: gcs-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    # update/richardwilkes-gcs-* is owned by the hash updater.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       !startsWith(github.head_ref, 'update/richardwilkes-gcs'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+          - system: aarch64-darwin
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df # main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@f69a2d3e148e90223fe63ab6e3f6331f2e7e33dc # main
+
+      - name: Build gcs
+        run: |
+          out="$(nix build --system "${{ matrix.system }}" --no-link --print-out-paths .#gcs)"
+          test -x "$out/bin/gcs"
+          if [[ "${{ matrix.system }}" == "aarch64-darwin" ]]; then
+            test -x "$out/Applications/GCS.app/Contents/MacOS/gcs"
+          fi
