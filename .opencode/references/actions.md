@@ -181,19 +181,22 @@ approve.
 
 ---
 
-### R3b — Checks never report on `update/*`
+### R3b — Checks never report on a branch an updater owns
 
-**Rule.** The checks workflow skips `update/*` branches and is dispatched by the
-updater after the fix is pushed.
+**Rule.** A checks workflow skips exactly the Renovate branches that have a hash
+updater for its family, and that updater dispatches the checks after pushing.
 
 **Why.** The checks are triggered by Renovate's first push, which is the unfixed
-commit — it is broken by construction. Reporting on it produces a red check that
+commit — broken by construction. Reporting on it produces a red check that
 describes code nobody will merge, and the fixed commit never gets a run.
+
+Skip the family's branches, not every `update/*` branch: `update/nixpkgs` has no
+updater, and is exactly the PR that needs the checks.
 
 **Prevents.** P1: #602's red hash-mismatch check on the pre-fix commit.
 
-**Check.** Every checks workflow has `workflow_dispatch:` and an `if:` that
-excludes `update/*`; every updater dispatches it with
+**Check.** Each checks workflow has `workflow_dispatch:` and an `if:` that
+excludes its own updater's branches; each updater dispatches it with
 `gh workflow run <checks>.yml --ref "$GITHUB_HEAD_REF"`.
 
 ---
@@ -432,19 +435,19 @@ Append-only. Rules cite these; do not edit history, add entries.
 Current mapping. Regenerate this table whenever a workflow's trigger, `paths`,
 targets, or reporting changes.
 
-| Workflow                      | Event                                      | Guard                    | Paths                                           | Builds                                       | Reports via                | Merge owner      |
-| ----------------------------- | ------------------------------------------ | ------------------------ | ----------------------------------------------- | -------------------------------------------- | -------------------------- | ---------------- |
-| `agent-browser-hash-update`   | `pull_request_target`                      | `update/` + same repo    | derivation, scripts, self                       | `agent-browser` (1 platform)                 | status                     | Renovate         |
-| `renovate-hash-update`        | `pull_request_target`                      | `update/` + same repo    | gcs/clamav/television derivations, script, self | the three changed attrs (1 platform)         | status                     | Renovate         |
-| `renovate-hash-update-darwin` | `pull_request_target`                      | `update/` + same repo    | ocrit derivation, script, self                  | `ocrit` (darwin)                             | status                     | Renovate         |
-| `mlx-hash-update-darwin`      | `pull_request_target`                      | `update/` + same repo    | mlx, mlx-lm derivations, script, self           | `mlx`, `mlx-lm` (darwin)                     | status                     | Renovate         |
-| `artcraft-hash-update`        | `pull_request_target`                      | `update/` + same repo    | `packages/artcraft/**`, list, script, self      | 14 attrs (1 platform)                        | status + dispatched checks | Renovate         |
-| `constructcraft-hash-update`  | `pull_request_target`                      | `update/` + same repo    | `packages/constructcraft/**`, script, self      | `constructcraft` + `ccad` (1 platform)       | status + dispatched checks | Renovate         |
-| `solidcraft-hash-update`      | `pull_request_target`                      | `update/` + same repo    | `packages/solidcraft/**`, script, self          | `solidcraft` + `solidcraft-cli` (1 platform) | status + dispatched checks | Renovate         |
-| `artcraft-checks`             | `pull_request_target`, `workflow_dispatch` | same repo, not `update/` | `packages/artcraft/**`, list, `flake.*`, self   | 14 attrs × 3 systems                         | check runs                 | —                |
-| `constructcraft-checks`       | `pull_request_target`, `workflow_dispatch` | same repo, not `update/` | `packages/constructcraft/**`, `flake.*`, self   | `constructcraft` + `ccad` × 3 systems        | check runs                 | —                |
-| `solidcraft-checks`           | `pull_request_target`, `workflow_dispatch` | same repo, not `update/` | `packages/solidcraft/**`, `flake.*`, self       | `solidcraft` + `solidcraft-cli` × 3 systems  | check runs                 | —                |
-| `opencode-update`             | `schedule`, `workflow_dispatch`            | none                     | n/a                                             | CLI + desktop × 3 systems                    | own PR                     | self (exception) |
+| Workflow                      | Event                                      | Guard                               | Paths                                           | Builds                                       | Reports via                | Merge owner      |
+| ----------------------------- | ------------------------------------------ | ----------------------------------- | ----------------------------------------------- | -------------------------------------------- | -------------------------- | ---------------- |
+| `agent-browser-hash-update`   | `pull_request_target`                      | `update/` + same repo               | derivation, scripts, self                       | `agent-browser` (1 platform)                 | status                     | Renovate         |
+| `renovate-hash-update`        | `pull_request_target`                      | `update/` + same repo               | gcs/clamav/television derivations, script, self | the three changed attrs (1 platform)         | status                     | Renovate         |
+| `renovate-hash-update-darwin` | `pull_request_target`                      | `update/` + same repo               | ocrit derivation, script, self                  | `ocrit` (darwin)                             | status                     | Renovate         |
+| `mlx-hash-update-darwin`      | `pull_request_target`                      | `update/` + same repo               | mlx, mlx-lm derivations, script, self           | `mlx`, `mlx-lm` (darwin)                     | status                     | Renovate         |
+| `artcraft-hash-update`        | `pull_request_target`                      | `update/` + same repo               | `packages/artcraft/**`, list, script, self      | 14 attrs (1 platform)                        | status + dispatched checks | Renovate         |
+| `constructcraft-hash-update`  | `pull_request_target`                      | `update/` + same repo               | `packages/constructcraft/**`, script, self      | `constructcraft` + `ccad` (1 platform)       | status + dispatched checks | Renovate         |
+| `solidcraft-hash-update`      | `pull_request_target`                      | `update/` + same repo               | `packages/solidcraft/**`, script, self          | `solidcraft` + `solidcraft-cli` (1 platform) | status + dispatched checks | Renovate         |
+| `artcraft-checks`             | `pull_request_target`, `workflow_dispatch` | same repo, not its updater branches | `packages/artcraft/**`, list, `flake.*`, self   | 14 attrs × 3 systems                         | check runs                 | —                |
+| `constructcraft-checks`       | `pull_request_target`, `workflow_dispatch` | same repo, not its updater branches | `packages/constructcraft/**`, `flake.*`, self   | `constructcraft` + `ccad` × 3 systems        | check runs                 | —                |
+| `solidcraft-checks`           | `pull_request_target`, `workflow_dispatch` | same repo, not its updater branches | `packages/solidcraft/**`, `flake.*`, self       | `solidcraft` + `solidcraft-cli` × 3 systems  | check runs                 | —                |
+| `opencode-update`             | `schedule`, `workflow_dispatch`            | none                                | n/a                                             | CLI + desktop × 3 systems                    | own PR                     | self (exception) |
 
 Families with no Shape B coverage today: `gcs`, `clamav`, `television`, `mlx`,
 `mlx-lm`, `ocrit`, `agent-browser`, `mekhq`, `cleverswitch`, `craft-fonts`. A

@@ -22,12 +22,14 @@ concurrency:
 
 jobs:
   checks:
-    # update/* branches are owned by the hash updater, which dispatches this
-    # workflow after pushing a validated commit.
+    # update/* branches that have an ArtCraft hash updater are owned by it: it
+    # dispatches this workflow once the branch is fixed. Other Renovate branches
+    # (notably update/nixpkgs) have no updater, so they are validated here.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
-       !startsWith(github.head_ref, 'update/'))
+       !startsWith(github.head_ref, 'update/artcraft-suite') &&
+       !startsWith(github.head_ref, 'update/storytold-'))
     strategy:
       fail-fast: false
       matrix:
