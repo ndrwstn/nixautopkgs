@@ -103,6 +103,14 @@ in
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook pkgs.wrapGAppsHook3 ];
 
     buildInputs = lib.optionals pkgs.stdenv.isLinux [
+      # What the Electron bundle actually links against. libX11, libxcb,
+      # libgbm and libudev used to arrive transitively through webkitgtk_4_1;
+      # dropping that dependency means naming them here or autoPatchelfHook
+      # fails in fixupPhase.
+      pkgs.libX11
+      pkgs.libxcb
+      pkgs.mesa # libgbm.so.1
+      pkgs.systemd # libudev.so.1
       pkgs.gtk3
       pkgs.glib
       pkgs.dbus

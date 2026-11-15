@@ -89,14 +89,14 @@ except Exception as e:
 	elif [[ $exit_code -eq 124 ]]; then
 		echo "[$(date '+%Y-%m-%d %H:%M:%S')] TIMED OUT ${attr_name} for ${system} after ${TIMEOUT_SECONDS}s" >&2
 		echo "--- ${system} ${attr_name} timed out (last 120 lines) ---" >&2
-		sed -n '1,120p' "$log_file" >&2
+		tail -n 120 "$log_file" >&2
 		echo "--- end log excerpt ---" >&2
 		echo "timeout"
 		return 0
 	else
 		echo "[$(date '+%Y-%m-%d %H:%M:%S')] Failed ${attr_name} for ${system} after ${elapsed}s (exit ${exit_code})" >&2
 		echo "--- ${system} ${attr_name} failed (last 120 lines) ---" >&2
-		sed -n '1,120p' "$log_file" >&2
+		tail -n 120 "$log_file" >&2
 		echo "--- end log excerpt ---" >&2
 		echo "failure"
 		return 0
