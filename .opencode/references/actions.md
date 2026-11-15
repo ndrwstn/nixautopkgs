@@ -369,16 +369,20 @@ branch to `failure`, never to `success`.
 ### R12 — Concurrency cancels, never orders
 
 **Rule.** Concurrency groups are scoped per family and per head ref, and no
-sequencing logic relies on them.
+sequencing logic relies on them. `cancel-in-progress: true` is only allowed when a
+run reliably finishes inside its trigger interval.
 
 **Why.** A shared group cancels in-flight runs. It cannot make workflow B wait for
-workflow A.
+workflow A. And if the interval is shorter than the run, every run is killed by
+the next tick and nothing ever reports.
 
-**Prevents.** The assumption that `*-checks` would run after `*-hash-update`
-finished fixing the branch.
+**Prevents.** P1, the assumption that `*-checks` would run after `*-hash-update`
+finished fixing the branch; P8, `opencode-update` cancelling itself every 30
+minutes because a validate run takes longer than that.
 
 **Check.** No workflow's correctness depends on another workflow's completion;
-`group:` includes `github.head_ref`.
+`group:` includes `github.head_ref`; for scheduled workflows, compare the cron
+interval with the observed run duration.
 
 ---
 
@@ -427,6 +431,7 @@ Append-only. Rules cite these; do not edit history, add entries.
 | P5  | 2026-11-14 | `mlx-hash-update-darwin` and `renovate-hash-update-darwin` used `pull_request` while every sibling used `pull_request_target`.                                                    | R3a           |
 | P6  | 2026-11-14 | OpenCode `aarch64-linux` desktop builds timed out at 1800s; the timeout was reported as a package failure, failing every scheduled run.                                           | R11           |
 | P7  | 2026-11-15 | #604, #605: after the hash fix was pushed, the follow-up `pull_request` checks run sat in `action_required` and the PR stayed `UNSTABLE` with nothing validating the head.        | R3a, R3c, R10 |
+| P8  | 2026-11-15 | `opencode-update` ran on a 30 minute schedule with `cancel-in-progress: true`, but a validate run needs longer than 30 minutes, so every run was cancelled by the next tick.      | R11, R12      |
 
 ---
 

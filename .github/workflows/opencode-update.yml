@@ -7,7 +7,12 @@ on:
 
 concurrency:
   group: opencode-update
-  cancel-in-progress: true
+  # A validate run takes longer than the 30 minute schedule interval: the
+  # aarch64-linux desktop build alone needs more than 30 minutes on a cold
+  # cache. Cancelling in progress meant every run was killed by the next tick
+  # before it could report, so let runs queue instead. GitHub keeps at most one
+  # pending run, so this cannot pile up.
+  cancel-in-progress: false
 
 jobs:
   discover:
