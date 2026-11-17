@@ -64,7 +64,6 @@ rustPlatform.buildRustPackage rec {
     # the fetcher output. The latter can produce an un-realized .drv path while
     # evaluating foreign-system flake outputs.
     lockFile = ./locks/${pname}.Cargo.lock;
-    inherit outputHashes;
   };
   inherit postPatch;
   cargoBuildFlags = [
