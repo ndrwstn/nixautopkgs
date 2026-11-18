@@ -19,7 +19,13 @@ concurrency:
 
 jobs:
   update-package-hashes:
-    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
+    # Only the tracked packages' Renovate branches. `update/` alone would also
+    # match action-digest bumps, which touch every workflow file.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.head_ref, 'update/richardwilkes-gcs') ||
+       startsWith(github.head_ref, 'update/alexpasmantier-television') ||
+       startsWith(github.head_ref, 'update/clamav-'))
     runs-on: ubuntu-26.04
     permissions:
       contents: write

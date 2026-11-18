@@ -17,7 +17,9 @@ concurrency:
 
 jobs:
   update-ocrit-hashes:
-    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
+    # Only this package's Renovate branches. `update/` alone would also match
+    # action-digest bumps, which touch every workflow file.
+    if: startsWith(github.head_ref, 'update/insidegui-ocrit') && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-26
     permissions:
       contents: write

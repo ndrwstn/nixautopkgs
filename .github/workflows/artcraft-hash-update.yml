@@ -18,7 +18,13 @@ concurrency:
 
 jobs:
   update-artcraft:
-    if: startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository
+    # Only this family's Renovate branches. `update/` alone would also match
+    # action-digest bumps, which touch every workflow file and would otherwise
+    # run a full hash refresh here.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (startsWith(github.head_ref, 'update/artcraft-suite') ||
+       startsWith(github.head_ref, 'update/storytold-'))
     runs-on: ubuntu-26.04
     permissions:
       contents: write
@@ -58,6 +64,13 @@ jobs:
             nix run nixpkgs#nix-update -- --flake --version=skip "$package"
             nix build ".#$package"
           done < .github/artcraft-packages.txt
+
+          # nix-update rewrites the cargoLock attrset and drops
+          # `inherit outputHashes;`, which is what supplies the git-dependency
+          # hashes for craft-ui and craft-print. common.nix is shared by all 14
+          # packages, so nothing here may rewrite it: only default.nix and
+          # locks/ are ours to change.
+          git checkout -- packages/artcraft/common.nix
 
       - name: Commit and push hash updates
         run: |
