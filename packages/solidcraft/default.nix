@@ -51,7 +51,7 @@ rustPlatform.buildRustPackage {
     owner = "tangency-labs";
     repo = "solidcraft";
     rev = "v${version}";
-    hash = "sha256-oHNOu1upjn8ns/plnPgCPR8Br0oP48Rhq44Z6Sf+zlo=";
+    hash = "sha256-dKDbEBKsI2ImlsPXrc9V9yvK3+Kdg3NR0rYrEmjRevw=";
   };
 
   # Keep the lock file as a repository input rather than interpolating it from
