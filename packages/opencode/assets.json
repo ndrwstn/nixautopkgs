@@ -26,16 +26,16 @@
   "desktop": {
     "aarch64-darwin": {
       "archiveType": "darwin-dmg",
-      "hash": "sha256-lc9PRQ79oIm4ajsonubJSUB7YERtqkZ5hcZuvhiKSbY=",
+      "hash": "sha256-LEYmkTLSrL2Kc+2TG7Yfo5/RfoD6zYFRk8U2w65OBSw=",
       "name": "opencode-desktop-mac-arm64.dmg",
-      "url": "https://opencode.ai/files/bin/2.3.1/opencode-desktop-mac-arm64.dmg"
+      "url": "https://opencode.ai/files/bin/2.3.2/opencode-desktop-mac-arm64.dmg"
     },
     "x86_64-linux": {
       "archiveType": "deb",
-      "hash": "sha256-oTJ12pSB9Te31ytGTl00CBRyMHFn5Ir0iRuoj9LJIOU=",
+      "hash": "sha256-7XAA4uH9m5j0NnEY5tHuvvO6qaSwLWxgkPOX36p4exc=",
       "name": "opencode-desktop-linux-amd64.deb",
-      "url": "https://opencode.ai/files/bin/2.3.1/opencode-desktop-linux-amd64.deb"
+      "url": "https://opencode.ai/files/bin/2.3.2/opencode-desktop-linux-amd64.deb"
     }
   },
-  "desktopVersion": "2.3.1"
+  "desktopVersion": "2.3.2"
 }
