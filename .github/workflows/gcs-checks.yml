@@ -48,6 +48,8 @@ jobs:
         with:
           name: nixautopkgs
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # only the x86_64-linux outputs are consumed locally
+          skipPush: ${{ matrix.system != 'x86_64-linux' }}
 
       - name: Build gcs
         run: |

@@ -41,6 +41,8 @@ jobs:
         with:
           name: nixautopkgs
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # darwin-only: nothing here is consumed on the NixOS machines
+          skipPush: true
 
       - name: Assert Renovate branch context
         run: |
