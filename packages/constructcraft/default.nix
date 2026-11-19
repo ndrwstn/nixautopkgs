@@ -35,7 +35,7 @@ let
 in
 rustPlatform.buildRustPackage rec {
   pname = "constructcraft";
-  version = "0.12.0";
+  version = "0.13.0";
 
   src = fetchFromGitHub {
     owner = "francisreboucas";
