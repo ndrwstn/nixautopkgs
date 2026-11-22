@@ -3,7 +3,7 @@
 
   inputs = {
     # NOTE: nixpkgs-unstable required for packages to build
-    # Pinned to November 6, 2026 (4fe25e12eb9f4c744966dd3de5a05246cf098601) - provides Go 1.27.3 and pnpm_11
+    # Pinned to November 21, 2026 (93a9ed0a866099a230ed5146a5bb7d16fd5c9b14) - provides Go 1.27.3 and pnpm_11
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/93a9ed0a866099a230ed5146a5bb7d16fd5c9b14";
     flake-parts.url = "github:hercules-ci/flake-parts";
