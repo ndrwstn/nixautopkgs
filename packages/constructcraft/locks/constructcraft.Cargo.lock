@@ -267,7 +267,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "api_doc"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "proc-macro2",
  "syn 2.0.119",
@@ -712,7 +712,7 @@ dependencies = [
 
 [[package]]
 name = "cc_app"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_engine",
@@ -745,7 +745,7 @@ dependencies = [
 
 [[package]]
 name = "cc_cad"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "acadrust",
  "cc_core",
@@ -757,7 +757,7 @@ dependencies = [
 
 [[package]]
 name = "cc_cli"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_engine",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "cc_core"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "glam",
  "ron",
@@ -778,7 +778,7 @@ dependencies = [
 
 [[package]]
 name = "cc_engine"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_cad",
  "cc_core",
@@ -791,6 +791,7 @@ dependencies = [
  "glam",
  "image",
  "mlua",
+ "png 0.18.1",
  "schemars",
  "serde",
  "serde_json",
@@ -799,7 +800,7 @@ dependencies = [
 
 [[package]]
 name = "cc_geom"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_script",
@@ -810,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "cc_ifc"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_geom",
@@ -819,8 +820,9 @@ dependencies = [
 
 [[package]]
 name = "cc_plugins"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
+ "cc_core",
  "cc_engine",
  "cc_script",
  "cc_skp",
@@ -833,7 +835,7 @@ dependencies = [
 
 [[package]]
 name = "cc_raytracing"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_geom",
@@ -846,7 +848,7 @@ dependencies = [
 
 [[package]]
 name = "cc_render"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "bytemuck",
  "cc_core",
@@ -859,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "cc_script"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "glam",
@@ -869,11 +871,11 @@ dependencies = [
 
 [[package]]
 name = "cc_skp"
-version = "0.13.0"
+version = "0.14.0"
 
 [[package]]
 name = "cc_views"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "cc_core",
  "cc_geom",
