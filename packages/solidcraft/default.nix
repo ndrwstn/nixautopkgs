@@ -24,7 +24,7 @@
 }:
 
 let
-  version = "0.46.0";
+  version = "0.46.2";
   shortVersion = lib.head (lib.splitString "-" version);
   isLinux = stdenv.hostPlatform.isLinux;
   runtimeLibs = lib.optionals isLinux [
