@@ -172,14 +172,17 @@
       "ignoreUnstable": false,
       "respectLatest": false,
       "allowedVersions": "/^\\d+\\.\\d+\\.\\d+(-rc\\.\\d+)?$/",
-      "automerge": false,
+      "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
     },
     {
       "matchDepNames": ["NixOS/nixpkgs"],
       "branchTopic": "nixpkgs",
-      "schedule": ["at any time"]
+      "schedule": ["at any time"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
     }
   ]
 }

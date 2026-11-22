@@ -86,12 +86,21 @@ it once the branch is fixed. `workflow_dispatch` is exempt from the
 The workflow never merges a Renovate PR. `automerge` in `renovate.json` is the
 switch:
 
-- `false` during the validation period — the fixer still refreshes, builds, and
-  pushes, and you merge by hand once you have looked at it.
-- `true` after — the fixer refreshes, builds, pushes, and posts a green status,
-  and Renovate merges.
+- `false` — the fixer still refreshes, builds, and pushes, and you merge by hand
+  once you have looked at it.
+- `true` — the fixer refreshes, builds, pushes, and posts its status; Renovate
+  merges once the branch is green on every platform.
 
-Flipping it is a deliberate `renovate.json` change, never a runtime decision.
+Currently `true` for `NixOS/nixpkgs` and `tangency-labs/solidcraft`; the other
+families are still manual. Flipping it is a deliberate `renovate.json` change,
+never a runtime decision.
+
+Renovate does not read the PR's `statusCheckRollup`. Its GitHub platform calls
+`GET /commits/<ref>/check-runs` and requires every run to be
+`success`/`skipped`/`neutral`, so the checks a fixer dispatches on the pushed
+head do gate automerge — even though GitHub's PR rollup omits
+`workflow_dispatch` check suites (verified on #618, #619 and #621, whose rollups
+contain only the fixer's status).
 
 ### The status is what makes this work
 
@@ -477,7 +486,7 @@ the migration list, not a permanent record.
 | Fixers build 1 platform, checks build 3                      | decide one platform set per family                            | R8    |
 | No Shape B for gcs/clamav/television/mlx/ocrit/agent-browser | add, or accept the gap and keep the fixer as the only verdict | R1    |
 | `opencode-update` merges its own PR                          | gate the merge step during its validation period              | R2    |
-| `renovate.json` `automerge`                                  | `false` now; flip per family once its validation period ends  | Model |
+| `renovate.json` `automerge`                                  | `true` for nixpkgs and solidcraft; flip others once validated | Model |
 
 ---
 
