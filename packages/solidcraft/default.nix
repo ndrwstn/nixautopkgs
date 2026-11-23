@@ -24,7 +24,7 @@
 }:
 
 let
-  version = "0.46.2";
+  version = "0.47.0";
   shortVersion = lib.head (lib.splitString "-" version);
   isLinux = stdenv.hostPlatform.isLinux;
   runtimeLibs = lib.optionals isLinux [
@@ -51,7 +51,7 @@ rustPlatform.buildRustPackage {
     owner = "tangency-labs";
     repo = "solidcraft";
     rev = "v${version}";
-    hash = "sha256-KE+7LzAB/QUaRNJZvsQutNNDrgubfBnPoA/WkTVbQzM=";
+    hash = "sha256-ujkMVzp92vk/KuLl8FchioYC49EOfC4e8DXmFSAXTcw=";
   };
 
   # Keep the lock file as a repository input rather than interpolating it from
