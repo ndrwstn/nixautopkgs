@@ -13,7 +13,7 @@
 
 let
   pname = "agent-browser";
-  version = "0.43.0";
+  version = "0.44.0";
   hash = "sha256-+hmbSIgTqs5uZW7j0hAhz/9Fd24Np80DfoccqN4fGF4=";
   cargoHash = "sha256-MKTL/1k3gvGB0ylg4iAi2WyZ1sNrEpBJVtvjc7J6maA=";
   pnpmDepsHash = "sha256-lzbhkeZAOc5ETT07FReZIpnhw5ttlxvd9G+1BVbrJzk=";
