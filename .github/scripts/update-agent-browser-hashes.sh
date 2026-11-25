@@ -88,7 +88,7 @@ version="$(extract_version)"
 
 echo "Preparing hash update for agent-browser v${version}"
 
-nix run nixpkgs#nix-update -- --flake --version=skip agent-browser
+nix run .#nix-update -- --flake --version=skip agent-browser
 
 echo "Converging agent-browser hashes"
 

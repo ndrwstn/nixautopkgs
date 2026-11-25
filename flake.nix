@@ -7,6 +7,15 @@
     # renovate: datasource=git-refs depName=NixOS/nixpkgs
     nixpkgs.url = "github:NixOS/nixpkgs/619c39f6eac5d1ed6b8f073a9414baf7034b2356";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    # nix-update 1.16.0 (still the version in nixpkgs) cannot update flakes with
+    # Nix 2.35: `nix flake metadata` no longer copies a dirty tree into the
+    # store, so the hash updater fails before building. 1.17.0 switched to
+    # `nix flake prefetch`; pin it until nixpkgs ships that fix.
+    # https://github.com/Mic92/nix-update/issues/693
+    nix-update = {
+      url = "github:Mic92/nix-update/v1.17.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, ... }:
@@ -15,6 +24,10 @@
 
       perSystem = { pkgs, system, ... }:
         let
+          # Pinned hash updater (see the nix-update input above); used by the
+          # update workflows and the dev shell.
+          nix-update = inputs.nix-update.packages.${system}.default;
+
           # Import package definitions
           gcs = import ./packages/gcs/default.nix { inherit pkgs; };
           agent-browser = pkgs.callPackage ./packages/agent-browser/default.nix { };
@@ -49,6 +62,7 @@
         in
         {
           packages = {
+            inherit nix-update;
             inherit agent-browser clamav cleverswitch television mekhq constructcraft solidcraft;
           }
           // pkgs.lib.optionalAttrs (system != "aarch64-linux") {
@@ -68,7 +82,7 @@
             default = pkgs.mkShell {
               name = "nixautopkgs-dev";
 
-              packages = with pkgs; [
+              packages = (with pkgs; [
                 # Language toolchains
                 go
                 bun
@@ -79,7 +93,6 @@
                 # Nix tools
                 nix-prefetch-git
                 nix-prefetch-github
-                nix-update
 
                 # Utilities
                 jq
@@ -91,7 +104,7 @@
                 # Optional: Additional development tools
                 ripgrep # Better grep for searching
                 fd # Better find for file discovery
-              ];
+              ]) ++ [ nix-update ];
 
               shellHook = ''
                 echo "╔══════════════════════════════════════════════════════════╗"
