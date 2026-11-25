@@ -27,13 +27,13 @@ in
 
 pkgs.buildGoModule.override { go = pkgs.go_1_27; } rec {
   pname = "gcs";
-  version = "5.61.0";
+  version = "5.62.0";
 
   src = pkgs.fetchFromGitHub {
     owner = "richardwilkes";
     repo = "gcs";
     rev = "v${version}";
-    hash = "sha256-rZvd5muNxY7hkkHrYWtGKrAkxFIQ9qLiSIgUhuYfPf4=";
+    hash = "sha256-u7hJ5/LPQFKeB8cuIUrvK57HGL0sh2ck6m1jMwf2YeY=";
   };
 
   vendorHash = "sha256-IJ9oKdlV8v8vyLUybilyEZcKXDSU0B67Qtw1x8zoOm0=";
