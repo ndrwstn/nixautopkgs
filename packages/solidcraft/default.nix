@@ -20,6 +20,7 @@
 , zenity
 , desktop-file-utils
 , appstream
+, zstd
 , nix-update-script
 }:
 
@@ -66,7 +67,7 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ pkg-config ]
     ++ lib.optionals isLinux [ makeWrapper wayland-scanner desktop-file-utils appstream ];
-  buildInputs = runtimeLibs;
+  buildInputs = runtimeLibs ++ [ zstd ];
 
   postInstall = lib.optionalString isLinux ''
     install -Dm644 assets/platforms/linux/io.tangencylabs.solidcraft.desktop \
