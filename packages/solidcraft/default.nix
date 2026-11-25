@@ -20,11 +20,12 @@
 , zenity
 , desktop-file-utils
 , appstream
+, zstd
 , nix-update-script
 }:
 
 let
-  version = "0.47.0";
+  version = "0.49.0";
   shortVersion = lib.head (lib.splitString "-" version);
   isLinux = stdenv.hostPlatform.isLinux;
   runtimeLibs = lib.optionals isLinux [
@@ -51,7 +52,7 @@ rustPlatform.buildRustPackage {
     owner = "tangency-labs";
     repo = "solidcraft";
     rev = "v${version}";
-    hash = "sha256-ujkMVzp92vk/KuLl8FchioYC49EOfC4e8DXmFSAXTcw=";
+    hash = "sha256-+tdj9581fBB32LuPTJWWvCnIEJEbeejNr339x2S9JHk=";
   };
 
   # Keep the lock file as a repository input rather than interpolating it from
@@ -66,7 +67,7 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ pkg-config ]
     ++ lib.optionals isLinux [ makeWrapper wayland-scanner desktop-file-utils appstream ];
-  buildInputs = runtimeLibs;
+  buildInputs = runtimeLibs ++ [ zstd ];
 
   postInstall = lib.optionalString isLinux ''
     install -Dm644 assets/platforms/linux/io.tangencylabs.solidcraft.desktop \
