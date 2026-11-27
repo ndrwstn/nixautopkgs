@@ -35,13 +35,13 @@ let
 in
 rustPlatform.buildRustPackage rec {
   pname = "constructcraft";
-  version = "0.14.1";
+  version = "0.15.0";
 
   src = fetchFromGitHub {
     owner = "francisreboucas";
     repo = "constructcraft";
     rev = "v${version}";
-    hash = "sha256-cxSL+g4+RP/T6Ur2D6UQ/IS4KAJefgWX1+pdfv8b+ys=";
+    hash = "sha256-sDd6bUdiivaUVColtSeI33geDeOx+IqtDNpdsWMK1CA=";
   };
 
   # Keep the lock file as a repository input rather than interpolating it from
